@@ -1,4 +1,3 @@
-"""Command-line entry points: simulate the loop, or bake a variant library."""
 from __future__ import annotations
 
 import argparse
@@ -15,9 +14,6 @@ from .types import CacheKey, Intensity, Material
 _DEFAULT_LOG = os.path.join("data", "movement_logs", "sample_run.json")
 
 
-# --------------------------------------------------------------------------- #
-# simulate
-# --------------------------------------------------------------------------- #
 def _build_predictor(args):
     if args.predictor == "tier1":
         return Tier1DeterministicPredictor(lead_ms=args.lead_ms)
@@ -110,9 +106,6 @@ def main_sim(argv=None) -> int:
     return 0
 
 
-# --------------------------------------------------------------------------- #
-# bake
-# --------------------------------------------------------------------------- #
 def main_bake(argv=None) -> int:
     p = argparse.ArgumentParser(description="Bake an offline library of SFX variants.")
     p.add_argument("--generator", default="mock", help="mock | stableaudio")

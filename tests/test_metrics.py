@@ -29,7 +29,6 @@ def test_hit_rate_perfect_when_lead_exceeds_latency():
 
 
 def test_hit_rate_zero_when_latency_exceeds_lead():
-    # unique contexts => no warm reuse, so latency > lead means everything falls back
     s = summarize(_result(lead_ms=100, latency_ms=500, unique=True))
     assert s["hit_rate"] == 0.0
     assert s["fallback_rate"] == 1.0

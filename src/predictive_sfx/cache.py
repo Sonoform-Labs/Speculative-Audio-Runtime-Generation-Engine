@@ -1,11 +1,3 @@
-"""Context-keyed cache of generated SFX variants.
-
-Two conceptual tiers live in one structure:
-  * pinned entries  = the offline-baked library (never evicted)
-  * unpinned entries = runtime speculative results (evicted LRU under a budget)
-
-Playback uses an avoid-repeat shuffle bag per key to fight repetition fatigue.
-"""
 from __future__ import annotations
 
 from collections import OrderedDict, deque
@@ -41,7 +33,6 @@ class VariantCache:
         self._rng = rng if rng is not None else np.random.default_rng(0)
         self.stats = CacheStats()
 
-    # ---- writes -----------------------------------------------------------
     def add(self, key: CacheKey, clip: AudioClip, *, pin: bool = False) -> None:
         lst = self._store.get(key)
         if lst is None:
@@ -56,16 +47,11 @@ class VariantCache:
         self._store.move_to_end(key)
         self._evict_if_needed()
 
-    # ---- reads ------------------------------------------------------------
     def has(self, key: CacheKey) -> bool:
         lst = self._store.get(key)
         return bool(lst)
 
     def get(self, key: CacheKey) -> AudioClip | None:
-        """Return a variant for `key` (avoid-repeat selection), or None on miss.
-
-        Records a hit/miss in `stats`.
-        """
         lst = self._store.get(key)
         if not lst:
             self.stats.misses += 1
@@ -81,24 +67,22 @@ class VariantCache:
     def variants(self, key: CacheKey) -> int:
         return len(self._store.get(key, ()))
 
-    # ---- eviction ---------------------------------------------------------
     def _evict_if_needed(self) -> None:
         if self.max_bytes is None:
             return
         while self._bytes > self.max_bytes:
             victim = None
-            for k in self._store:  # OrderedDict iterates LRU-first
+            for k in self._store:
                 if k not in self._pinned:
                     victim = k
                     break
             if victim is None:
-                break  # everything left is pinned
+                break
             lst = self._store.pop(victim)
             self._recent.pop(victim, None)
             self._bytes -= sum(c.nbytes for c in lst)
             self.stats.evictions += 1
 
-    # ---- introspection ----------------------------------------------------
     @property
     def nbytes(self) -> int:
         return self._bytes

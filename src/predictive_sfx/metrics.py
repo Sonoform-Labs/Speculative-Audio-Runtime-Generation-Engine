@@ -1,4 +1,3 @@
-"""Turn a SimResult into the numbers that decide feasibility."""
 from __future__ import annotations
 
 import numpy as np
@@ -19,17 +18,11 @@ def summarize(res: SimResult) -> dict:
 
     gl_s = res.gen_latency_ms / 1000.0
     leads = [o.lead_s for o in res.outcomes if o.lead_s is not None]
-    # Feasibility inequality: among events that had a correct prediction, how many
-    # had enough lead time for generation to finish (lead >= gen_latency)?
     in_time = sum(1 for o in res.outcomes if o.lead_s is not None and o.lead_s >= gl_s)
 
-    # Speculation precision: of all clips we generated, how many were actually used?
     precision = ((res.n_generations - res.n_wasted_generations) / res.n_generations
                  if res.n_generations else 0.0)
 
-    # Cold vs warm: the first time a key is requested it may be cold (nothing
-    # cached yet); after that the context-keyed cache stays warm, so generation
-    # latency only ever costs cold-start misses, not steady-state ones.
     seen: set = set()
     cold = 0
     cold_hits = 0
@@ -42,7 +35,6 @@ def summarize(res: SimResult) -> dict:
     warm = n - cold
     warm_hits = hits - cold_hits
 
-    # Repetition: same variant played twice in a row for the same key.
     last_variant: dict = {}
     immediate_repeats = 0
     for o in res.outcomes:

@@ -1,9 +1,4 @@
-"""Generate a sample movement log: a player walking/running across surfaces.
-
-Footsteps follow a gait cadence; the surface material changes in segments; a few
-impacts are sprinkled in. Deterministic given --seed.
-"""
-import _bootstrap  # noqa: F401  (adds src/ to path)
+import _bootstrap
 
 import argparse
 import os
@@ -13,15 +8,14 @@ import numpy as np
 from predictive_sfx.logs import save_events
 from predictive_sfx.types import GameEvent
 
-# Each segment: (material, duration_s, gait) where gait is seconds between steps.
 _SEGMENTS = [
     ("grass", 8.0, 0.52),
     ("dirt", 6.0, 0.50),
-    ("stone", 10.0, 0.46),   # speeds up
+    ("stone", 10.0, 0.46),
     ("wood", 8.0, 0.44),
-    ("metal", 6.0, 0.42),    # running
+    ("metal", 6.0, 0.42),
     ("stone", 8.0, 0.48),
-    ("grass", 10.0, 0.54),   # slows down
+    ("grass", 10.0, 0.54),
 ]
 
 
@@ -32,17 +26,15 @@ def build(seed: int = 0) -> list[GameEvent]:
     for material, dur, gait in _SEGMENTS:
         seg_end = t + dur
         while t < seg_end:
-            # intensity correlates with cadence: faster gait -> harder steps
             if gait <= 0.43:
                 inten = rng.choice(["normal", "hard"], p=[0.4, 0.6])
             elif gait <= 0.50:
                 inten = rng.choice(["soft", "normal", "hard"], p=[0.2, 0.6, 0.2])
             else:
                 inten = rng.choice(["soft", "normal"], p=[0.6, 0.4])
-            jitter = rng.normal(0.0, 0.015)  # human cadence isn't a metronome
+            jitter = rng.normal(0.0, 0.015)
             events.append(GameEvent("footstep", material, str(inten), round(t, 4)))
             t += gait + jitter
-        # an impact at most segment boundaries (jump-land / bump)
         if rng.random() < 0.7:
             events.append(GameEvent("impact", material, "hard", round(seg_end - 0.05, 4)))
 

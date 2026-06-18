@@ -1,10 +1,3 @@
-"""A dependency-free synthetic generator.
-
-It produces a short, material-flavoured percussive burst so the whole
-pipeline (predict -> cache -> fallback -> metrics) can be built and tested
-with zero external setup. Swap in a real neural backend later behind the same
-interface. Output is deterministic for a given (key, variant).
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -12,11 +5,6 @@ import numpy as np
 from .base import Generator
 from ..types import AudioClip, CacheKey, SAMPLE_RATE
 
-# Per-material synthesis profiles: a rough caricature, not a real foley model.
-#   freq:  body resonance (Hz)
-#   noise: how noise-dominated vs tonal the hit is (0..1)
-#   decay: amplitude decay rate (higher = snappier)
-#   ring:  amount of metallic overtone ring
 _MATERIAL_PROFILE = {
     "wood":  dict(freq=220.0, noise=0.55, decay=24.0, ring=0.12),
     "stone": dict(freq=140.0, noise=0.72, decay=32.0, ring=0.05),
@@ -41,7 +29,6 @@ class MockGenerator(Generator):
         prof = _MATERIAL_PROFILE.get(key.material, _MATERIAL_PROFILE["dirt"])
         gain = _INTENSITY_GAIN.get(key.intensity, 0.70)
 
-        # Deterministic per (key, variant) so caches/tests are reproducible.
         seed = (hash(str(key)) ^ (variant * 2654435761)) & 0xFFFFFFFF
         rng = np.random.default_rng(seed)
 
@@ -50,7 +37,7 @@ class MockGenerator(Generator):
         env = np.exp(-prof["decay"] * t)
 
         noise = rng.standard_normal(n) * prof["noise"]
-        freq = prof["freq"] * (1.0 + rng.uniform(-0.06, 0.06))  # per-variant pitch jitter
+        freq = prof["freq"] * (1.0 + rng.uniform(-0.06, 0.06))
         tone = np.sin(2 * np.pi * freq * t) * (1.0 - prof["noise"])
         ring = prof["ring"] * np.sin(2 * np.pi * freq * 2.0 * t) * np.exp(-6.0 * t)
 

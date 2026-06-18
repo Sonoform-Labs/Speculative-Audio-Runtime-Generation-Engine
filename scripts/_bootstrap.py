@@ -1,4 +1,3 @@
-"""Allow running scripts/ directly without installing the package."""
 import os
 import sys
 

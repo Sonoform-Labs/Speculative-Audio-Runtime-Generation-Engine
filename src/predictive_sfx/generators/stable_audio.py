@@ -1,19 +1,3 @@
-"""Local Stable Audio Open Small backend (optional, experimental).
-
-This is the recommended path for the *runtime* story: a small (~341M) few-step
-latent diffusion model that runs on-device with no network latency, which is
-what makes speculative pre-generation controllable.
-
-Setup:
-    pip install 'predictive-neural-sfx[stableaudio]'
-    # accept the model license + log in to Hugging Face:
-    huggingface-cli login
-    # model: stabilityai/stable-audio-open-small
-
-The model + weights are large and gated, so this backend lazy-imports
-everything and only loads the model on first use. The generate() call below
-follows the `stable_audio_tools` API; verify against the version you install.
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -30,7 +14,6 @@ _DEFAULT_TEMPLATE = "a single {intensity} {event} on {material}, dry, isolated s
 
 class StableAudioGenerator(Generator):
     name = "stableaudio"
-    # ~75 ms on an H100 at 8 steps; on a consumer GPU expect a few hundred ms.
     latency_ms = 300.0
 
     def __init__(self, model_name: str = "stabilityai/stable-audio-open-small",
@@ -48,9 +31,9 @@ class StableAudioGenerator(Generator):
         if self._model is not None:
             return
         try:
-            import torch  # noqa: F401
+            import torch
             from stable_audio_tools import get_pretrained_model
-        except ImportError as e:  # pragma: no cover - optional dep
+        except ImportError as e:
             raise RuntimeError(
                 "Stable Audio deps missing. Run: "
                 "pip install 'predictive-neural-sfx[stableaudio]' and `huggingface-cli login`."
@@ -65,7 +48,7 @@ class StableAudioGenerator(Generator):
         tmpl = _PROMPT_TEMPLATES.get(key.event_type, _DEFAULT_TEMPLATE)
         return tmpl.format(intensity=key.intensity, material=key.material, event=key.event_type)
 
-    def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:  # pragma: no cover - needs weights
+    def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         self._ensure_loaded()
         import torch
         from stable_audio_tools.inference.generation import generate_diffusion_cond
@@ -85,7 +68,6 @@ class StableAudioGenerator(Generator):
                 device=self.device,
                 seed=(hash(str(key)) ^ (variant * 2654435761)) & 0x7FFFFFFF,
             )
-        # audio: [batch, channels, samples] in [-1, 1]
         wav = audio.squeeze(0).to(torch.float32).cpu().numpy()
         mono = wav.mean(axis=0) if wav.ndim > 1 else wav
         return AudioClip(mono.astype(np.float32), int(sr), variant_id=variant)

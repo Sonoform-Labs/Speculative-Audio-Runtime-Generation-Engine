@@ -11,7 +11,7 @@ def _clip(n=128, variant=0):
 def test_add_and_get_hit_miss():
     c = VariantCache()
     k = CacheKey("footstep", "wood", "normal")
-    assert c.get(k) is None              # miss
+    assert c.get(k) is None
     assert c.stats.misses == 1
     c.add(k, _clip(variant=0))
     assert c.has(k)
@@ -26,17 +26,15 @@ def test_avoid_repeat_cycles_variants():
     for v in range(3):
         c.add(k, _clip(variant=v))
     seen = [c.get(k).variant_id for _ in range(2)]
-    # with avoid_repeat=2 the two most recent picks should differ
     assert seen[0] != seen[1]
 
 
 def test_eviction_respects_pin():
-    # each clip is 128 * 4 = 512 bytes; budget fits ~1 clip
     c = VariantCache(max_bytes=600)
     pinned = CacheKey("footstep", "wood", "normal")
     runtime = CacheKey("footstep", "metal", "hard")
     c.add(pinned, _clip(), pin=True)
-    c.add(runtime, _clip())          # pushes over budget -> evict unpinned
+    c.add(runtime, _clip())
     assert c.has(pinned)
     assert not c.has(runtime)
     assert c.stats.evictions >= 1

@@ -1,4 +1,3 @@
-"""Load/save movement logs (timelines of sound-triggering game events)."""
 from __future__ import annotations
 
 import json

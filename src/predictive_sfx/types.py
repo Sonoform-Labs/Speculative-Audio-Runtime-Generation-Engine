@@ -1,4 +1,3 @@
-"""Core domain types: events, cache keys, and audio clips."""
 from __future__ import annotations
 
 import os
@@ -12,7 +11,6 @@ SAMPLE_RATE = 48_000
 
 
 class Material(str, Enum):
-    """Surface materials a sound event can occur on."""
     WOOD = "wood"
     STONE = "stone"
     GRASS = "grass"
@@ -22,7 +20,6 @@ class Material(str, Enum):
 
 
 class Intensity(str, Enum):
-    """How forceful the event is (drives gain / brightness)."""
     SOFT = "soft"
     NORMAL = "normal"
     HARD = "hard"
@@ -30,12 +27,6 @@ class Intensity(str, Enum):
 
 @dataclass(frozen=True, slots=True)
 class CacheKey:
-    """The context bucket a generated sound is cached under.
-
-    Mirrors how shipped games already structure audio (Wwise switch containers
-    keyed on material/state, intensity via RTPC). Keeping the key discrete is
-    what bounds the cache size.
-    """
     event_type: str
     material: str
     intensity: str
@@ -47,7 +38,6 @@ class CacheKey:
 
 @dataclass(slots=True)
 class GameEvent:
-    """A sound-triggering event on the game timeline."""
     event_type: str
     material: str
     intensity: str
@@ -80,7 +70,6 @@ class GameEvent:
 
 @dataclass(slots=True)
 class AudioClip:
-    """A mono PCM clip in float32, range [-1, 1]."""
     samples: np.ndarray
     sample_rate: int = SAMPLE_RATE
     variant_id: int = 0
@@ -94,7 +83,6 @@ class AudioClip:
         return int(self.samples.nbytes)
 
     def to_wav(self, path: str | os.PathLike) -> None:
-        """Write the clip to a 16-bit PCM WAV file."""
         path = os.fspath(path)
         parent = os.path.dirname(os.path.abspath(path))
         os.makedirs(parent, exist_ok=True)

@@ -99,13 +99,17 @@ GameEvent timeline ──▶ Predictor ──▶ Prediction(key, emit_time, targ
 
 ## Roadmap
 
-- [x] **Phase 0/1** — predict→cache→fallback loop + metrics on a mock generator *(this repo)*
-- [ ] **Phase 2** — wire a real generator (Stable Audio Open Small) and bake a library
-- [ ] **Phase 3** — blind A/B vs authored assets; tune predictor on a real movement trace
-- [ ] **Phase 4** — in-engine integration (Unity PCM injection / Unreal `USoundWaveProcedural`)
+The goal is a standalone proof that backs a conference (ADC) talk. Full plan and status:
+**[`docs/PLAN.md`](docs/PLAN.md)**.
 
-See [`docs/feasibility-study.md`](docs/feasibility-study.md) for the full feasibility analysis
-and [`docs/prior-art.md`](docs/prior-art.md) for the novelty / prior-art assessment.
+- [x] **Phase 0/1** — predict→cache→fallback loop + metrics on a mock generator *(this repo)*
+- [ ] **Phase A** — local Stable Audio Open Small; bake a real library; measure real GPU latency
+- [ ] **Phase B** — blind A/B vs authored; FAD/PANNs + CLAP; the repetition centerpiece
+- [ ] **Phase C** — systems proof on a realistic trace with real measured latency
+- [ ] **Phase D** — standalone audible demo + the ADC talk deck
+
+See also [`docs/feasibility-study.md`](docs/feasibility-study.md) (full feasibility analysis)
+and [`docs/prior-art.md`](docs/prior-art.md) (novelty / prior-art assessment).
 
 ## Prior art & novelty (short version)
 

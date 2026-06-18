@@ -24,14 +24,12 @@ def test_tier1_clamps_lead_at_zero():
 def test_noisy_recall_bounds_prediction_count():
     events = _events(200)
     preds = NoisyPredictor(recall=0.5, key_accuracy=1.0, false_pos_rate=0.0, seed=1).predict(events)
-    # roughly half predicted; allow generous slack for randomness
     assert 70 <= len(preds) <= 130
 
 
 def test_noisy_false_positives_create_wrong_keys():
     events = _events(100)
     preds = NoisyPredictor(recall=1.0, key_accuracy=1.0, false_pos_rate=1.0, seed=2).predict(events)
-    # every event yields its correct prediction plus one wasted guess
     wrong = [p for p in preds if p.key != events[0].key]
     assert len(preds) > len(events)
     assert len(wrong) > 0

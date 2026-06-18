@@ -1,10 +1,4 @@
-"""Bake an offline library of SFX variants. Thin wrapper over predictive_sfx.cli.
-
-Examples:
-    python scripts/bake_library.py                       # mock, all materials
-    python scripts/bake_library.py --generator elevenlabs --variants 10
-"""
-import _bootstrap  # noqa: F401  (adds src/ to path)
+import _bootstrap
 
 from predictive_sfx.cli import main_bake
 
