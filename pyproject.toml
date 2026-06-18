@@ -16,8 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Real generator backends (the mock generator needs nothing beyond numpy).
-elevenlabs = ["requests>=2.28"]
+# Local neural backend (the mock generator needs nothing beyond numpy).
 stableaudio = ["torch>=2.1", "stable-audio-tools>=0.0.16", "einops>=0.7"]
 dev = ["pytest>=7.4"]
 

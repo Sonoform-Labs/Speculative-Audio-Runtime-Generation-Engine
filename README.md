@@ -67,8 +67,7 @@ audio comes from:
 | Backend | Install | Notes |
 |---|---|---|
 | `mock` | nothing | Synthetic SFX. Start here; validates the loop with zero setup. |
-| `elevenlabs` | `pip install -e .[elevenlabs]` + `ELEVENLABS_API_KEY` | Real neural SFX in minutes. Cloud round-trip → offline/baking use, not the hot path. |
-| `stableaudio` | `pip install -e .[stableaudio]` + `huggingface-cli login` | Local Stable Audio Open Small. The low-latency path for the runtime story. |
+| `stableaudio` | `pip install -e .[stableaudio]` + `huggingface-cli login` | Local Stable Audio Open Small. Low-latency, on-device, no per-call cost — the runtime-story backend. |
 
 ```bash
 python scripts/run_sim.py --generator stableaudio --prebake

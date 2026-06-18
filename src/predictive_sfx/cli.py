@@ -44,7 +44,7 @@ def _run_once(args, events, gen_latency_ms):
 def main_sim(argv=None) -> int:
     p = argparse.ArgumentParser(description="Simulate the predictive neural SFX loop.")
     p.add_argument("--log", default=_DEFAULT_LOG, help="movement log JSON")
-    p.add_argument("--generator", default="mock", help="mock | elevenlabs | stableaudio")
+    p.add_argument("--generator", default="mock", help="mock | stableaudio")
     p.add_argument("--predictor", default="tier1", choices=["tier1", "noisy"])
     p.add_argument("--lead-ms", type=float, default=250.0, dest="lead_ms",
                    help="prediction lead time (head start before the event)")
@@ -115,7 +115,7 @@ def main_sim(argv=None) -> int:
 # --------------------------------------------------------------------------- #
 def main_bake(argv=None) -> int:
     p = argparse.ArgumentParser(description="Bake an offline library of SFX variants.")
-    p.add_argument("--generator", default="mock", help="mock | elevenlabs | stableaudio")
+    p.add_argument("--generator", default="mock", help="mock | stableaudio")
     p.add_argument("--out", default=os.path.join("data", "baked"), help="output directory")
     p.add_argument("--variants", type=int, default=8, help="variants per key")
     p.add_argument("--event-types", nargs="+", default=["footstep"], dest="event_types")
