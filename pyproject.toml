@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "predictive-neural-sfx"
+version = "0.1.0"
+description = "Speculative prefetching for sound: predict game events, pre-generate neural SFX, cache by context, fall back to authored assets."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "TC-al" }]
+keywords = ["game-audio", "neural-audio", "sound-effects", "speculative-prefetch", "real-time"]
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+# Real generator backends (the mock generator needs nothing beyond numpy).
+elevenlabs = ["requests>=2.28"]
+stableaudio = ["torch>=2.1", "stable-audio-tools>=0.0.16", "einops>=0.7"]
+dev = ["pytest>=7.4"]
+
+[project.scripts]
+psfx-sim = "predictive_sfx.cli:main_sim"
+psfx-bake = "predictive_sfx.cli:main_bake"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/predictive_sfx"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

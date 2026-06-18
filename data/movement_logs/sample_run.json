@@ -1,0 +1,871 @@
+{
+  "meta": {
+    "seed": 0,
+    "n_events": 123,
+    "duration_s": 57.37,
+    "description": "synthetic walk/run across surfaces"
+  },
+  "events": [
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 0.5,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 1.018,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 1.5396,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 2.065,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 2.5992,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 3.1002,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 3.6209,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 4.1376,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 4.6466,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 5.1619,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 5.6975,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 6.238,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 6.7633,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 7.2847,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 7.7908,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 8.3141,
+      "context": "default"
+    },
+    {
+      "event_type": "impact",
+      "material": "grass",
+      "intensity": "hard",
+      "time_s": 8.45,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "normal",
+      "time_s": 8.831,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "normal",
+      "time_s": 9.3342,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "hard",
+      "time_s": 9.8244,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "normal",
+      "time_s": 10.3362,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "normal",
+      "time_s": 10.8173,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "normal",
+      "time_s": 11.3375,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "hard",
+      "time_s": 11.8414,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "normal",
+      "time_s": 12.3633,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "hard",
+      "time_s": 12.8903,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "normal",
+      "time_s": 13.3957,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "soft",
+      "time_s": 13.8956,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "dirt",
+      "intensity": "soft",
+      "time_s": 14.3763,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 14.8828,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 15.3328,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 15.7753,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 16.2278,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 16.684,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 17.1638,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 17.5907,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 18.061,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 18.5117,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 18.9803,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 19.4205,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 19.8945,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 20.3846,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 20.8351,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 21.2787,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 21.7482,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 22.2276,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 22.7129,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 23.1965,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 23.6455,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 24.121,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 24.5722,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "hard",
+      "time_s": 25.0112,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 25.4487,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "hard",
+      "time_s": 25.9018,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 26.3311,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "soft",
+      "time_s": 26.7373,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "soft",
+      "time_s": 27.1686,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 27.6075,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "soft",
+      "time_s": 28.0579,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "soft",
+      "time_s": 28.5192,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 28.9719,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 29.4237,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 29.8648,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 30.3028,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 30.7215,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "hard",
+      "time_s": 31.1529,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 31.5773,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "hard",
+      "time_s": 32.0227,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "hard",
+      "time_s": 32.4625,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "wood",
+      "intensity": "normal",
+      "time_s": 32.9235,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "normal",
+      "time_s": 33.328,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 33.7544,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 34.1801,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 34.5947,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "normal",
+      "time_s": 35.0131,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 35.4493,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 35.8705,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "normal",
+      "time_s": 36.2829,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "normal",
+      "time_s": 36.6806,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 37.099,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 37.483,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "normal",
+      "time_s": 37.8986,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 38.315,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 38.7343,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 39.132,
+      "context": "default"
+    },
+    {
+      "event_type": "impact",
+      "material": "metal",
+      "intensity": "hard",
+      "time_s": 39.278,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 39.5657,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 40.0595,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 40.5487,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 41.0066,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 41.4576,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 41.9345,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 42.4237,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 42.8971,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 43.37,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 43.8553,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 44.3061,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "soft",
+      "time_s": 44.8024,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 45.2781,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 45.7389,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 46.2118,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "normal",
+      "time_s": 46.6819,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 47.1378,
+      "context": "default"
+    },
+    {
+      "event_type": "impact",
+      "material": "stone",
+      "intensity": "hard",
+      "time_s": 47.5157,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 47.6299,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 48.1627,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 48.6833,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 49.244,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 49.8187,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 50.3674,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 50.9159,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 51.4474,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 52.0334,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 52.5432,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 53.0934,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 53.6538,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 54.1915,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 54.7164,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 55.2343,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 55.7982,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 56.3204,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "soft",
+      "time_s": 56.846,
+      "context": "default"
+    },
+    {
+      "event_type": "footstep",
+      "material": "grass",
+      "intensity": "normal",
+      "time_s": 57.3688,
+      "context": "default"
+    }
+  ]
+}
