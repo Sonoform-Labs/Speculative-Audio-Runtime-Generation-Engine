@@ -58,8 +58,9 @@ def main_sim(argv=None) -> int:
     p.add_argument("--prebake-variants", type=int, default=5, dest="prebake_variants")
     p.add_argument("--cache-mb", type=float, default=None, help="runtime cache budget (MB)")
     p.add_argument("--seed", type=int, default=0)
-    p.add_argument("--sweep", action="store_true",
-                   help="sweep generation latency to show the lead>=latency inequality")
+    p.add_argument("--sweep", nargs="?", const="latency", default=None,
+                   choices=["latency", "accuracy"],
+                   help="run a parameter sweep: 'latency' (default) or 'accuracy'")
     args = p.parse_args(argv)
 
     events = load_events(args.log)
@@ -67,7 +68,27 @@ def main_sim(argv=None) -> int:
     print(f"Generator={args.generator}  predictor={args.predictor}  lead={args.lead_ms:.0f}ms  "
           f"prebake={'on' if args.prebake else 'off'}\n")
 
-    if args.sweep:
+    if args.sweep == "accuracy":
+        args.predictor = "noisy"
+        print(" Prediction key-accuracy sweep (noisy predictor, "
+              f"lead={args.lead_ms:.0f}ms, recall={args.recall}, "
+              f"prebake={'on' if args.prebake else 'off'})\n")
+        print(f" {'key accuracy':>12} | {'hit rate':>9} | {'fallback':>9} | {'wasted gen':>10}")
+        print(" " + "-" * 52)
+        for acc in (1.0, 0.9, 0.8, 0.6, 0.4, 0.2):
+            args.accuracy = acc
+            res = _run_once(args, events, gen_latency_ms=args.gen_latency_ms)
+            s = summarize(res)
+            print(f" {acc:>12.2f} | {s['hit_rate']*100:>7.1f}% | "
+                  f"{s['fallback_rate']*100:>7.1f}% | {s['wasted_generations']:>10}")
+        print("\nReads: with caching, hit rate degrades GRACEFULLY with prediction accuracy "
+              "(recurring\ncontexts still warm the right slot sometimes). Mispredicted keys waste "
+              "generation and\nleave the correct slot cold. This plus context cardinality - not raw "
+              "model speed - is the\nsteady-state lever. Add --prebake to watch the authored-baked "
+              "floor erase the effect.")
+        return 0
+
+    if args.sweep == "latency":
         print(" Generation-latency sweep (predictor lead fixed at "
               f"{args.lead_ms:.0f} ms)\n")
         print(f" {'gen latency':>12} | {'hit rate':>9} | {'cold-start':>10} | {'warm':>7} | {'fallback':>9}")
