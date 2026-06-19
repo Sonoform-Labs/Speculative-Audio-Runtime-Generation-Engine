@@ -19,6 +19,19 @@ def _seed(key: CacheKey, variant: int) -> int:
     return (base ^ (variant * 2654435761)) & 0x7FFFFFFF
 
 
+def _extract(mono: np.ndarray, sr: int, duration_s: float, preroll_s: float = 0.03) -> np.ndarray:
+    n = int(duration_s * sr)
+    if n <= 0 or mono.shape[0] <= n:
+        return mono
+    win = max(1, int(0.005 * sr))
+    energy = np.convolve(mono.astype(np.float64) ** 2, np.ones(win) / win, mode="same")
+    center = int(np.argmax(energy))
+    start = max(0, center - int(preroll_s * sr))
+    end = min(mono.shape[0], start + n)
+    start = max(0, end - n)
+    return mono[start:end]
+
+
 class StableAudioGenerator(Generator):
     name = "stableaudio"
     latency_ms = 300.0
@@ -82,7 +95,5 @@ class StableAudioGenerator(Generator):
             audio = audio / peak
         audio = audio.clamp(-1.0, 1.0).cpu().numpy()
         mono = audio.mean(axis=0) if audio.ndim > 1 else audio
-        n = int(self.duration_s * self.sample_rate)
-        if 0 < n < mono.shape[0]:
-            mono = mono[:n]
+        mono = _extract(mono, self.sample_rate, self.duration_s)
         return AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant)
