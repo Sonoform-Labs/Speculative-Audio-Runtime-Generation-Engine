@@ -29,7 +29,14 @@ def _extract(mono: np.ndarray, sr: int, duration_s: float, preroll_s: float = 0.
     start = max(0, center - int(preroll_s * sr))
     end = min(mono.shape[0], start + n)
     start = max(0, end - n)
-    return mono[start:end]
+    seg = mono[start:end].copy()
+    fi = min(int(0.005 * sr), len(seg) // 2)
+    fo = min(int(0.05 * sr), len(seg) // 2)
+    if fi > 0:
+        seg[:fi] *= np.linspace(0.0, 1.0, fi, dtype=seg.dtype)
+    if fo > 0:
+        seg[-fo:] *= np.linspace(1.0, 0.0, fo, dtype=seg.dtype)
+    return seg
 
 
 class StableAudioGenerator(Generator):
