@@ -42,29 +42,26 @@ def main(argv=None) -> int:
             clips.append(_to48k(c.samples, c.sample_rate))
             labels.append(m)
 
-    def embed_audio(arrs):
-        inp = proc(audios=arrs, sampling_rate=48000, return_tensors="pt")
-        inp = {k: v.to(dev) for k, v in inp.items()}
+    def classify(arrs, texts):
+        a = proc(audio=arrs, sampling_rate=48000, return_tensors="pt")
+        t = proc(text=texts, return_tensors="pt", padding=True)
+        inp = {k: v.to(dev) for k, v in {**a, **t}.items()}
         with torch.no_grad():
-            e = clap.get_audio_features(**inp)
-        return torch.nn.functional.normalize(e, dim=-1)
+            out = clap(**inp)
+        return out.logits_per_audio.float().cpu().numpy()
 
-    def embed_text(txts):
-        inp = proc(text=txts, return_tensors="pt", padding=True)
-        inp = {k: v.to(dev) for k, v in inp.items()}
-        with torch.no_grad():
-            e = clap.get_text_features(**inp)
-        return torch.nn.functional.normalize(e, dim=-1)
+    def softmax_rows(x):
+        x = x - x.max(axis=1, keepdims=True)
+        e = np.exp(x)
+        return e / e.sum(axis=1, keepdims=True)
 
-    ae = embed_audio(clips)
-    me = embed_text([f"the sound of a footstep on {m}" for m in args.materials])
-    sim_mat = (ae @ me.T).cpu().numpy()
+    sim_mat = classify(clips, [f"the sound of a footstep on {m}" for m in args.materials])
+    probs_mat = softmax_rows(sim_mat)
     pred_idx = sim_mat.argmax(axis=1)
     true_idx = [args.materials.index(l) for l in labels]
     acc = sum(int(pred_idx[i] == true_idx[i]) for i in range(len(labels))) / len(labels)
 
-    cat_e = embed_text(CATEGORIES)
-    sim_cat = (ae @ cat_e.T).cpu().numpy()
+    sim_cat = classify(clips, CATEGORIES)
     foot_idx = CATEGORIES.index("a footstep")
     foot_top = sum(int(sim_cat[i].argmax() == foot_idx) for i in range(len(labels)))
 
@@ -82,9 +79,9 @@ def main(argv=None) -> int:
                 row[pred_idx[i]] += 1
         print(f"  {m:<7} " + " ".join(f"{x:>6}" for x in row))
     print()
-    print("mean self-label CLAP similarity:")
+    print("mean softmax prob assigned to the TRUE material:")
     for ti, m in enumerate(args.materials):
-        vals = [sim_mat[i][ti] for i in range(len(labels)) if true_idx[i] == ti]
+        vals = [probs_mat[i][ti] for i in range(len(labels)) if true_idx[i] == ti]
         print(f"  {m:<7} {np.mean(vals):.3f}")
     return 0
 
