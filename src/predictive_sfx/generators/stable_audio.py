@@ -44,8 +44,8 @@ class StableAudioGenerator(Generator):
     latency_ms = 300.0
 
     def __init__(self, model_name: str = "stabilityai/stable-audio-open-small",
-                 device: str | None = None, steps: int = 8, cfg_scale: float = 1.0,
-                 sampler_type: str = "pingpong", seconds_total: float | None = None,
+                 device: str | None = None, steps: int = 8, cfg_scale: float = 4.0,
+                 sampler_type: str = "pingpong", seconds_total: float | None = 1.0,
                  duration_s: float = 0.6, sample_rate: int = 44_100,
                  prompt_template: str | None = None, negative_prompt: str | None = None):
         self.model_name = model_name
