@@ -19,18 +19,17 @@ REWARD_WEIGHTS = {"footstep_seq": 0.30, "material": 0.25, "quality": 0.20, "not_
 
 PROMPTS = {
     "default": None,
-    "foley": "foley sound effect, a single {intensity} footstep, a boot on a {material} surface, dry, close mic, mono, no music",
-    "percussive": "a sharp {intensity} footstep impact on hard {material}, dry, close mic, isolated, no music",
-    "material_fwd": "a distinct {material} footstep, clear {material} texture, foley, dry, single step, no music",
+    "plural": "footsteps on {material}, dry, mono",
+    "floor": "a {intensity} footstep on a {material} floor, dry, mono",
 }
 
 CONFIGS = [
-    dict(name="baseline_1s",   prompt="default",      cfg=1.0, secs=1.0, steps=8),
-    dict(name="default_cfg4",  prompt="default",      cfg=4.0, secs=1.0, steps=8),
-    dict(name="foley_1",       prompt="foley",        cfg=1.0, secs=1.0, steps=8),
-    dict(name="foley_cfg4",    prompt="foley",        cfg=4.0, secs=1.0, steps=8),
-    dict(name="percussive_cf4", prompt="percussive",  cfg=4.0, secs=1.0, steps=8),
-    dict(name="material_cf4",  prompt="material_fwd", cfg=4.0, secs=1.0, steps=8),
+    dict(name="cfg3",        prompt="default", cfg=3.0, secs=1.0, steps=8),
+    dict(name="cfg3p5",      prompt="default", cfg=3.5, secs=1.0, steps=8),
+    dict(name="cfg4",        prompt="default", cfg=4.0, secs=1.0, steps=8),
+    dict(name="cfg4p5",      prompt="default", cfg=4.5, secs=1.0, steps=8),
+    dict(name="cfg4_secs05", prompt="default", cfg=4.0, secs=0.5, steps=8),
+    dict(name="cfg4_dur04",  prompt="default", cfg=4.0, secs=1.0, steps=8, dur=0.4),
 ]
 
 
@@ -85,6 +84,7 @@ def main(argv=None) -> int:
         g.cfg_scale = cfg["cfg"]
         g.seconds_total = cfg["secs"]
         g.steps = cfg["steps"]
+        g.duration_s = cfg.get("dur", 0.6)
         corrs = []
         for mat in args.materials:
             vs = [g.generate(CacheKey("footstep", mat, "normal"), variant=v).samples

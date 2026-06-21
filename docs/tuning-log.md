@@ -9,6 +9,7 @@ Composite reward = 0.30·footstep_seq (AST on the rhythmic sequence) + 0.25·mat
 | round | best config | reward | foot_seq | material | quality | notes |
 |---|---|---|---|---|---|---|
 | 1 | default_cfg4 (cfg=4, secs=1, simple prompt) | 0.604 | 25% | 62% | 70% | cfg=4 ≫ cfg=1; simple prompt beats foley/percussive; secs=1 fixed "music" |
+| 2 | floor_cfg5 (0.538) — did NOT beat round 1 | 0.538 | 25% | 31% | 72% | cfg 5/6/7 all hurt material (62→50/31/38%); cfg≈4 is the sweet spot; plural/floor prompts no help |
 
 ## Round 1 detail
 - cfg_scale=4 vs 1: footstep_seq 0→25%, material 56→62%, reward 0.51→0.60. Guidance helps.
