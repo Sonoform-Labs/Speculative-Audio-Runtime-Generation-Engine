@@ -46,7 +46,8 @@ class StableAudioGenerator(Generator):
     def __init__(self, model_name: str = "stabilityai/stable-audio-open-small",
                  device: str | None = None, steps: int = 8, cfg_scale: float = 1.0,
                  sampler_type: str = "pingpong", seconds_total: float | None = None,
-                 duration_s: float = 0.6, sample_rate: int = 44_100):
+                 duration_s: float = 0.6, sample_rate: int = 44_100,
+                 prompt_template: str | None = None):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -55,6 +56,7 @@ class StableAudioGenerator(Generator):
         self.seconds_total = seconds_total
         self.duration_s = float(duration_s)
         self.sample_rate = int(sample_rate)
+        self.prompt_template = prompt_template
         self._model = None
         self._sample_size = None
 
@@ -73,7 +75,7 @@ class StableAudioGenerator(Generator):
             self.seconds_total = self._sample_size / self.sample_rate
 
     def _prompt(self, key: CacheKey) -> str:
-        tmpl = _PROMPT_TEMPLATES.get(key.event_type, _DEFAULT_TEMPLATE)
+        tmpl = self.prompt_template or _PROMPT_TEMPLATES.get(key.event_type, _DEFAULT_TEMPLATE)
         return tmpl.format(intensity=key.intensity, material=key.material, event=key.event_type)
 
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
