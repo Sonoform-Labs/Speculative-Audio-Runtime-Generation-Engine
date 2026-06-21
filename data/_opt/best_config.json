@@ -1,0 +1,19 @@
+{
+  "round": 3,
+  "best_name": "cfg4",
+  "reward": 0.6042820420193376,
+  "axes": {
+    "footstep_seq": 0.25,
+    "material": 0.625,
+    "quality": 0.7029436215758323,
+    "not_music": 1.0,
+    "variation": 0.8244331770417103
+  },
+  "config": {
+    "name": "cfg4",
+    "prompt": "default",
+    "cfg": 4.0,
+    "secs": 1.0,
+    "steps": 8
+  }
+}

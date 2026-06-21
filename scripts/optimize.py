@@ -23,13 +23,15 @@ PROMPTS = {
     "floor": "a {intensity} footstep on a {material} floor, dry, mono",
 }
 
+NEG_MUSIC = "music, melody, song, ambient, drone, hum"
+NEG_BROAD = "music, speech, silence, rain, drone, hum, tone"
+
 CONFIGS = [
-    dict(name="cfg3",        prompt="default", cfg=3.0, secs=1.0, steps=8),
-    dict(name="cfg3p5",      prompt="default", cfg=3.5, secs=1.0, steps=8),
-    dict(name="cfg4",        prompt="default", cfg=4.0, secs=1.0, steps=8),
-    dict(name="cfg4p5",      prompt="default", cfg=4.5, secs=1.0, steps=8),
-    dict(name="cfg4_secs05", prompt="default", cfg=4.0, secs=0.5, steps=8),
-    dict(name="cfg4_dur04",  prompt="default", cfg=4.0, secs=1.0, steps=8, dur=0.4),
+    dict(name="cfg4_ref",      prompt="default", cfg=4.0, secs=1.0, steps=8),
+    dict(name="cfg4_negmus",   prompt="default", cfg=4.0, secs=1.0, steps=8, neg=NEG_MUSIC),
+    dict(name="cfg4_negbroad", prompt="default", cfg=4.0, secs=1.0, steps=8, neg=NEG_BROAD),
+    dict(name="cfg5_negmus",   prompt="default", cfg=5.0, secs=1.0, steps=8, neg=NEG_MUSIC),
+    dict(name="cfg6_negmus",   prompt="default", cfg=6.0, secs=1.0, steps=8, neg=NEG_MUSIC),
 ]
 
 
@@ -85,6 +87,7 @@ def main(argv=None) -> int:
         g.seconds_total = cfg["secs"]
         g.steps = cfg["steps"]
         g.duration_s = cfg.get("dur", 0.6)
+        g.negative_prompt = cfg.get("neg")
         corrs = []
         for mat in args.materials:
             vs = [g.generate(CacheKey("footstep", mat, "normal"), variant=v).samples

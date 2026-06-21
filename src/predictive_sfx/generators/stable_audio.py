@@ -47,7 +47,7 @@ class StableAudioGenerator(Generator):
                  device: str | None = None, steps: int = 8, cfg_scale: float = 1.0,
                  sampler_type: str = "pingpong", seconds_total: float | None = None,
                  duration_s: float = 0.6, sample_rate: int = 44_100,
-                 prompt_template: str | None = None):
+                 prompt_template: str | None = None, negative_prompt: str | None = None):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -57,6 +57,7 @@ class StableAudioGenerator(Generator):
         self.duration_s = float(duration_s)
         self.sample_rate = int(sample_rate)
         self.prompt_template = prompt_template
+        self.negative_prompt = negative_prompt
         self._model = None
         self._sample_size = None
 
@@ -86,6 +87,10 @@ class StableAudioGenerator(Generator):
 
         conditioning = [{"prompt": self._prompt(key), "seconds_start": 0,
                          "seconds_total": self.seconds_total}]
+        extra = {}
+        if self.negative_prompt:
+            extra["negative_conditioning"] = [{"prompt": self.negative_prompt, "seconds_start": 0,
+                                               "seconds_total": self.seconds_total}]
         with torch.no_grad():
             audio = generate_diffusion_cond(
                 self._model,
@@ -97,6 +102,7 @@ class StableAudioGenerator(Generator):
                 seed=_seed(key, variant),
                 device=self.device,
                 sampler_type=self.sampler_type,
+                **extra,
             )
         audio = rearrange(audio, "b d n -> d (b n)").to(torch.float32)
         peak = torch.max(torch.abs(audio))
