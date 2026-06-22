@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "TC-al" }]
 keywords = ["game-audio", "neural-audio", "sound-effects", "speculative-prefetch", "real-time"]
 dependencies = [
-    "numpy>=1.24",
+    "numpy>=1.24,<2.5",
 ]
 
 [project.optional-dependencies]

@@ -34,6 +34,25 @@ raise `material`. Under e.g. {material .35, quality .25, not_music .15, foot_seq
 SA3 ≈ 0.72 vs open-small ≈ 0.66 — i.e. the recalibrated composite agrees with the per-axis truth. Left as
 a flagged change rather than silently re-scored, to avoid moving goalposts.
 
+## FAD / realism vs real footsteps (kill-gate 2)
+Reference: 40 ESC-50 "footsteps" clips (real-world recorded walking; CC BY-NC, eval-only). 24 generated
+walk-sequences per model; PANNs embeddings; PCA-20 FAD + cosine-to-real-centroid (`scripts/fad.py`,
+`scripts/fetch_real_footsteps.py`).
+
+| model | FAD ↓ | cos-dist-to-real ↓ |
+|---|---|---|
+| real-vs-real (floor) | 30.7 | 0.000 |
+| open-small | 78.1 | 0.239 |
+| sa3-small-sfx | 87.3 | 0.244 |
+| mock (synthetic) | 126.5 | 0.365 |
+
+Honest read: (1) both neural models are FAR closer to real than synthetic mock — validates the neural
+approach. (2) SA3 ≈ open-small on distance-to-real (78 vs 87 = within small-N noise); **FAD does not favor
+SA3** — its edge is material distinctness (CLAP 62→100%), not recording-realism. (3) Generated dry SFX
+stay distributionally distinguishable from real ESC-50 (~80 vs 31 floor), partly because ESC-50 carries
+room/ambience our isolated clips lack. Small-N (24 gen / 40 real) FAD is indicative, not rigorous —
+trust the relative ordering (neural ≪ mock).
+
 ## Round 5 — model upgrade (Stable Audio 3 Small SFX)
 Swapped the generator from `stable-audio-open-small` (341M, music-trained) to the SFX-specialized
 `stabilityai/stable-audio-3-small-sfx`. **Material discrimination jumped 62% → 100%** (CLAP) — the exact
