@@ -43,10 +43,10 @@ def candidates(ctx: GameContext) -> list:
 
 
 class AffordanceEngine:
-    def __init__(self, generator: Generator, vram_budget_kb: float = 800.0,
-                 gpu_ms_budget: float = 2400.0, gen_cost_ms: float = 393.0,
+    def __init__(self, generator: Generator, vram_budget_kb: float = 1600.0,
+                 gpu_ms_budget: float = 3000.0, gen_cost_ms: float = 393.0,
                  latency_saved_ms: float = 400.0, tau: float = 0.05,
-                 continuous_topk: int = 2):
+                 continuous_topk: int = 2, variants_per_key: int = 2):
         self.gen = generator
         self.vram_budget = int(vram_budget_kb * 1024)
         self.gpu_ms_budget = gpu_ms_budget
@@ -54,12 +54,15 @@ class AffordanceEngine:
         self.latency_saved_ms = latency_saved_ms
         self.tau = tau
         self.continuous_topk = continuous_topk
+        self.variants_per_key = variants_per_key
         self.cache: dict = {}
         self.priority: dict = {}
+        self.recent: dict = {}
         self.pinned: set = set()
         self.L = 0.0
         self.generated: set = set()
         self.fired: set = set()
+        self.last_served = None
         self.stats = {"spec_gen": 0, "demand_gen": 0, "hits": 0, "fallback": 0,
                       "evicted": 0, "gpu_ms": 0.0, "peak_bytes": 0}
 
@@ -67,7 +70,7 @@ class AffordanceEngine:
         return int(getattr(clip, "nbytes", 0))
 
     def _used(self):
-        return sum(self._bytes(c) for c in self.cache.values())
+        return sum(self._bytes(c) for pool in self.cache.values() for c in pool)
 
     def _gate_thresh(self, gpu_pressure):
         base = self.gen_cost_ms / (self.gen_cost_ms + self.latency_saved_ms)
@@ -81,6 +84,7 @@ class AffordanceEngine:
         self.L = h
         del self.cache[k]
         self.priority.pop(k, None)
+        self.recent.pop(k, None)
         self.stats["evicted"] += 1
         return True
 
@@ -92,45 +96,57 @@ class AffordanceEngine:
             if k not in reachable:
                 del self.cache[k]
                 self.priority.pop(k, None)
+                self.recent.pop(k, None)
                 self.stats["evicted"] += 1
 
         thresh = self._gate_thresh(gpu_pressure)
         impulse_items = [c for c in cands if c.source == "item"]
         cont = sorted((c for c in cands if c.kind == "continuous"), key=lambda c: -c.p_use)[:self.continuous_topk]
         surface_other = [c for c in cands if c.source == "surface" and c.kind != "continuous"]
-        pool = impulse_items + cont + surface_other
+        pool_cands = impulse_items + cont + surface_other
 
-        admitted = [c for c in pool
+        admitted = [c for c in pool_cands
                     if c.key not in self.cache
-                    and (c.source == "item" and c.p_use >= self.tau or c.p_use >= thresh)]
+                    and ((c.source == "item" and c.p_use >= self.tau) or c.p_use >= thresh)]
         est_bytes = max(1, int(getattr(self.gen, "sample_rate", 44100) * 0.6 * 4))
         admitted.sort(key=lambda c: self.L + c.p_use * self.gen_cost_ms / est_bytes, reverse=True)
 
         spent = 0.0
         for c in admitted:
-            if spent + self.gen_cost_ms > self.gpu_ms_budget:
-                break
-            clip = self.gen.generate(c.key, variant=len(self.generated))
-            while self._used() + self._bytes(clip) > self.vram_budget:
-                if not self._evict_min_speculative():
+            pool = []
+            for v in range(self.variants_per_key):
+                if spent + self.gen_cost_ms > self.gpu_ms_budget:
                     break
-            if self._used() + self._bytes(clip) > self.vram_budget:
-                continue
-            self.cache[c.key] = clip
-            self.priority[c.key] = self.L + c.p_use * self.gen_cost_ms / max(1, self._bytes(clip))
-            self.generated.add(c.key)
-            self.stats["spec_gen"] += 1
-            self.stats["gpu_ms"] += self.gen_cost_ms
-            spent += self.gen_cost_ms
+                clip = self.gen.generate(c.key, variant=len(self.generated) * 8 + v)
+                while self._used() + self._bytes(clip) > self.vram_budget:
+                    if not self._evict_min_speculative():
+                        break
+                if self._used() + self._bytes(clip) > self.vram_budget:
+                    break
+                pool.append(clip)
+                self.stats["spec_gen"] += 1
+                self.stats["gpu_ms"] += self.gen_cost_ms
+                spent += self.gen_cost_ms
+            if pool:
+                self.cache[c.key] = pool
+                self.priority[c.key] = self.L + c.p_use * self.gen_cost_ms / max(1, self._bytes(pool[0]))
+                self.generated.add(c.key)
         self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
 
     def on_event(self, key: CacheKey) -> str:
         self.fired.add(key)
-        if key in self.cache:
+        pool = self.cache.get(key)
+        if pool:
             self.stats["hits"] += 1
+            idx = (self.recent.get(key, -1) + 1) % len(pool)
+            self.recent[key] = idx
+            self.last_served = pool[idx]
             return "cached"
         self.stats["fallback"] += 1
-        self.cache[key] = self.gen.generate(key, variant=10_000)
+        clip = self.gen.generate(key, variant=10_000)
+        self.cache[key] = [clip]
+        self.recent[key] = 0
+        self.last_served = clip
         self.stats["demand_gen"] += 1
         self.stats["gpu_ms"] += self.gen_cost_ms
         self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
