@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torchaudio.functional as AF
 
-from predictive_sfx.generators.stable_audio import StableAudioGenerator
+from predictive_sfx.generators import get_generator
 from predictive_sfx.types import AudioClip, CacheKey
 
 CATEGORIES = ["a footstep", "a gunshot", "music", "speech", "silence", "rain", "an explosion"]
@@ -27,11 +27,12 @@ NEG_MUSIC = "music, melody, song, ambient, drone, hum"
 NEG_BROAD = "music, speech, silence, rain, drone, hum, tone"
 
 CONFIGS = [
-    dict(name="cfg4_ref",      prompt="default", cfg=4.0, secs=1.0, steps=8),
-    dict(name="cfg4_negmus",   prompt="default", cfg=4.0, secs=1.0, steps=8, neg=NEG_MUSIC),
-    dict(name="cfg4_negbroad", prompt="default", cfg=4.0, secs=1.0, steps=8, neg=NEG_BROAD),
-    dict(name="cfg5_negmus",   prompt="default", cfg=5.0, secs=1.0, steps=8, neg=NEG_MUSIC),
-    dict(name="cfg6_negmus",   prompt="default", cfg=6.0, secs=1.0, steps=8, neg=NEG_MUSIC),
+    dict(name="sa3_cfg1",       prompt="default", cfg=1.0, secs=1.0, steps=8),
+    dict(name="sa3_cfg2",       prompt="default", cfg=2.0, secs=1.0, steps=8),
+    dict(name="sa3_cfg4",       prompt="default", cfg=4.0, secs=1.0, steps=8),
+    dict(name="sa3_cfg1_floor", prompt="floor",   cfg=1.0, secs=1.0, steps=8),
+    dict(name="sa3_cfg1_dur04", prompt="default", cfg=1.0, secs=1.0, steps=8, dur=0.4),
+    dict(name="sa3_cfg2_s16",   prompt="default", cfg=2.0, secs=1.0, steps=16),
 ]
 
 
@@ -69,10 +70,11 @@ def main(argv=None) -> int:
     ap.add_argument("--materials", nargs="+", default=["wood", "stone", "grass", "metal"])
     ap.add_argument("--variants", type=int, default=4)
     ap.add_argument("--round", type=int, default=1)
+    ap.add_argument("--generator", default="stableaudio")
     args = ap.parse_args(argv)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
 
-    g = StableAudioGenerator()
+    g = get_generator(args.generator)
     g.generate(CacheKey("footstep", "wood", "normal"), variant=0)
     sr = g.sample_rate
     tmp = os.path.join("data", "_opt")
@@ -85,6 +87,7 @@ def main(argv=None) -> int:
         g.prompt_template = PROMPTS[cfg["prompt"]]
         g.cfg_scale = cfg["cfg"]
         g.seconds_total = cfg["secs"]
+        g.gen_duration_s = cfg["secs"]
         g.steps = cfg["steps"]
         g.duration_s = cfg.get("dur", 0.6)
         g.negative_prompt = cfg.get("neg")
