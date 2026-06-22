@@ -2,6 +2,7 @@ from .types import AudioClip, CacheKey, GameEvent, Intensity, Material, SAMPLE_R
 from .cache import VariantCache, CacheStats
 from .predictor import Predictor, Prediction, Tier1DeterministicPredictor, NoisyPredictor
 from .pipeline import PredictivePipeline, SimResult, EventOutcome
+from .gamestate import simulate, GameStateTrace, StateFrame, AnticipatoryPredictor
 from .metrics import summarize, report
 
 __version__ = "0.1.0"
