@@ -3,6 +3,7 @@ from .cache import VariantCache, CacheStats
 from .predictor import Predictor, Prediction, Tier1DeterministicPredictor, NoisyPredictor
 from .pipeline import PredictivePipeline, SimResult, EventOutcome
 from .gamestate import simulate, GameStateTrace, StateFrame, AnticipatoryPredictor
+from .affordance import AffordanceEngine, GameContext, Candidate, candidates, make_session
 from .metrics import summarize, report
 
 __version__ = "0.1.0"
