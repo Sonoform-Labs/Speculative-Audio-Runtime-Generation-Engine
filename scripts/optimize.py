@@ -27,12 +27,12 @@ NEG_MUSIC = "music, melody, song, ambient, drone, hum"
 NEG_BROAD = "music, speech, silence, rain, drone, hum, tone"
 
 CONFIGS = [
-    dict(name="sa3_cfg1",       prompt="default", cfg=1.0, secs=1.0, steps=8),
     dict(name="sa3_cfg2",       prompt="default", cfg=2.0, secs=1.0, steps=8),
-    dict(name="sa3_cfg4",       prompt="default", cfg=4.0, secs=1.0, steps=8),
-    dict(name="sa3_cfg1_floor", prompt="floor",   cfg=1.0, secs=1.0, steps=8),
-    dict(name="sa3_cfg1_dur04", prompt="default", cfg=1.0, secs=1.0, steps=8, dur=0.4),
-    dict(name="sa3_cfg2_s16",   prompt="default", cfg=2.0, secs=1.0, steps=16),
+    dict(name="sa3_cfg2p5",     prompt="default", cfg=2.5, secs=1.0, steps=8),
+    dict(name="sa3_cfg3",       prompt="default", cfg=3.0, secs=1.0, steps=8),
+    dict(name="sa3_cfg2_neg",   prompt="default", cfg=2.0, secs=1.0, steps=8, neg=NEG_MUSIC),
+    dict(name="sa3_cfg3_neg",   prompt="default", cfg=3.0, secs=1.0, steps=8, neg=NEG_MUSIC),
+    dict(name="sa3_cfg2_dur05", prompt="default", cfg=2.0, secs=1.0, steps=8, dur=0.5),
 ]
 
 
