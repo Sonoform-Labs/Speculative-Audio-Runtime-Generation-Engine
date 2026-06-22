@@ -12,7 +12,7 @@ class StableAudio3Generator(Generator):
     latency_ms = 300.0
 
     def __init__(self, model_name: str = "small-sfx", device: str | None = None,
-                 steps: int = 8, cfg_scale: float = 1.0, gen_duration_s: float = 1.0,
+                 steps: int = 8, cfg_scale: float = 2.0, gen_duration_s: float = 1.0,
                  duration_s: float = 0.6, sample_rate: int = 44_100,
                  prompt_template: str | None = None, negative_prompt: str | None = None,
                  model_half: bool = True):
