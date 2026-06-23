@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import hashlib
-
 import numpy as np
 
 from .base import Generator
-from ..types import AudioClip, CacheKey
+from ..types import AudioClip, CacheKey, seed_for
 
 _PROMPT_TEMPLATES = {
     "footstep": "a single {intensity} footstep on {material}, close mic, dry, isolated sound effect",
@@ -15,8 +13,7 @@ _DEFAULT_TEMPLATE = "a single {intensity} {event} on {material}, dry, isolated s
 
 
 def _seed(key: CacheKey, variant: int) -> int:
-    base = int(hashlib.md5(str(key).encode()).hexdigest()[:8], 16)
-    return (base ^ (variant * 2654435761)) & 0x7FFFFFFF
+    return seed_for(key, variant)
 
 
 def _extract(mono: np.ndarray, sr: int, duration_s: float, preroll_s: float = 0.03) -> np.ndarray:

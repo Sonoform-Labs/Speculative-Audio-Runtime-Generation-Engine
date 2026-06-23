@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import wave
 from dataclasses import dataclass
@@ -8,6 +9,11 @@ from enum import Enum
 import numpy as np
 
 SAMPLE_RATE = 48_000
+
+
+def seed_for(key, variant: int = 0) -> int:
+    base = int(hashlib.md5(str(key).encode()).hexdigest()[:8], 16)
+    return (base ^ (variant * 2654435761)) & 0x7FFFFFFF
 
 
 class Material(str, Enum):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from .base import Generator
-from ..types import AudioClip, CacheKey, SAMPLE_RATE
+from ..types import AudioClip, CacheKey, SAMPLE_RATE, seed_for
 
 _MATERIAL_PROFILE = {
     "wood":  dict(freq=220.0, noise=0.55, decay=24.0, ring=0.12),
@@ -29,8 +29,7 @@ class MockGenerator(Generator):
         prof = _MATERIAL_PROFILE.get(key.material, _MATERIAL_PROFILE["dirt"])
         gain = _INTENSITY_GAIN.get(key.intensity, 0.70)
 
-        seed = (hash(str(key)) ^ (variant * 2654435761)) & 0xFFFFFFFF
-        rng = np.random.default_rng(seed)
+        rng = np.random.default_rng(seed_for(key, variant))
 
         n = int(self.duration_s * self.sample_rate)
         t = np.arange(n) / self.sample_rate

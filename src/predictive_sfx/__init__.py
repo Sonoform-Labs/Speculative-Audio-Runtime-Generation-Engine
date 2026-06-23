@@ -13,6 +13,8 @@ __all__ = [
     "VariantCache", "CacheStats",
     "Predictor", "Prediction", "Tier1DeterministicPredictor", "NoisyPredictor",
     "PredictivePipeline", "SimResult", "EventOutcome",
+    "simulate", "GameStateTrace", "StateFrame", "AnticipatoryPredictor",
+    "AffordanceEngine", "GameContext", "Candidate", "candidates", "make_session",
     "summarize", "report",
     "__version__",
 ]
