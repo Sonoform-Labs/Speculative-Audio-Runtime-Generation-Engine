@@ -35,6 +35,7 @@ namespace PredictiveSfx
 
         void Update()
         {
+            if (!PredictiveSfxService.Instance.IsConnected) return;
             _yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
             _pitch = Mathf.Clamp(_pitch - Input.GetAxisRaw("Mouse Y") * mouseSensitivity, -80f, 80f);
             transform.rotation = Quaternion.Euler(0f, _yaw, 0f);
@@ -84,6 +85,13 @@ namespace PredictiveSfx
         void OnGUI()
         {
             var svc = PredictiveSfxService.Instance;
+            if (!svc.IsConnected)
+            {
+                float w = 460f, h = 64f;
+                GUI.Box(new Rect((Screen.width - w) / 2f, (Screen.height - h) / 2f, w, h),
+                    "Starting sound engine...\nfirst run can take ~30s (loading the neural model)");
+                return;
+            }
             GUI.Label(new Rect(12, 10, 540, 22), "WASD move  ·  mouse look  ·  Esc free cursor / click to relock");
             GUI.Label(new Rect(12, 30, 540, 22), "on: " + (_surface ?? "-") + "    served: " + (svc.LastServed ?? "-") +
                 "    cached " + svc.CachedCount + " / fallback " + svc.FallbackCount + (svc.IsConnected ? "" : "    [OFFLINE]"));
