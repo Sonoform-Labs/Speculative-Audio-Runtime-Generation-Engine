@@ -46,7 +46,8 @@ class AffordanceEngine:
     def __init__(self, generator: Generator, vram_budget_kb: float = 1600.0,
                  gpu_ms_budget: float = 3000.0, gen_cost_ms: float = 393.0,
                  latency_saved_ms: float = 400.0, tau: float = 0.05,
-                 continuous_topk: int = 2, variants_per_key: int = 2):
+                 continuous_topk: int = 2, variants_per_key: int = 2,
+                 target_variants: int = 6):
         self.gen = generator
         self.vram_budget = int(vram_budget_kb * 1024)
         self.gpu_ms_budget = gpu_ms_budget
@@ -54,11 +55,14 @@ class AffordanceEngine:
         self.latency_saved_ms = latency_saved_ms
         self.tau = tau
         self.continuous_topk = continuous_topk
-        self.variants_per_key = variants_per_key
+        self.variants_per_key = int(variants_per_key)
+        self.target_variants = max(int(variants_per_key), int(target_variants))
         self.cache: dict = {}
         self.priority: dict = {}
         self.recent: dict = {}
+        self.want: dict = {}
         self.pinned: set = set()
+        self.persistent: set = set()
         self.L = 0.0
         self.generated: set = set()
         self.fired: set = set()
@@ -85,18 +89,38 @@ class AffordanceEngine:
         del self.cache[k]
         self.priority.pop(k, None)
         self.recent.pop(k, None)
+        self.want.pop(k, None)
         self.stats["evicted"] += 1
         return True
+
+    def _add_clips(self, batch):
+        if not batch:
+            return
+        clips = self.gen.generate_batch(list(batch))
+        for (key, _variant), clip in zip(batch, clips):
+            if clip is None:
+                continue
+            while self._used() + self._bytes(clip) > self.vram_budget:
+                if not self._evict_min_speculative():
+                    break
+            if self._used() + self._bytes(clip) > self.vram_budget:
+                break
+            self.cache.setdefault(key, []).append(clip)
+            self.generated.add(key)
+            self.stats["spec_gen"] += 1
+            self.stats["gpu_ms"] += self.gen_cost_ms
+        self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
 
     def on_context_change(self, ctx: GameContext, gpu_pressure: float = 1.0):
         cands = candidates(ctx)
         reachable = {c.key for c in cands}
-        self.pinned = set(reachable)
+        self.pinned = set(reachable) | self.persistent
         for k in list(self.cache):
-            if k not in reachable:
+            if k not in reachable and k not in self.persistent:
                 del self.cache[k]
                 self.priority.pop(k, None)
                 self.recent.pop(k, None)
+                self.want.pop(k, None)
                 self.stats["evicted"] += 1
 
         thresh = self._gate_thresh(gpu_pressure)
@@ -106,32 +130,63 @@ class AffordanceEngine:
         pool_cands = impulse_items + cont + surface_other
 
         admitted = [c for c in pool_cands
-                    if c.key not in self.cache
-                    and ((c.source == "item" and c.p_use >= self.tau) or c.p_use >= thresh)]
-        est_bytes = max(1, int(getattr(self.gen, "sample_rate", 44100) * 0.6 * 4))
-        admitted.sort(key=lambda c: self.L + c.p_use * self.gen_cost_ms / est_bytes, reverse=True)
+                    if (c.source == "item" and c.p_use >= self.tau) or c.p_use >= thresh]
+        admitted.sort(key=lambda c: c.p_use, reverse=True)
 
         spent = 0.0
+        batch = []
         for c in admitted:
-            pool = []
-            for v in range(self.variants_per_key):
+            self.want[c.key] = max(self.want.get(c.key, 0), self.target_variants)
+            self.priority[c.key] = self.L + c.p_use
+            have = len(self.cache.get(c.key, ()))
+            for v in range(have, self.variants_per_key):
                 if spent + self.gen_cost_ms > self.gpu_ms_budget:
                     break
-                clip = self.gen.generate(c.key, variant=len(self.generated) * 8 + v)
-                while self._used() + self._bytes(clip) > self.vram_budget:
-                    if not self._evict_min_speculative():
-                        break
-                if self._used() + self._bytes(clip) > self.vram_budget:
-                    break
-                pool.append(clip)
-                self.stats["spec_gen"] += 1
-                self.stats["gpu_ms"] += self.gen_cost_ms
+                batch.append((c.key, v))
                 spent += self.gen_cost_ms
+        self._add_clips(batch)
+
+    def _has_evictable(self):
+        return any(k not in self.pinned for k in self.cache)
+
+    def _est_bytes(self):
+        for pool in self.cache.values():
             if pool:
-                self.cache[c.key] = pool
-                self.priority[c.key] = self.L + c.p_use * self.gen_cost_ms / max(1, self._bytes(pool[0]))
-                self.generated.add(c.key)
-        self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
+                return self._bytes(pool[0])
+        return int(getattr(self.gen, "sample_rate", 44100) * 0.6 * 4)
+
+    def deepen_step(self):
+        for key in list(self.pinned):
+            have = len(self.cache.get(key, ()))
+            if have >= self.want.get(key, 0):
+                continue
+            if self._used() + self._est_bytes() > self.vram_budget and not self._has_evictable():
+                continue
+            self._add_clips([(key, have)])
+            if len(self.cache.get(key, ())) > have:
+                return True
+        return False
+
+    def _set_prompts(self, prompts):
+        g = getattr(self.gen, "inner", self.gen)
+        pm = getattr(g, "prompts", None)
+        if pm is not None and prompts:
+            pm.update(prompts)
+
+    def prewarm(self, keys, prompts=None):
+        if prompts:
+            self._set_prompts(prompts)
+        for key in keys:
+            self.pinned.add(key)
+            self.persistent.add(key)
+            self.want[key] = max(self.want.get(key, 0), self.target_variants)
+            self.priority[key] = 1.0
+        batch = []
+        for key in keys:
+            have = len(self.cache.get(key, ()))
+            for v in range(have, self.variants_per_key):
+                batch.append((key, v))
+        self._add_clips(batch)
 
     def on_event(self, key: CacheKey) -> str:
         self.fired.add(key)

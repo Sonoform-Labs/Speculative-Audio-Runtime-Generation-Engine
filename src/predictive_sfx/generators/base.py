@@ -14,3 +14,6 @@ class Generator(ABC):
     @abstractmethod
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         raise NotImplementedError
+
+    def generate_batch(self, items: list) -> list:
+        return [self.generate(key, variant=variant) for key, variant in items]

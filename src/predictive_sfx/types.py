@@ -92,12 +92,23 @@ class AudioClip:
         path = os.fspath(path)
         parent = os.path.dirname(os.path.abspath(path))
         os.makedirs(parent, exist_ok=True)
-        pcm16 = (np.clip(self.samples, -1.0, 1.0) * 32767.0).astype("<i2")
+        pcm16 = np.round(np.clip(self.samples, -1.0, 1.0) * 32767.0).astype("<i2")
         with wave.open(path, "wb") as w:
             w.setnchannels(1)
             w.setsampwidth(2)
             w.setframerate(self.sample_rate)
             w.writeframes(pcm16.tobytes())
+
+    @classmethod
+    def from_wav(cls, path: str | os.PathLike) -> "AudioClip":
+        with wave.open(os.fspath(path), "rb") as w:
+            sr = w.getframerate()
+            ch = w.getnchannels()
+            raw = w.readframes(w.getnframes())
+        a = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32767.0
+        if ch > 1:
+            a = a.reshape(-1, ch).mean(axis=1)
+        return cls(np.ascontiguousarray(a, dtype=np.float32), sr)
 
     @classmethod
     def silence(cls, duration_s: float = 0.2, sample_rate: int = SAMPLE_RATE) -> "AudioClip":

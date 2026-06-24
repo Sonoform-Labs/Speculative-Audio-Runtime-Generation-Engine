@@ -20,7 +20,7 @@ class MockGenerator(Generator):
     name = "mock"
 
     def __init__(self, latency_ms: float = 120.0, duration_s: float = 0.18,
-                 sample_rate: int = SAMPLE_RATE):
+                 sample_rate: int = SAMPLE_RATE, **_):
         self.latency_ms = float(latency_ms)
         self.duration_s = float(duration_s)
         self.sample_rate = int(sample_rate)

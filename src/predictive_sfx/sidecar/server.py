@@ -177,6 +177,27 @@ class _Handler(socketserver.BaseRequestHandler):
     def _on_prebake(self, body):
         if not isinstance(body, dict):
             raise FrameError("bad_fields", "prebake must be an object", fatal=False)
+        keys_spec = body.get("keys")
+        if keys_spec is not None:
+            if not isinstance(keys_spec, list):
+                raise FrameError("bad_fields", "keys must be a list", fatal=False)
+            keys = []
+            prompts = {}
+            for k in keys_spec:
+                if not isinstance(k, dict) or "event_type" not in k or "material" not in k:
+                    raise FrameError("bad_fields", "each key needs event_type and material", fatal=False)
+                ck = CacheKey(str(k["event_type"]), str(k["material"]),
+                              str(k.get("intensity", "normal")), str(k.get("context", "default")))
+                keys.append(ck)
+                if isinstance(k.get("prompt"), str) and k["prompt"]:
+                    prompts[str(ck)] = k["prompt"]
+            with engine_lock:
+                self.server.engine.prewarm(keys, prompts or None)
+                stats = dict(self.server.engine.stats)
+                cached = len(self.server.engine.cache)
+            self._send(MsgType.PREBAKE_ACK, {"type": "prebake_ack", "spec_gen": int(stats["spec_gen"]),
+                                             "peak_bytes": int(stats["peak_bytes"]), "cached_keys": cached})
+            return
         contexts = body.get("contexts", [])
         if not isinstance(contexts, list):
             raise FrameError("bad_fields", "contexts must be a list", fatal=False)
@@ -208,10 +229,27 @@ class _Handler(socketserver.BaseRequestHandler):
         self._send(MsgType.PONG, {"type": "pong", "t": t, "server_t": time.time()})
 
 
+def _deepen_loop(server):
+    import time
+    while getattr(server, "deepening", False):
+        try:
+            with engine_lock:
+                did = server.engine.deepen_step()
+        except Exception:
+            did = False
+        time.sleep(0.05 if did else 0.5)
+
+
 def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
-          pcm: str = "f32le", recv_timeout: float = 30.0, warmup: bool = True, **engine_kwargs) -> SfxServer:
+          pcm: str = "f32le", recv_timeout: float = 30.0, warmup: bool = True,
+          cache_dir: str | None = None, deepen: bool = False, gen_kwargs: dict | None = None,
+          **engine_kwargs) -> SfxServer:
     if engine is None:
-        engine = AffordanceEngine(get_generator(generator), **engine_kwargs)
+        gen = get_generator(generator, **(gen_kwargs or {}))
+        if cache_dir:
+            from ..generators.cached import CachedGenerator
+            gen = CachedGenerator(gen, cache_dir)
+        engine = AffordanceEngine(gen, **engine_kwargs)
     if warmup:
         try:
             engine.gen.generate(CacheKey("footstep", "grass", "normal"), variant=0)
@@ -221,4 +259,9 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     thread = threading.Thread(target=server.serve_forever, name="sfx-sidecar", daemon=True)
     thread.start()
     server.runner = thread
+    if deepen:
+        server.deepening = True
+        dthread = threading.Thread(target=_deepen_loop, args=(server,), name="sfx-deepener", daemon=True)
+        dthread.start()
+        server.deepener = dthread
     return server
