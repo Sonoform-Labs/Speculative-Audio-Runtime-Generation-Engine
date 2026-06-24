@@ -5,5 +5,8 @@
   "description": "Runtime neural sound effects over a local sidecar: predict, pre-generate, cache, authored-fallback. Drop in, run the sidecar, and hear generated SFX by context.",
   "unity": "2020.3",
   "keywords": ["audio", "sfx", "procedural", "generative"],
-  "author": { "name": "Sonoform Labs" }
+  "author": { "name": "Sonoform Labs" },
+  "samples": [
+    { "displayName": "Interactive Showcase", "description": "A/B old-way-vs-live demo with surface morph, gun affordance, and an on-screen HUD.", "path": "Samples~/Showcase" }
+  ]
 }

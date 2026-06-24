@@ -51,6 +51,7 @@ namespace PredictiveSfx
             public WorkItem item;
             public float[] samples;
             public int sampleRate, variantId;
+            public string served;
         }
 
         readonly BlockingCollection<WorkItem> _queue = new BlockingCollection<WorkItem>();
@@ -67,6 +68,10 @@ namespace PredictiveSfx
         volatile ContextArgs _lastContext;
 
         public bool IsConnected => _connected;
+        public string LastServed { get; private set; }
+        public int LastVariantId { get; private set; } = -1;
+        public int CachedCount { get; private set; }
+        public int FallbackCount { get; private set; }
 
         void Awake()
         {
@@ -118,6 +123,10 @@ namespace PredictiveSfx
             {
                 if (res.ok)
                 {
+                    LastServed = res.served;
+                    LastVariantId = res.variantId;
+                    if (res.served == "cached") CachedCount++;
+                    else if (res.served == "fallback") FallbackCount++;
                     AudioClip clip = null;
                     try { clip = GetOrCreateClip(res); }
                     catch (Exception) { clip = null; }
@@ -188,7 +197,7 @@ namespace PredictiveSfx
                     else
                     {
                         var r = client.Event(item.eventType, item.material, item.intensity, item.context);
-                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, variantId = r.meta.variant_id });
+                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, variantId = r.meta.variant_id, served = r.meta.served });
                     }
                 }
                 catch (SfxProtocolException pe)
