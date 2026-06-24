@@ -42,7 +42,7 @@ class _Handler(socketserver.BaseRequestHandler):
     def handle(self):
         while True:
             try:
-                msg_type, body, _ = wire.read_frame(self.request)
+                msg_type, body, _ = wire.read_frame(self.request, idle_ok=True)
             except IdleTimeout:
                 continue
             except (ClientGone, OSError):
@@ -209,9 +209,14 @@ class _Handler(socketserver.BaseRequestHandler):
 
 
 def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
-          pcm: str = "f32le", recv_timeout: float = 30.0, **engine_kwargs) -> SfxServer:
+          pcm: str = "f32le", recv_timeout: float = 30.0, warmup: bool = True, **engine_kwargs) -> SfxServer:
     if engine is None:
         engine = AffordanceEngine(get_generator(generator), **engine_kwargs)
+    if warmup:
+        try:
+            engine.gen.generate(CacheKey("footstep", "grass", "normal"), variant=0)
+        except Exception:
+            pass
     server = SfxServer((host, port), engine, default_pcm=pcm, recv_timeout=recv_timeout)
     thread = threading.Thread(target=server.serve_forever, name="sfx-sidecar", daemon=True)
     thread.start()

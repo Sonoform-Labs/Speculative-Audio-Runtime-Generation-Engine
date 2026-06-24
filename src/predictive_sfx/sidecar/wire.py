@@ -80,8 +80,8 @@ def pack_frame(msg_type: int, body: dict, pcm: bytes = b"") -> bytes:
     return header + payload
 
 
-def read_frame(sock, max_json: int = MAX_JSON, max_pcm: int = MAX_PCM):
-    head = recv_exactly(sock, HEADER_SIZE, idle_ok=True)
+def read_frame(sock, max_json: int = MAX_JSON, max_pcm: int = MAX_PCM, idle_ok: bool = False):
+    head = recv_exactly(sock, HEADER_SIZE, idle_ok=idle_ok)
     magic, version, msg_type, flags, _reserved, json_len, pcm_len = HEADER.unpack(head)
     if magic != MAGIC:
         raise FrameError("bad_frame", "bad magic", fatal=True)

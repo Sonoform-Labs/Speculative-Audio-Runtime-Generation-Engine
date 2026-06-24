@@ -22,9 +22,11 @@ def main(argv=None) -> int:
     if args.gen_cost_ms is not None:
         kwargs["gen_cost_ms"] = args.gen_cost_ms
 
+    if args.generator != "mock":
+        print(f"loading + warming {args.generator} model (first time can take ~30s)...")
     server = serve(generator=args.generator, host=args.host, port=args.port, pcm=args.pcm, **kwargs)
     host, port = server.server_address
-    print(f"sidecar listening on {host}:{port}  generator={args.generator}  pcm={args.pcm}")
+    print(f"sidecar READY on {host}:{port}  generator={args.generator}  pcm={args.pcm}")
     print("ctrl-c to stop")
 
     stop = threading.Event()
