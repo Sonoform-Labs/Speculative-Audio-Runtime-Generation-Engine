@@ -16,9 +16,11 @@ def main(argv=None) -> int:
     ap.add_argument("--gpu-ms-budget", type=float, default=10_000_000.0)
     ap.add_argument("--gen-cost-ms", type=float, default=None)
     ap.add_argument("--variants", type=int, default=3)
+    ap.add_argument("--topk", type=int, default=4)
     args = ap.parse_args(argv)
 
-    kwargs = dict(vram_budget_kb=args.vram_kb, gpu_ms_budget=args.gpu_ms_budget, variants_per_key=args.variants)
+    kwargs = dict(vram_budget_kb=args.vram_kb, gpu_ms_budget=args.gpu_ms_budget,
+                  variants_per_key=args.variants, continuous_topk=args.topk)
     if args.gen_cost_ms is not None:
         kwargs["gen_cost_ms"] = args.gen_cost_ms
 
