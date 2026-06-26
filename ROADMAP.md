@@ -99,6 +99,20 @@ the ETA/confidence only the predictor produces; building them against no predict
       63% on cold/diverse keys, and the lead-vs-latency sweep shows ready_in_time 0%->100% as lead
       crosses the 393ms SA3 latency. 5 tests. Frame-time impact needs the live Unity run -> P4.1.
 
+## Generation model (2026-06-26, overnight)
+
+Deep-research + on-3060 bench (docs/model-research-2026-06-26.md, docs/bench-results-2026-06-26.md):
+- [x] Adopted **sa3 @ 4 steps = ~219ms** (was 8 steps / 403ms) — ~2x faster, footstep character
+      unchanged, material accuracy still strong. Quality collapses below 4 steps (sa3 is not a true
+      1-step model). Tooling: scripts/bench_generators.py (latency) + scripts/bench_quality.py (CLAP).
+- [~] True sub-100ms WITH quality needs a distilled model (MeanAudio 120M/1-step, FlashAudio, ARC).
+      Needs an ISOLATED env (their CUDA 11.8 vs project 12.4 would clobber torch) -> separate
+      generator microservice or supervised torch downgrade. Plan in bench-results doc. User's call.
+- STRATEGIC REFRAME: fast generation undercuts latency-hiding as the reason to predict; the paper's
+      novel delta is **predict-then-GENERATE** (not predict-then-fetch = prior art) and prediction
+      pays off in **large/combinatorial/cold-start, VRAM-bounded** key spaces. The "looks the same"
+      small-palette result = Fig 1; the hit-rate-vs-keyspace crossover = the contribution.
+
 ## Phase 5 — Regroup before writing (NOT first)
 
 - [ ] P5.1 After Phase 4 (system built + benchmarked), STOP and come back to discuss with the user
