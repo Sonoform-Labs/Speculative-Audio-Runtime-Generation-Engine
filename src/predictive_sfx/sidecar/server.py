@@ -9,13 +9,16 @@ from . import wire
 from .wire import ClientGone, FrameError, IdleTimeout, MsgType
 from .. import __version__
 from ..affordance import AffordanceEngine, GameContext
+from ..calibration import PredictorCalibration
 from ..fusion import PredictionFusion
 from ..generators import get_generator
+from ..predictor import EventSequencePredictor
 from ..types import CacheKey
 
 engine_lock = threading.Lock()
 
 MAX_PREBAKE_CONTEXTS = 256
+INTENT_IGNORE = {"footstep", "jump", "land"}
 
 
 class SfxServer(socketserver.ThreadingTCPServer):
@@ -163,6 +166,7 @@ class _Handler(socketserver.BaseRequestHandler):
             samples = clip.samples
             variant_id = int(clip.variant_id)
             sr = int(clip.sample_rate)
+            intent = self._update_intent(key)
         pcm = wire.encode_pcm(samples, self.pcm)
         n = int(samples.shape[0])
         self._send(MsgType.AUDIO, {
@@ -175,7 +179,35 @@ class _Handler(socketserver.BaseRequestHandler):
             "n_samples": n,
             "byte_len": len(pcm),
             "duration_s": (n / sr) if sr else 0.0,
+            "intent": intent,
         }, pcm)
+
+    def _update_intent(self, key):
+        srv = self.server
+        intent = getattr(srv, "intent", None)
+        if intent is None or not hasattr(srv.engine, "register_predictions"):
+            return getattr(srv, "last_intent", "")
+        if key.event_type in INTENT_IGNORE:
+            return srv.last_intent
+        for pk, conf in srv.intent_pending:
+            srv.calib.observe("intent", conf, pk == key)
+        srv.intent_pending = []
+        ctx = key.context
+        intent.observe(key.event_type, ctx)
+        srv.intent_last_material[key.event_type] = key.material
+        pending = []
+        raw = []
+        for et, prob in intent.predict(ctx):
+            pk = CacheKey(et, srv.intent_last_material.get(et, key.material), "normal", ctx)
+            raw.append(("intent", pk, srv.intent_lead_s, prob))
+            pending.append((pk, prob))
+        proposals = srv.fusion.fuse(raw)
+        if proposals:
+            srv.engine.register_predictions(proposals)
+            top = proposals[0]
+            srv.last_intent = f"{top.key.event_type} {top.p_use:.2f}"
+        srv.intent_pending = pending
+        return srv.last_intent
 
     def _on_prebake(self, body):
         if not isinstance(body, dict):
@@ -312,10 +344,17 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
         except Exception:
             pass
     server = SfxServer((host, port), engine, default_pcm=pcm, recv_timeout=recv_timeout)
+    server.calib = PredictorCalibration()
     server.fusion = PredictionFusion(
+        calibration=server.calib,
         gen_cost_ms=getattr(engine, "gen_cost_ms", 393.0),
         latency_saved_ms=getattr(engine, "latency_saved_ms", 400.0),
         owner={"footstep": "motion"})
+    server.intent = EventSequencePredictor()
+    server.intent_last_material = {}
+    server.intent_pending = []
+    server.intent_lead_s = 0.6
+    server.last_intent = ""
     thread = threading.Thread(target=server.serve_forever, name="sfx-sidecar", daemon=True)
     thread.start()
     server.runner = thread

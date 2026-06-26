@@ -19,10 +19,14 @@ namespace PredictiveSfx
         public string[] arenaSurfaces = { "grass", "stone", "metal", "wood" };
         public AudioClip authoredFallback;
 
+        public bool showLandMarker = true;
+
         float _dist, _yaw, _pitch, _groundY, _vy;
         bool _grounded = true, _hasGun;
         int _ammo;
         string _surface;
+        GameObject _landMarker;
+        string _predLandSurface;
 
         void Awake()
         {
@@ -83,6 +87,8 @@ namespace PredictiveSfx
                 _surface = DetectSurface();
                 Fire("land", _surface);
             }
+            if (!_grounded) PredictLanding();
+            else { _predLandSurface = null; if (_landMarker != null) _landMarker.SetActive(false); }
 
             if (Input.GetKeyDown(KeyCode.G)) { _hasGun = !_hasGun; PushContext(); }
             if (Input.GetMouseButtonDown(0))
@@ -128,6 +134,70 @@ namespace PredictiveSfx
             return defaultMaterial;
         }
 
+        void PredictLanding()
+        {
+            float height = transform.position.y - _groundY;
+            if (height <= 0.01f) return;
+            float t = (_vy + Mathf.Sqrt(_vy * _vy + 2f * gravity * height)) / gravity;
+            if (t <= 0.01f) return;
+            float h = Input.GetAxisRaw("Horizontal");
+            float v = Input.GetAxisRaw("Vertical");
+            var dir = transform.right * h + transform.forward * v;
+            if (dir.sqrMagnitude > 1f) dir.Normalize();
+            Vector3 land = transform.position + dir * (moveSpeed * t);
+            Vector3 hitPoint;
+            string surf = SurfaceAtPoint(land, out hitPoint);
+            if (surf != _predLandSurface)
+            {
+                _predLandSurface = surf;
+                PredictiveSfxService.Instance.SendPredictions(
+                    new System.Collections.Generic.List<SfxPrediction>(1)
+                    {
+                        new SfxPrediction { source = "motion", eventType = "land", material = surf,
+                            intensity = "normal", context = "default", etaS = t, confidence = 1f },
+                    }, Time.time);
+            }
+            UpdateLandMarker(hitPoint);
+        }
+
+        string SurfaceAtPoint(Vector3 p, out Vector3 hitPoint)
+        {
+            hitPoint = new Vector3(p.x, _groundY, p.z);
+            RaycastHit hit;
+            if (Physics.Raycast(new Vector3(p.x, _groundY + 5f, p.z), Vector3.down, out hit, 10f))
+            {
+                hitPoint = hit.point;
+                var s = hit.collider.GetComponentInParent<PredictiveSfxSurface>();
+                if (s != null && !string.IsNullOrEmpty(s.material)) return s.material;
+            }
+            return defaultMaterial;
+        }
+
+        void UpdateLandMarker(Vector3 p)
+        {
+            if (!showLandMarker) return;
+            if (_landMarker == null)
+            {
+                _landMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+                var col = _landMarker.GetComponent<Collider>();
+                if (col != null) Destroy(col);
+                _landMarker.layer = 2;
+                _landMarker.name = "psfx_landing_marker";
+                _landMarker.transform.localScale = new Vector3(0.7f, 0.02f, 0.7f);
+                var mr = _landMarker.GetComponent<Renderer>();
+                var c = new Color(0.2f, 0.7f, 1f);
+                mr.material.color = c;
+                if (mr.material.HasProperty("_BaseColor")) mr.material.SetColor("_BaseColor", c);
+                if (mr.material.HasProperty("_EmissionColor"))
+                {
+                    mr.material.EnableKeyword("_EMISSION");
+                    mr.material.SetColor("_EmissionColor", c * 0.8f);
+                }
+            }
+            _landMarker.SetActive(true);
+            _landMarker.transform.position = p + Vector3.up * 0.03f;
+        }
+
         void OnGUI()
         {
             var svc = PredictiveSfxService.Instance;
@@ -143,8 +213,10 @@ namespace PredictiveSfx
                 "    served: " + (svc.LastServed ?? "-") + "    cached " + svc.CachedCount + " / fallback " + svc.FallbackCount);
             GUI.Label(new Rect(12, 54, 700, 22), "predicting ahead -> " + (svc.LastPredicted ?? "(none yet)") +
                 "    (sent " + svc.PredictionsSent + ")");
+            GUI.Label(new Rect(12, 78, 700, 22), "intent (habit guess) -> " +
+                (string.IsNullOrEmpty(svc.LastIntent) ? "(learning your habits...)" : svc.LastIntent));
             if (svc.CachedCount + svc.FallbackCount == 0)
-                GUI.Label(new Rect(12, 78, 620, 22), "warming up the sound palette...");
+                GUI.Label(new Rect(12, 102, 620, 22), "warming up the sound palette...");
         }
     }
 }

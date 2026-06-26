@@ -108,6 +108,47 @@ class KinematicGaitPredictor:
         return preds
 
 
+class EventSequencePredictor:
+    def __init__(self, order: int = 2, top_k: int = 3, smoothing: float = 0.5,
+                 min_total: int = 3, history_cap: int = 64):
+        self.order = int(order)
+        self.top_k = int(top_k)
+        self.smoothing = float(smoothing)
+        self.min_total = int(min_total)
+        self.history_cap = int(history_cap)
+        self.ngram: dict = {}
+        self.unigram: dict = {}
+        self.vocab: set = set()
+        self.history: list = []
+
+    def reset(self) -> None:
+        self.history = []
+
+    def observe(self, event_type: str, context: str = "default") -> None:
+        self.vocab.add(event_type)
+        key = (context, tuple(self.history[-self.order:]))
+        d = self.ngram.setdefault(key, {})
+        d[event_type] = d.get(event_type, 0) + 1
+        u = self.unigram.setdefault(context, {})
+        u[event_type] = u.get(event_type, 0) + 1
+        self.history.append(event_type)
+        if len(self.history) > self.history_cap:
+            self.history = self.history[-self.history_cap:]
+
+    def predict(self, context: str = "default") -> list:
+        d = self.ngram.get((context, tuple(self.history[-self.order:])))
+        total = sum(d.values()) if d else 0
+        if not d or total < self.min_total:
+            d = self.unigram.get(context, {})
+            total = sum(d.values())
+        if not d or total == 0:
+            return []
+        denom = total + self.smoothing * max(1, len(self.vocab))
+        scored = sorted(((c, (n + self.smoothing) / denom) for c, n in d.items()),
+                        key=lambda x: x[1], reverse=True)
+        return scored[:self.top_k]
+
+
 class NoisyPredictor(Predictor):
 
     def __init__(self, lead_ms: float = 250.0, lead_jitter_ms: float = 80.0,

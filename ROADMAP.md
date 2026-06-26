@@ -78,8 +78,12 @@ the ETA/confidence only the predictor produces; building them against no predict
 - [x] P3.4 Variant pools for high-rate classes. DONE — footstep/shoot/gunshot warm to deeper pools
       (high_rate_variants=8 vs 6); burst serves rotate through 8 distinct variants, never per-event
       live-gen. 4 tests.
-- [ ] P3.5 (later) Learned intent predictor B for discrete events (shoot/reload/ability), top-k,
-      noisy (F1 ~0.4); used to broaden speculation, gated by calibrated confidence.
+- [x] P3.5 Learned intent predictor B. DONE — EventSequencePredictor (online order-2 Markov over the
+      discrete-event stream) wired server-side in the sidecar: on_event -> observe -> top-k predict ->
+      fuse(calibrated) -> register; self-corrects via a calibration feedback loop (pending guesses
+      judged against the next event -> hit/miss -> calibration -> down-weighted so it never starves
+      motion). Footsteps/jump/land ignored. HUD "intent" line (Tier 3). Tiers 1+2 tested (server +
+      unit), Tier 3 (HUD) needs in-editor eyeball.
 
 ## Phase 4 — Validation + benchmarks
 
