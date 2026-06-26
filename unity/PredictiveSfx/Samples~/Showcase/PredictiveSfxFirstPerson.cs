@@ -141,8 +141,10 @@ namespace PredictiveSfx
             GUI.Label(new Rect(12, 10, 620, 22), "WASD move  ·  mouse look  ·  Space jump  ·  click fire  ·  R reload  ·  G holster  ·  Esc cursor");
             GUI.Label(new Rect(12, 30, 620, 22), "on: " + (_surface ?? "-") + "    gun: " + (_hasGun ? "ammo " + _ammo : "holstered") +
                 "    served: " + (svc.LastServed ?? "-") + "    cached " + svc.CachedCount + " / fallback " + svc.FallbackCount);
+            GUI.Label(new Rect(12, 54, 700, 22), "predicting ahead -> " + (svc.LastPredicted ?? "(none yet)") +
+                "    (sent " + svc.PredictionsSent + ")");
             if (svc.CachedCount + svc.FallbackCount == 0)
-                GUI.Label(new Rect(12, 54, 620, 22), "warming up the sound palette...");
+                GUI.Label(new Rect(12, 78, 620, 22), "warming up the sound palette...");
         }
     }
 }

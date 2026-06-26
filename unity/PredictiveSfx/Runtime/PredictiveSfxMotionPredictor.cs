@@ -13,6 +13,10 @@ namespace PredictiveSfx
         public string defaultMaterial = "grass";
         public string intensity = "normal";
 
+        public bool showMarkers = true;
+        public float markerSize = 0.28f;
+        public float markerLifetime = 0.9f;
+
         Vector3 _lastPos;
         Vector3 _lastVel;
         bool _have;
@@ -57,8 +61,13 @@ namespace PredictiveSfx
             float ttn = remaining / speed;
             if (ttn > leadSeconds || _emittedStep >= _stepCount) return;
 
-            Vector3 footPos = pos + vel * ttn;
-            string surface = SurfaceAt(footPos);
+            float horizon = Mathf.Max(leadSeconds, ttn);
+            Vector3 footPos = pos + vel * horizon;
+            Vector3 hitPoint;
+            string surface = SurfaceAt(footPos, out hitPoint);
+            Vector3 hereHit;
+            string here = SurfaceAt(pos, out hereHit);
+            SpawnMarker(hitPoint, _stab, surface != here);
             var preds = new List<SfxPrediction>(1)
             {
                 new SfxPrediction
@@ -68,7 +77,7 @@ namespace PredictiveSfx
                     material = surface,
                     intensity = intensity,
                     context = "default",
-                    etaS = ttn,
+                    etaS = horizon,
                     confidence = _stab,
                 },
             };
@@ -76,15 +85,42 @@ namespace PredictiveSfx
             _emittedStep = _stepCount;
         }
 
-        string SurfaceAt(Vector3 worldPos)
+        string SurfaceAt(Vector3 worldPos, out Vector3 hitPoint)
         {
+            hitPoint = worldPos;
             RaycastHit hit;
             if (Physics.Raycast(worldPos + Vector3.up * 0.5f, Vector3.down, out hit, rayDistance + 0.5f))
             {
+                hitPoint = hit.point;
                 var surf = hit.collider.GetComponentInParent<PredictiveSfxSurface>();
                 if (surf != null && !string.IsNullOrEmpty(surf.material)) return surf.material;
             }
             return defaultMaterial;
+        }
+
+        void SpawnMarker(Vector3 pos, float confidence, bool transition)
+        {
+            if (!showMarkers) return;
+            var m = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            var col = m.GetComponent<Collider>();
+            if (col != null) Destroy(col);
+            m.layer = 2;
+            m.name = "psfx_prediction_marker";
+            m.transform.position = pos + Vector3.up * 0.04f;
+            float s = transition ? markerSize * 1.9f : markerSize;
+            m.transform.localScale = new Vector3(s, s * 0.22f, s);
+            Color c = transition
+                ? new Color(1f, 0.82f, 0.1f)
+                : Color.Lerp(new Color(1f, 0.3f, 0.2f), new Color(0.2f, 1f, 0.35f), confidence);
+            var mr = m.GetComponent<Renderer>();
+            mr.material.color = c;
+            if (mr.material.HasProperty("_BaseColor")) mr.material.SetColor("_BaseColor", c);
+            if (mr.material.HasProperty("_EmissionColor"))
+            {
+                mr.material.EnableKeyword("_EMISSION");
+                mr.material.SetColor("_EmissionColor", c * (transition ? 1.2f : 0.5f));
+            }
+            Destroy(m, transition ? markerLifetime * 1.7f : markerLifetime);
         }
     }
 }

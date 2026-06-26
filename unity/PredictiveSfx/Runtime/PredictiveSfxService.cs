@@ -75,6 +75,8 @@ namespace PredictiveSfx
         public int LastVariantId { get; private set; } = -1;
         public int CachedCount { get; private set; }
         public int FallbackCount { get; private set; }
+        public int PredictionsSent { get; private set; }
+        public string LastPredicted { get; private set; }
 
         void Awake()
         {
@@ -102,6 +104,10 @@ namespace PredictiveSfx
         public void SendPredictions(List<SfxPrediction> preds, float now)
         {
             if (!_running || preds == null || preds.Count == 0) return;
+            var p = preds[0];
+            LastPredicted = p.eventType + "|" + p.material + " in " +
+                p.etaS.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + "s";
+            PredictionsSent += preds.Count;
             _queue.Add(new WorkItem { isPredict = true, predictions = preds, predictNow = now });
         }
 
