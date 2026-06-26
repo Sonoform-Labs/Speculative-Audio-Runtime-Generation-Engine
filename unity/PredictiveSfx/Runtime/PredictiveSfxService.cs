@@ -39,7 +39,10 @@ namespace PredictiveSfx
         class WorkItem
         {
             public bool isContext;
+            public bool isPredict;
             public ContextArgs ctx;
+            public List<SfxPrediction> predictions;
+            public float predictNow;
             public string eventType, material, intensity, context;
             public Action<AudioClip> onReady;
             public Action onFailed;
@@ -94,6 +97,12 @@ namespace PredictiveSfx
             var ctx = new ContextArgs { timeS = Time.time, equipped = equipped, surfaces = surfaces, region = region, gpu = gpuPressure };
             _lastContext = ctx;
             if (_running) _queue.Add(new WorkItem { isContext = true, ctx = ctx });
+        }
+
+        public void SendPredictions(List<SfxPrediction> preds, float now)
+        {
+            if (!_running || preds == null || preds.Count == 0) return;
+            _queue.Add(new WorkItem { isPredict = true, predictions = preds, predictNow = now });
         }
 
         public void Play(string eventType, string material, AudioSource source, string intensity = "normal")
@@ -189,7 +198,11 @@ namespace PredictiveSfx
                 {
                     var client = EnsureConnected();
                     if (!got) { client.Ping(0f); continue; }
-                    if (item.isContext)
+                    if (item.isPredict)
+                    {
+                        client.Predict(item.predictions, item.predictNow);
+                    }
+                    else if (item.isContext)
                     {
                         var c = item.ctx;
                         client.Context(c.timeS, c.equipped, c.surfaces, c.region, c.gpu);
@@ -202,14 +215,14 @@ namespace PredictiveSfx
                 }
                 catch (SfxProtocolException pe)
                 {
-                    if (got && item != null && !item.isContext) _results.Enqueue(new Result { ok = false, item = item });
+                    if (got && item != null && !item.isContext && !item.isPredict) _results.Enqueue(new Result { ok = false, item = item });
                     if (pe.Fatal) { _connected = false; SafeClose(); _stop.Wait(reconnectDelayMs); }
                 }
                 catch (Exception)
                 {
                     _connected = false;
                     SafeClose();
-                    if (got && item != null && !item.isContext) _results.Enqueue(new Result { ok = false, item = item });
+                    if (got && item != null && !item.isContext && !item.isPredict) _results.Enqueue(new Result { ok = false, item = item });
                     _stop.Wait(reconnectDelayMs);
                 }
             }

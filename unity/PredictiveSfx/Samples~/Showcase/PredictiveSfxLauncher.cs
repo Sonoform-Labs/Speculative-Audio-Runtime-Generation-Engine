@@ -27,9 +27,16 @@ namespace PredictiveSfx
 
         void StartSidecar()
         {
+            string logPath = System.IO.Path.Combine(workingDir, "sidecar.log");
             if (AlreadyRunning())
             {
-                UnityEngine.Debug.Log("[PSFX] sidecar already running; reusing it");
+                UnityEngine.Debug.Log("[PSFX] a sidecar is already running on " + host + ":" + port + "; reusing it");
+                return;
+            }
+            if (!System.IO.File.Exists(pythonExe))
+            {
+                UnityEngine.Debug.LogWarning("[PSFX] python not found at '" + pythonExe +
+                    "'. Fix the paths on the Predictive Sfx Launcher component, or start the sidecar manually.");
                 return;
             }
             try
@@ -41,21 +48,37 @@ namespace PredictiveSfx
                     WorkingDirectory = workingDir,
                     UseShellExecute = false,
                     CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
                 };
                 if (!string.IsNullOrEmpty(hfHome))
                 {
                     psi.EnvironmentVariables["HF_HOME"] = hfHome;
                     psi.EnvironmentVariables["HF_HUB_OFFLINE"] = "1";
                 }
-                _proc = Process.Start(psi);
+                try { System.IO.File.WriteAllText(logPath, "[psfx] launching: " + pythonExe + " " + arguments + "\n(cwd " + workingDir + ")\n"); } catch { }
+                _proc = new Process { StartInfo = psi };
+                _proc.OutputDataReceived += (s, e) => Append(logPath, e.Data);
+                _proc.ErrorDataReceived += (s, e) => Append(logPath, e.Data);
+                _proc.Start();
+                _proc.BeginOutputReadLine();
+                _proc.BeginErrorReadLine();
                 _spawned = true;
-                UnityEngine.Debug.Log("[PSFX] launched sidecar; gameplay waits until it is ready");
+                UnityEngine.Debug.Log("[PSFX] launched sidecar; warming model (~30s). Output -> " + logPath);
             }
             catch (System.Exception e)
             {
                 UnityEngine.Debug.LogWarning("[PSFX] could not launch sidecar (" + e.Message +
-                    "). Set the python/working-dir paths on the Predictive Sfx Launcher, or start it manually.");
+                    "). Check the paths on the Predictive Sfx Launcher, or run the sidecar manually.");
             }
+        }
+
+        static readonly object _logLock = new object();
+
+        static void Append(string path, string line)
+        {
+            if (string.IsNullOrEmpty(line)) return;
+            try { lock (_logLock) { System.IO.File.AppendAllText(path, line + "\n"); } } catch { }
         }
 
         bool AlreadyRunning()

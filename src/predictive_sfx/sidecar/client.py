@@ -80,6 +80,11 @@ class SfxClient:
         _, body, _ = self._round_trip(MsgType.PREBAKE, {"type": "prewarm", "keys": list(keys)})
         return body
 
+    def predict(self, predictions, now: float = 0.0) -> dict:
+        _, body, _ = self._round_trip(MsgType.PREDICT, {
+            "type": "predict", "now": now, "predictions": list(predictions)})
+        return body
+
     def stats(self) -> dict:
         _, body, _ = self._round_trip(MsgType.STATS, {"type": "stats"})
         return body

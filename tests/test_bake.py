@@ -61,7 +61,7 @@ def test_cached_batch_mixes_hits_and_misses(tmp_path):
 
 
 def test_prewarm_pins_and_fills():
-    e = AffordanceEngine(MockGenerator(), variants_per_key=2, target_variants=6)
+    e = AffordanceEngine(MockGenerator(), variants_per_key=2, target_variants=6, high_rate_variants=6)
     keys = [CacheKey("footstep", "grass", "normal"), CacheKey("footstep", "metal", "normal")]
     e.prewarm(keys)
     for k in keys:
@@ -71,7 +71,7 @@ def test_prewarm_pins_and_fills():
 
 
 def test_deepen_step_fills_to_target_then_stops():
-    e = AffordanceEngine(MockGenerator(), variants_per_key=2, target_variants=5)
+    e = AffordanceEngine(MockGenerator(), variants_per_key=2, target_variants=5, high_rate_variants=5)
     k = CacheKey("footstep", "grass", "normal")
     e.prewarm([k])
     assert len(e.cache[k]) == 2

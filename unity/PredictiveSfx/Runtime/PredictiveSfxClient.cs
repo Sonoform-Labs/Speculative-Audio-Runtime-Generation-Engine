@@ -48,6 +48,17 @@ namespace PredictiveSfx
         public float[] samples;
     }
 
+    public struct SfxPrediction
+    {
+        public string source;
+        public string eventType;
+        public string material;
+        public string intensity;
+        public string context;
+        public float etaS;
+        public float confidence;
+    }
+
     public class SfxProtocolException : Exception
     {
         public string Code;
@@ -69,7 +80,8 @@ namespace PredictiveSfx
         static readonly byte[] Magic = Encoding.ASCII.GetBytes("PSFX");
 
         const byte HELLO = 1, WELCOME = 2, CONTEXT = 3, CONTEXT_ACK = 4, EVENT = 5, AUDIO = 6,
-                   PREBAKE = 7, PREBAKE_ACK = 8, STATS = 9, STATS_REPLY = 10, PING = 11, PONG = 12, ERROR = 255;
+                   PREBAKE = 7, PREBAKE_ACK = 8, STATS = 9, STATS_REPLY = 10, PING = 11, PONG = 12,
+                   PREDICT = 13, PREDICT_ACK = 14, ERROR = 255;
 
         TcpClient _tcp;
         NetworkStream _stream;
@@ -137,6 +149,27 @@ namespace PredictiveSfx
         public void Ping(float t)
         {
             WriteFrame(PING, "{\"type\":\"ping\",\"t\":" + F(t) + "}");
+            ReadFrame();
+        }
+
+        public void Predict(System.Collections.Generic.List<SfxPrediction> preds, float now)
+        {
+            var sb = new StringBuilder();
+            sb.Append("{\"type\":\"predict\",\"now\":").Append(F(now)).Append(",\"predictions\":[");
+            for (int i = 0; i < preds.Count; i++)
+            {
+                var p = preds[i];
+                if (i > 0) sb.Append(',');
+                sb.Append("{\"source\":").Append(Quote(p.source ?? "motion"));
+                sb.Append(",\"event_type\":").Append(Quote(p.eventType));
+                sb.Append(",\"material\":").Append(Quote(p.material));
+                sb.Append(",\"intensity\":").Append(Quote(p.intensity ?? "normal"));
+                sb.Append(",\"context\":").Append(Quote(p.context ?? "default"));
+                sb.Append(",\"eta_s\":").Append(F(p.etaS));
+                sb.Append(",\"confidence\":").Append(F(p.confidence)).Append('}');
+            }
+            sb.Append("]}");
+            WriteFrame(PREDICT, sb.ToString());
             ReadFrame();
         }
 

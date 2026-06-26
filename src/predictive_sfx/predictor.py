@@ -38,6 +38,76 @@ class Tier1DeterministicPredictor(Predictor):
         ]
 
 
+class KinematicGaitPredictor:
+    def __init__(self, stride_m: float = 0.75, lead_ms: float = 300.0,
+                 min_speed: float = 0.4, stab_alpha: float = 0.4,
+                 event_type: str = "footstep", intensity: str = "normal",
+                 context: str = "default"):
+        self.stride_m = float(stride_m)
+        self.lead_s = lead_ms / 1000.0
+        self.min_speed = float(min_speed)
+        self.stab_alpha = float(stab_alpha)
+        self.event_type = event_type
+        self.intensity = intensity
+        self.context = context
+        self.reset()
+
+    def reset(self) -> None:
+        self._t = None
+        self._pos = None
+        self._vel = None
+        self._stab = 1.0
+        self._dist = 0.0
+        self._next_step_dist = self.stride_m
+        self._step_count = 0
+        self._emitted_step = -1
+
+    def observe(self, t: float, pos, surface: str,
+                upcoming_surface: str | None = None) -> Prediction | None:
+        p = np.asarray(pos, dtype=np.float64)
+        out: Prediction | None = None
+        if self._t is not None and t > self._t:
+            dt = t - self._t
+            step = p - self._pos
+            dist = float(np.linalg.norm(step))
+            speed = dist / dt
+            vel = step / dt
+            stable = 1.0
+            if self._vel is not None:
+                nv = float(np.linalg.norm(vel))
+                npv = float(np.linalg.norm(self._vel))
+                if nv > 1e-6 and npv > 1e-6:
+                    stable = max(0.0, float(np.dot(vel, self._vel) / (nv * npv)))
+            self._stab = (1.0 - self.stab_alpha) * self._stab + self.stab_alpha * stable
+            self._dist += dist
+            self._vel = vel
+            if speed >= self.min_speed:
+                while self._next_step_dist - self._dist <= 0:
+                    self._next_step_dist += self.stride_m
+                    self._step_count += 1
+                remaining = self._next_step_dist - self._dist
+                ttn = remaining / speed
+                if ttn <= self.lead_s and self._emitted_step < self._step_count:
+                    surf = upcoming_surface or surface
+                    key = CacheKey(self.event_type, surf, self.intensity, self.context)
+                    out = Prediction(key, t, t + ttn, self._stab)
+                    self._emitted_step = self._step_count
+        self._t = t
+        self._pos = p
+        return out
+
+    def run(self, samples) -> list[Prediction]:
+        self.reset()
+        preds: list[Prediction] = []
+        for s in samples:
+            t, pos, surface = s[0], s[1], s[2]
+            upcoming = s[3] if len(s) > 3 else None
+            p = self.observe(t, pos, surface, upcoming)
+            if p is not None:
+                preds.append(p)
+        return preds
+
+
 class NoisyPredictor(Predictor):
 
     def __init__(self, lead_ms: float = 250.0, lead_jitter_ms: float = 80.0,

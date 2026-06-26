@@ -9,6 +9,7 @@ from . import wire
 from .wire import ClientGone, FrameError, IdleTimeout, MsgType
 from .. import __version__
 from ..affordance import AffordanceEngine, GameContext
+from ..fusion import PredictionFusion
 from ..generators import get_generator
 from ..types import CacheKey
 
@@ -87,6 +88,8 @@ class _Handler(socketserver.BaseRequestHandler):
             return self._on_event(body)
         if msg_type == MsgType.PREBAKE:
             return self._on_prebake(body)
+        if msg_type == MsgType.PREDICT:
+            return self._on_predict(body)
         if msg_type == MsgType.STATS:
             return self._on_stats(body)
         raise FrameError("unknown_type", f"unknown msg_type {msg_type}", fatal=False)
@@ -137,7 +140,7 @@ class _Handler(socketserver.BaseRequestHandler):
         ctx = self._context_from(body)
         gpu = self._float_field(body, "gpu_pressure", 1.0)
         with engine_lock:
-            self.server.engine.on_context_change(ctx, gpu)
+            self.server.engine.on_context_change(ctx, gpu, now=ctx.time_s)
             stats = dict(self.server.engine.stats)
             cached = len(self.server.engine.cache)
         self._send(MsgType.CONTEXT_ACK, {
@@ -206,7 +209,7 @@ class _Handler(socketserver.BaseRequestHandler):
         parsed = [(self._context_from(c), self._float_field(c, "gpu_pressure", 1.0)) for c in contexts]
         for ctx, gpu in parsed:
             with engine_lock:
-                self.server.engine.on_context_change(ctx, gpu)
+                self.server.engine.on_context_change(ctx, gpu, now=ctx.time_s)
         with engine_lock:
             stats = dict(self.server.engine.stats)
             cached = len(self.server.engine.cache)
@@ -214,6 +217,36 @@ class _Handler(socketserver.BaseRequestHandler):
             "type": "prebake_ack",
             "spec_gen": int(stats["spec_gen"]),
             "peak_bytes": int(stats["peak_bytes"]),
+            "cached_keys": cached,
+        })
+
+    def _on_predict(self, body):
+        if not isinstance(body, dict):
+            raise FrameError("bad_fields", "predict must be an object", fatal=False)
+        preds = body.get("predictions")
+        if not isinstance(preds, list):
+            raise FrameError("bad_fields", "predictions must be a list", fatal=False)
+        now = self._float_field(body, "now", 0.0)
+        raw = []
+        for p in preds:
+            if not isinstance(p, dict) or "event_type" not in p or "material" not in p:
+                raise FrameError("bad_fields", "each prediction needs event_type and material", fatal=False)
+            key = CacheKey(str(p["event_type"]), str(p["material"]),
+                           str(p.get("intensity", "normal")), str(p.get("context", "default")))
+            try:
+                eta = float(p.get("eta_s", 0.0))
+                conf = float(p.get("confidence", 1.0))
+            except (TypeError, ValueError):
+                raise FrameError("bad_fields", "eta_s and confidence must be numbers", fatal=False)
+            raw.append((str(p.get("source", "motion")), key, eta, conf))
+        with engine_lock:
+            proposals = self.server.fusion.fuse(raw)
+            result = self.server.engine.register_predictions(proposals, now=now)
+            cached = len(self.server.engine.cache)
+        self._send(MsgType.PREDICT_ACK, {
+            "type": "predict_ack",
+            "queued": int(result["queued"]),
+            "lead_gated": int(result["lead_gated"]),
             "cached_keys": cached,
         })
 
@@ -231,13 +264,32 @@ class _Handler(socketserver.BaseRequestHandler):
 
 def _deepen_loop(server):
     import time
+    eng = server.engine
+    planner = getattr(eng, "plan_batch", None)
     while getattr(server, "deepening", False):
+        batch = []
+        stat = "spec_gen"
         try:
+            if planner is None:
+                with engine_lock:
+                    did = eng.deepen_step()
+                time.sleep(0.05 if did else 0.5)
+                continue
             with engine_lock:
-                did = server.engine.deepen_step()
+                batch, stat = planner(max_items=1)
+            if batch:
+                clips = eng.gen.generate_batch(batch)
+                with engine_lock:
+                    eng.commit_clips(batch, clips, stat)
         except Exception:
-            did = False
-        time.sleep(0.05 if did else 0.5)
+            if batch:
+                try:
+                    with engine_lock:
+                        eng.inflight.difference_update(batch)
+                except Exception:
+                    pass
+            batch = []
+        time.sleep(0.05 if batch else 0.5)
 
 
 def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
@@ -252,10 +304,18 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
         engine = AffordanceEngine(gen, **engine_kwargs)
     if warmup:
         try:
-            engine.gen.generate(CacheKey("footstep", "grass", "normal"), variant=0)
+            ready = getattr(engine.gen, "ensure_ready", None)
+            if ready:
+                ready()
+            inner = getattr(engine.gen, "inner", engine.gen)
+            inner.generate(CacheKey("warmup", "grass", "normal"), variant=0)
         except Exception:
             pass
     server = SfxServer((host, port), engine, default_pcm=pcm, recv_timeout=recv_timeout)
+    server.fusion = PredictionFusion(
+        gen_cost_ms=getattr(engine, "gen_cost_ms", 393.0),
+        latency_saved_ms=getattr(engine, "latency_saved_ms", 400.0),
+        owner={"footstep": "motion"})
     thread = threading.Thread(target=server.serve_forever, name="sfx-sidecar", daemon=True)
     thread.start()
     server.runner = thread

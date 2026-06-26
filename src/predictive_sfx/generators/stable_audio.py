@@ -3,11 +3,14 @@ from __future__ import annotations
 import numpy as np
 
 from .base import Generator
+from ..loudness import normalize_loudness, target_for
 from ..types import AudioClip, CacheKey, seed_for
 
 _PROMPT_TEMPLATES = {
     "footstep": "a single {intensity} footstep on {material}, close mic, dry, isolated sound effect",
     "impact": "a single {intensity} impact on {material}, close mic, dry, isolated sound effect",
+    "jump": "a single {intensity} jump take-off scuff on {material}, dry, isolated sound effect",
+    "land": "a single {intensity} heavy landing thud on {material}, dry, isolated sound effect",
 }
 _DEFAULT_TEMPLATE = "a single {intensity} {event} on {material}, dry, isolated sound effect"
 
@@ -101,11 +104,8 @@ class StableAudioGenerator(Generator):
                 sampler_type=self.sampler_type,
                 **extra,
             )
-        audio = rearrange(audio, "b d n -> d (b n)").to(torch.float32)
-        peak = torch.max(torch.abs(audio))
-        if peak > 0:
-            audio = audio / peak
-        audio = audio.clamp(-1.0, 1.0).cpu().numpy()
+        audio = rearrange(audio, "b d n -> d (b n)").to(torch.float32).cpu().numpy()
         mono = audio.mean(axis=0) if audio.ndim > 1 else audio
         mono = _extract(mono, self.sample_rate, self.duration_s)
+        mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
         return AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant)

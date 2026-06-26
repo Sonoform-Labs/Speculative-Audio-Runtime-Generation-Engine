@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from .base import Generator
+from ..loudness import normalize_loudness, target_for
 from ..types import AudioClip, CacheKey
 from .stable_audio import _DEFAULT_TEMPLATE, _PROMPT_TEMPLATES, _extract, _seed
 
@@ -45,6 +46,9 @@ class StableAudio3Generator(Generator):
         if sr:
             self.sample_rate = int(sr)
 
+    def ensure_ready(self):
+        self._ensure_loaded()
+
     def _prompt(self, key: CacheKey) -> str:
         override = self.prompts.get(str(key))
         if override:
@@ -71,9 +75,8 @@ class StableAudio3Generator(Generator):
         while a.ndim > 2:
             a = a[0]
         mono = a.mean(axis=0) if a.ndim == 2 else a
-        peak = float(np.max(np.abs(mono))) or 1.0
-        mono = mono / peak
         mono = _extract(mono, self.sample_rate, self.duration_s)
+        mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
         return AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant)
 
     def generate_batch(self, items: list) -> list:
@@ -97,7 +100,7 @@ class StableAudio3Generator(Generator):
             while clip.ndim > 2:
                 clip = clip[0]
             mono = clip.mean(axis=0) if clip.ndim == 2 else clip
-            peak = float(np.max(np.abs(mono))) or 1.0
-            mono = _extract(mono / peak, self.sample_rate, self.duration_s)
+            mono = _extract(mono, self.sample_rate, self.duration_s)
+            mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
             out.append(AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant))
         return out

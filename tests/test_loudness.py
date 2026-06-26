@@ -1,0 +1,49 @@
+import numpy as np
+
+from predictive_sfx.generators import MockGenerator
+from predictive_sfx.loudness import normalize_loudness, rms, target_for
+from predictive_sfx.types import CacheKey
+
+
+def test_normalize_hits_target_rms_regardless_of_input_level():
+    rng = np.random.default_rng(0)
+    quiet = (rng.standard_normal(4800) * 0.01).astype(np.float32)
+    loud = (rng.standard_normal(4800) * 5.0).astype(np.float32)
+    for sig in (quiet, loud):
+        out = normalize_loudness(sig, target_rms=0.1)
+        assert abs(rms(out) - 0.1) < 1e-3
+
+
+def test_peak_ceiling_enforced():
+    x = np.full(1000, 0.001, dtype=np.float32)
+    x[0] = 1.0
+    out = normalize_loudness(x, target_rms=0.5, peak_ceiling=0.9)
+    assert np.max(np.abs(out)) <= 0.9 + 1e-4
+
+
+def test_intensity_targets_are_ordered():
+    assert target_for("soft") < target_for("normal") < target_for("hard")
+
+
+def test_two_variants_same_intensity_match_loudness():
+    rng = np.random.default_rng(1)
+    a = (rng.standard_normal(4800) * 0.3).astype(np.float32)
+    b = (rng.standard_normal(4800) * 2.0).astype(np.float32)
+    assert abs(rms(normalize_loudness(a)) - rms(normalize_loudness(b))) < 1e-3
+
+
+def test_empty_signal_is_safe():
+    assert normalize_loudness(np.zeros(0, dtype=np.float32)).size == 0
+    assert normalize_loudness(np.zeros(100, dtype=np.float32)).max() == 0.0
+
+
+def test_mock_clip_is_loudness_normalized():
+    c = MockGenerator().generate(CacheKey("footstep", "wood", "normal"), variant=0)
+    assert 0.0 < rms(c.samples) <= target_for("normal") + 1e-3
+    assert np.max(np.abs(c.samples)) <= 0.97 + 1e-4
+
+
+def test_mock_intensity_affects_loudness():
+    soft = MockGenerator().generate(CacheKey("footstep", "wood", "soft"), variant=0)
+    hard = MockGenerator().generate(CacheKey("footstep", "wood", "hard"), variant=0)
+    assert rms(soft.samples) < rms(hard.samples)

@@ -33,6 +33,8 @@ class MsgType(IntEnum):
     STATS_REPLY = 10
     PING = 11
     PONG = 12
+    PREDICT = 13
+    PREDICT_ACK = 14
     ERROR = 255
 
 

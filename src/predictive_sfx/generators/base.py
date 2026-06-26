@@ -17,3 +17,6 @@ class Generator(ABC):
 
     def generate_batch(self, items: list) -> list:
         return [self.generate(key, variant=variant) for key, variant in items]
+
+    def ensure_ready(self):
+        pass

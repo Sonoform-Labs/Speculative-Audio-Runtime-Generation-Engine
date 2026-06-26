@@ -16,6 +16,11 @@ class CachedGenerator(Generator):
         self.latency_ms = inner.latency_ms
         os.makedirs(cache_dir, exist_ok=True)
 
+    def ensure_ready(self):
+        r = getattr(self.inner, "ensure_ready", None)
+        if r:
+            r()
+
     def _tag(self) -> str:
         return f"{self.inner.name}|{getattr(self.inner, 'steps', 0)}|{getattr(self.inner, 'cfg_scale', 0)}"
 

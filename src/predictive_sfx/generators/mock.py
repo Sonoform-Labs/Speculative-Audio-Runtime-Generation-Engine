@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from .base import Generator
+from ..loudness import normalize_loudness, target_for
 from ..types import AudioClip, CacheKey, SAMPLE_RATE, seed_for
 
 _MATERIAL_PROFILE = {
@@ -13,7 +14,6 @@ _MATERIAL_PROFILE = {
     "water": dict(freq=70.0,  noise=0.90, decay=18.0, ring=0.00),
     "dirt":  dict(freq=110.0, noise=0.85, decay=36.0, ring=0.02),
 }
-_INTENSITY_GAIN = {"soft": 0.40, "normal": 0.70, "hard": 1.0}
 
 
 class MockGenerator(Generator):
@@ -27,7 +27,6 @@ class MockGenerator(Generator):
 
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         prof = _MATERIAL_PROFILE.get(key.material, _MATERIAL_PROFILE["dirt"])
-        gain = _INTENSITY_GAIN.get(key.intensity, 0.70)
 
         rng = np.random.default_rng(seed_for(key, variant))
 
@@ -41,6 +40,5 @@ class MockGenerator(Generator):
         ring = prof["ring"] * np.sin(2 * np.pi * freq * 2.0 * t) * np.exp(-6.0 * t)
 
         sig = (noise + tone + ring) * env
-        peak = float(np.max(np.abs(sig))) or 1.0
-        sig = (sig / peak) * gain
+        sig = normalize_loudness(sig, target_rms=target_for(key.intensity))
         return AudioClip(sig.astype(np.float32), self.sample_rate, variant_id=variant)
