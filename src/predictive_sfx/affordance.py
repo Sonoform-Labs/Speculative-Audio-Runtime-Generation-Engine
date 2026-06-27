@@ -168,13 +168,12 @@ class AffordanceEngine:
                 self.stats["evicted"] += 1
 
         thresh = self._gate_thresh(gpu_pressure)
-        impulse_items = [c for c in cands if c.source == "item"]
         cont = sorted((c for c in cands if c.kind == "continuous"), key=lambda c: -c.p_use)[:self.continuous_topk]
-        surface_other = [c for c in cands if c.source == "surface" and c.kind != "continuous"]
-        pool_cands = impulse_items + cont + surface_other
+        other = [c for c in cands if c.kind != "continuous"]
+        pool_cands = cont + other
 
         admitted = [c for c in pool_cands
-                    if (c.source == "item" and c.p_use >= self.tau) or c.p_use >= thresh]
+                    if (c.source in ("item", "learned") and c.p_use >= self.tau) or c.p_use >= thresh]
         admitted.sort(key=lambda c: c.p_use, reverse=True)
 
         spent = 0.0

@@ -1,0 +1,15 @@
+============================================================
+ CROSS-GAME GENERALIZATION  (warm-phase cache hit-rate, %)
+ learner = auto-derived affordances, ZERO authoring
+ authored = hand-authored ITEM/SURFACE tables
+============================================================
+game           learner  authored
+fps               100%       20%
+platformer        100%       20%
+racing            100%        0%
+explore           100%       25%
+--------------------------------
+AVERAGE           100%       16%
+
+Learner generalizes to any game from play (zero per-game authoring);
+hand-authored tables only cover games matching their predefined vocabulary.
