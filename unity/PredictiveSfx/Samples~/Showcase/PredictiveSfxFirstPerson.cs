@@ -208,15 +208,12 @@ namespace PredictiveSfx
                     "Starting sound engine...\nfirst run can take ~30s (loading the neural model)");
                 return;
             }
-            GUI.Label(new Rect(12, 10, 620, 22), "WASD move  ·  mouse look  ·  Space jump  ·  click fire  ·  R reload  ·  G holster  ·  Esc cursor");
-            GUI.Label(new Rect(12, 30, 620, 22), "on: " + (_surface ?? "-") + "    gun: " + (_hasGun ? "ammo " + _ammo : "holstered") +
-                "    served: " + (svc.LastServed ?? "-") + "    cached " + svc.CachedCount + " / fallback " + svc.FallbackCount);
-            GUI.Label(new Rect(12, 54, 700, 22), "predicting ahead -> " + (svc.LastPredicted ?? "(none yet)") +
+            GUI.Label(new Rect(12, 10, 820, 22), "engine: " + (svc.Generator ?? "?") + "    on: " + (_surface ?? "-") + "    gun: " + (_hasGun ? "ammo " + _ammo : "holstered") +
+                "    served: " + (svc.LastServed ?? "-") + "    cached " + svc.CachedCount + " / realtime " + svc.RealtimeCount + " / fallback " + svc.FallbackCount);
+            GUI.Label(new Rect(12, 34, 700, 22), "predicting ahead -> " + (svc.LastPredicted ?? "(none yet)") +
                 "    (sent " + svc.PredictionsSent + ")");
-            GUI.Label(new Rect(12, 78, 700, 22), "intent (habit guess) -> " +
+            GUI.Label(new Rect(12, 58, 700, 22), "intent (habit guess) -> " +
                 (string.IsNullOrEmpty(svc.LastIntent) ? "(learning your habits...)" : svc.LastIntent));
-            if (svc.CachedCount + svc.FallbackCount == 0)
-                GUI.Label(new Rect(12, 102, 620, 22), "warming up the sound palette...");
         }
     }
 }

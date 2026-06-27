@@ -10,8 +10,9 @@ predict → pre-generate → cache → authored-fallback loop runs outside your 
 From the repo root (Python 3.12 + the project venv):
 
 ```
-python scripts/run_sidecar.py                 # mock generator, 127.0.0.1:8765 (no GPU)
-python scripts/run_sidecar.py --generator sa3 # neural SFX (needs the GPU model)
+python scripts/run_sidecar.py --realtime       # sa3 neural SFX, realtime generate-on-demand (recommended)
+python scripts/run_sidecar.py                   # sa3 neural SFX, predict + prewarm
+python scripts/run_sidecar.py --generator mock  # synthetic placeholder, no GPU (testing only)
 ```
 
 ## 2. Add the package to your project

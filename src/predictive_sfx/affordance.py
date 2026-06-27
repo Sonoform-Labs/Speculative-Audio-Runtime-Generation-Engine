@@ -51,10 +51,11 @@ class AffordanceEngine:
                  continuous_topk: int = 2, variants_per_key: int = 2,
                  target_variants: int = 6, high_rate_variants: int = 8,
                  high_rate_events=None, authored=None, fallback_generator=None, learner=None,
-                 router=None):
+                 router=None, realtime=False):
         self.gen = generator
         self.learner = learner
         self.router = router
+        self.realtime = bool(realtime)
         self.vram_budget = int(vram_budget_kb * 1024)
         self.gpu_ms_budget = gpu_ms_budget
         self.gen_cost_ms = gen_cost_ms
@@ -87,7 +88,7 @@ class AffordanceEngine:
         self.generated: set = set()
         self.fired: set = set()
         self.last_served = None
-        self.stats = {"spec_gen": 0, "demand_gen": 0, "hits": 0, "fallback": 0,
+        self.stats = {"spec_gen": 0, "demand_gen": 0, "realtime": 0, "hits": 0, "fallback": 0,
                       "silence": 0, "evicted": 0, "gpu_ms": 0.0, "peak_bytes": 0}
 
     def _bytes(self, clip):
@@ -149,6 +150,9 @@ class AffordanceEngine:
             self._now = now
         if self.learner is not None:
             self.learner.observe_context(ctx)
+        if self.realtime:
+            return
+        if self.learner is not None:
             cands = self.learner.candidates(ctx)
         else:
             cands = candidates(ctx)
@@ -357,6 +361,20 @@ class AffordanceEngine:
                 did = True
         return did
 
+    def _realtime_generate(self, key: CacheKey) -> AudioClip:
+        clip = self.gen.generate(key, variant=0)
+        while self._used() + self._bytes(clip) > self.vram_budget:
+            if not self._evict_min_speculative():
+                break
+        if self._used() + self._bytes(clip) <= self.vram_budget:
+            self.cache.setdefault(key, []).append(clip)
+            self.generated.add(key)
+            self.recent[key] = 0
+        self.stats["realtime"] += 1
+        self.stats["gpu_ms"] += self.gen_cost_ms
+        self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
+        return clip
+
     def on_event(self, key: CacheKey) -> str:
         self.fired.add(key)
         self.eta.pop(key, None)
@@ -369,6 +387,9 @@ class AffordanceEngine:
             self.recent[key] = idx
             self.last_served = pool[idx]
             return "cached"
+        if self.realtime:
+            self.last_served = self._realtime_generate(key)
+            return "realtime"
         self._queue_demand(key)
         if self._has_authored(key):
             self.stats["fallback"] += 1

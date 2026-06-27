@@ -125,8 +125,25 @@ hand-authored tables" to a GENERALIZABLE adaptive hybrid. Built + tested autonom
 - [x] MeanAudio measured: 131ms 1-step (vs sa3 219ms), 16kHz — speed tier via RemoteGenerator.
 - [~] Unity auto-capture (PredictiveSfxAutoCapture.cs) — physics-collision -> event, zero wiring;
       written, needs in-editor verify (P4.1).
-- [ ] NEXT: realtime on-demand serve path for tolerant events (fast tier) + multi-game in real Unity +
-      reframe the EXAG paper around generalization.
+- [x] REALTIME on-demand mode (affordance.py realtime flag + serve(realtime=) + run_sidecar --realtime).
+      Nothing pre-generated at startup; on a cache miss the engine GENERATES the clip on the fly,
+      plays it, and caches it -> instant on every repeat. Prompt is auto-derived from the (event,
+      material, intensity) the game emits at fire time -> generalizes to ANY event with zero tables
+      and zero per-game prompt authoring (proven over the wire: a never-defined "grappling_hook on
+      rope" serves "realtime"). 5 unit/wire tests. Tradeoff: the FIRST occurrence of each distinct
+      sound carries the gen latency (sa3@4 ~219ms); every repeat is instant. Unity demo wired to
+      `--generator sa3 --steps 4 --realtime --learn`; HUD shows cached/realtime/fallback counts.
+- [x] JIT prediction layer ON TOP of realtime: in realtime mode the background loop stays on but
+      (since realtime never pins context) only drains the prediction-fed demand queue -> predicted
+      sounds (footsteps via motion predictor, shoot via intent) are generated just-in-time off the
+      audio lock and are cache-hits by the time they fire. Proven with real sa3: a predicted
+      footstep served "cached" @ 0ms (full 4-step quality) while an un-predicted one generated
+      on-demand. Nothing pre-generated at startup (demand+pinned empty until the game predicts).
+      Measured: shrinking clip length does NOT help (latency is fixed model overhead ~221ms, not
+      length); steps is the only direct knob (4=221 / 3=172 / 2=127 / 1=83 ms) but trades quality.
+- [ ] NEXT: optional MeanAudio 131ms as the realtime generator for un-predicted first-hits; tune
+      gen_cost_ms gate to real sa3 latency so fast-cadence footsteps still qualify for JIT; multi-game
+      in real Unity; reframe the EXAG paper around realtime+generalization.
 
 ## Phase 5 — Regroup before writing (NOT first)
 

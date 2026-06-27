@@ -167,6 +167,8 @@ class _Handler(socketserver.BaseRequestHandler):
             variant_id = int(clip.variant_id)
             sr = int(clip.sample_rate)
             intent = self._update_intent(key)
+            lrn = getattr(self.server.engine, "learner", None)
+            learned = len(lrn.event_count) if lrn is not None else 0
         pcm = wire.encode_pcm(samples, self.pcm)
         n = int(samples.shape[0])
         self._send(MsgType.AUDIO, {
@@ -180,6 +182,7 @@ class _Handler(socketserver.BaseRequestHandler):
             "byte_len": len(pcm),
             "duration_s": (n / sr) if sr else 0.0,
             "intent": intent,
+            "learned": learned,
         }, pcm)
 
     def _update_intent(self, key):
@@ -327,12 +330,24 @@ def _deepen_loop(server):
 def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
           pcm: str = "f32le", recv_timeout: float = 30.0, warmup: bool = True,
           cache_dir: str | None = None, deepen: bool = False, gen_kwargs: dict | None = None,
-          **engine_kwargs) -> SfxServer:
+          learn: bool = False, realtime: bool = False, **engine_kwargs) -> SfxServer:
+    # In realtime mode the background loop is kept ON, but since realtime never pins context
+    # candidates it ONLY drains the prediction-fed demand queue -> just-in-time generation of
+    # predicted sounds (e.g. the next footstep), off the audio lock. Nothing is pre-generated at
+    # startup (demand + pinned are both empty until the game actually predicts something).
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
             from ..generators.cached import CachedGenerator
             gen = CachedGenerator(gen, cache_dir)
+        if learn:
+            from ..affordance_learn import RuntimeAffordanceLearner
+            from ..router import EventRouter
+            engine_kwargs.setdefault("learner", RuntimeAffordanceLearner())
+            engine_kwargs.setdefault("router", EventRouter())
+        if realtime:
+            engine_kwargs["realtime"] = True
+            engine_kwargs.setdefault("authored", set())  # no mock fallback: realtime makes the real sound
         engine = AffordanceEngine(gen, **engine_kwargs)
     if warmup:
         try:

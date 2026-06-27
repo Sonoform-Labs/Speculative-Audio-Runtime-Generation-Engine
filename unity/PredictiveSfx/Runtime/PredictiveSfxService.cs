@@ -56,6 +56,7 @@ namespace PredictiveSfx
             public int sampleRate, variantId;
             public string served;
             public string intent;
+            public int learned;
         }
 
         readonly BlockingCollection<WorkItem> _queue = new BlockingCollection<WorkItem>();
@@ -72,13 +73,16 @@ namespace PredictiveSfx
         volatile ContextArgs _lastContext;
 
         public bool IsConnected => _connected;
+        public string Generator { get; private set; }
         public string LastServed { get; private set; }
         public int LastVariantId { get; private set; } = -1;
         public int CachedCount { get; private set; }
+        public int RealtimeCount { get; private set; }
         public int FallbackCount { get; private set; }
         public int PredictionsSent { get; private set; }
         public string LastPredicted { get; private set; }
         public string LastIntent { get; private set; }
+        public int LearnedEvents { get; private set; }
 
         void Awake()
         {
@@ -143,7 +147,9 @@ namespace PredictiveSfx
                     LastServed = res.served;
                     LastVariantId = res.variantId;
                     if (!string.IsNullOrEmpty(res.intent)) LastIntent = res.intent;
+                    if (res.learned > 0) LearnedEvents = res.learned;
                     if (res.served == "cached") CachedCount++;
+                    else if (res.served == "realtime") RealtimeCount++;
                     else if (res.served == "fallback") FallbackCount++;
                     AudioClip clip = null;
                     try { clip = GetOrCreateClip(res); }
@@ -219,7 +225,7 @@ namespace PredictiveSfx
                     else
                     {
                         var r = client.Event(item.eventType, item.material, item.intensity, item.context);
-                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent });
+                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned });
                     }
                 }
                 catch (SfxProtocolException pe)
@@ -246,6 +252,7 @@ namespace PredictiveSfx
             }
             var c = new PredictiveSfxClient();
             c.Connect(host, port, pcm);
+            Generator = c.Welcome != null ? c.Welcome.generator : null;
             lock (_clientLock) { _client = c; }
             _connected = true;
             var ctx = _lastContext;

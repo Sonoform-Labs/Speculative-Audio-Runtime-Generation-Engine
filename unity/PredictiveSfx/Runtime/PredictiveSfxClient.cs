@@ -32,6 +32,7 @@ namespace PredictiveSfx
         public int byte_len;
         public float duration_s;
         public string intent;
+        public int learned;
     }
 
     [Serializable]
