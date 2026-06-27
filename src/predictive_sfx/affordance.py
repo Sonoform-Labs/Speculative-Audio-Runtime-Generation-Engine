@@ -50,9 +50,11 @@ class AffordanceEngine:
                  latency_saved_ms: float = 400.0, tau: float = 0.05,
                  continuous_topk: int = 2, variants_per_key: int = 2,
                  target_variants: int = 6, high_rate_variants: int = 8,
-                 high_rate_events=None, authored=None, fallback_generator=None, learner=None):
+                 high_rate_events=None, authored=None, fallback_generator=None, learner=None,
+                 router=None):
         self.gen = generator
         self.learner = learner
+        self.router = router
         self.vram_budget = int(vram_budget_kb * 1024)
         self.gpu_ms_budget = gpu_ms_budget
         self.gen_cost_ms = gen_cost_ms
@@ -150,6 +152,8 @@ class AffordanceEngine:
             cands = self.learner.candidates(ctx)
         else:
             cands = candidates(ctx)
+        if self.router is not None:
+            cands = [c for c in cands if self.router.is_prefetch(c.key.event_type)]
         reachable = {c.key for c in cands}
         self.pinned = set(reachable) | self.persistent
         for k in list(self.cache):
