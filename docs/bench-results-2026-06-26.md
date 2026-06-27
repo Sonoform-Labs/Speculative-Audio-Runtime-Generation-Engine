@@ -50,3 +50,9 @@ the user's architecture call + need supervised install. Recommended supervised n
   3. bench latency+quality with the same harness ported in, compare to sa3@4steps (219ms)
   4. if it wins, wrap it as a separate process the sidecar talks to (keeps the main venv intact).
 Other candidates (FlashAudio 1-step, ARC Stable Audio Open) similarly need their own env.
+
+## MeanAudio 1-step measured on the 3060 (2026-06-27)
+MeanAudio meanaudio_s, 1 step, 1.0s clip: latency mean=137.5ms p50=131.2ms (load+warmup 8.8s), sampling_rate=16000.
+=> ~1.7x faster than sa3 @ 4 steps (219ms) AND holds quality at 1-step (sa3 collapses below 4 steps),
+   BUT 16kHz + general-audio vs sa3 44.1kHz SFX-specialized. sa3 = quality tier; MeanAudio = speed tier
+   (pluggable via RemoteGenerator). Isolated venv at D:\Python\_meanaudio_probe (cu124, no env damage).

@@ -50,8 +50,9 @@ class AffordanceEngine:
                  latency_saved_ms: float = 400.0, tau: float = 0.05,
                  continuous_topk: int = 2, variants_per_key: int = 2,
                  target_variants: int = 6, high_rate_variants: int = 8,
-                 high_rate_events=None, authored=None, fallback_generator=None):
+                 high_rate_events=None, authored=None, fallback_generator=None, learner=None):
         self.gen = generator
+        self.learner = learner
         self.vram_budget = int(vram_budget_kb * 1024)
         self.gpu_ms_budget = gpu_ms_budget
         self.gen_cost_ms = gen_cost_ms
@@ -144,7 +145,11 @@ class AffordanceEngine:
     def on_context_change(self, ctx: GameContext, gpu_pressure: float = 1.0, now: float | None = None):
         if now is not None:
             self._now = now
-        cands = candidates(ctx)
+        if self.learner is not None:
+            self.learner.observe_context(ctx)
+            cands = self.learner.candidates(ctx)
+        else:
+            cands = candidates(ctx)
         reachable = {c.key for c in cands}
         self.pinned = set(reachable) | self.persistent
         for k in list(self.cache):
@@ -352,6 +357,8 @@ class AffordanceEngine:
     def on_event(self, key: CacheKey) -> str:
         self.fired.add(key)
         self.eta.pop(key, None)
+        if self.learner is not None:
+            self.learner.observe_event(key)
         pool = self.cache.get(key)
         if pool:
             self.stats["hits"] += 1
