@@ -113,6 +113,21 @@ Deep-research + on-3060 bench (docs/model-research-2026-06-26.md, docs/bench-res
       pays off in **large/combinatorial/cold-start, VRAM-bounded** key spaces. The "looks the same"
       small-palette result = Fig 1; the hit-rate-vs-keyspace crossover = the contribution.
 
+## Generalization pivot (2026-06-27) — the new direction
+
+Research-backed pivot (docs/strategy-research-2026-06-27.md): from "pre-generate everything via
+hand-authored tables" to a GENERALIZABLE adaptive hybrid. Built + tested autonomously:
+- [x] Runtime affordance learner (affordance_learn.py) — auto-derive a game's vocabulary from observed
+      events; generalize surface-driven events to unseen surfaces. NO hand-authored tables.
+- [x] Adaptive router (router.py) — tolerant classes -> realtime on-demand, tight -> prefetch.
+- [x] Multi-game generalization eval (multigame.py, scripts/bench_generalization.py): learner 100%
+      warm hit-rate cross-game (zero authoring) vs hand-authored 16% — THE paper figure.
+- [x] MeanAudio measured: 131ms 1-step (vs sa3 219ms), 16kHz — speed tier via RemoteGenerator.
+- [~] Unity auto-capture (PredictiveSfxAutoCapture.cs) — physics-collision -> event, zero wiring;
+      written, needs in-editor verify (P4.1).
+- [ ] NEXT: realtime on-demand serve path for tolerant events (fast tier) + multi-game in real Unity +
+      reframe the EXAG paper around generalization.
+
 ## Phase 5 — Regroup before writing (NOT first)
 
 - [ ] P5.1 After Phase 4 (system built + benchmarked), STOP and come back to discuss with the user
