@@ -10,16 +10,17 @@ from .stable_audio import _DEFAULT_TEMPLATE, _PROMPT_TEMPLATES, _extract, _seed
 
 class StableAudio3Generator(Generator):
     name = "stableaudio3"
-    latency_ms = 219.0
+    latency_ms = 190.0
 
     def __init__(self, model_name: str = "small-sfx", device: str | None = None,
-                 steps: int = 4, cfg_scale: float = 2.0, gen_duration_s: float = 1.0,
+                 steps: int = 3, cfg_scale: float = 2.0, gen_duration_s: float = 1.0,
                  duration_s: float = 0.6, sample_rate: int = 44_100,
                  prompt_template: str | None = None, negative_prompt: str | None = None,
-                 model_half: bool = True, **_):
+                 model_half: bool = True, sampler_type: str = "euler", **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
+        self.sampler_type = str(sampler_type)
         self.cfg_scale = float(cfg_scale)
         self.gen_duration_s = float(gen_duration_s)
         self.duration_s = float(duration_s)
@@ -62,6 +63,7 @@ class StableAudio3Generator(Generator):
         kw = {}
         if self.negative_prompt:
             kw["negative_prompt"] = self.negative_prompt
+        kw["sampler_type"] = self.sampler_type
         with torch.no_grad():
             audio = self._model.generate(
                 prompt=self._prompt(key),
@@ -88,6 +90,7 @@ class StableAudio3Generator(Generator):
         kw = {}
         if self.negative_prompt:
             kw["negative_prompt"] = self.negative_prompt
+        kw["sampler_type"] = self.sampler_type
         with torch.no_grad():
             audio = self._model.generate(
                 prompt=prompts, duration=self.gen_duration_s, steps=self.steps,

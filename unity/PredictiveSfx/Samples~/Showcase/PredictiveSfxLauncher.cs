@@ -8,7 +8,7 @@ namespace PredictiveSfx
         public bool autoStart = true;
         public string pythonExe = @"D:\Python\Predictive-Neural-SFX\.venv\Scripts\python.exe";
         public string workingDir = @"D:\Python\Predictive-Neural-SFX";
-        public string arguments = @"scripts\run_sidecar.py --generator sa3 --steps 4 --realtime --learn";
+        public string arguments = @"scripts\run_sidecar.py --generator sa3 --tier default --realtime --learn";
         public string hfHome = @"D:\hf_cache";
         public string host = "127.0.0.1";
         public int port = 8765;
