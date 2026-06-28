@@ -52,7 +52,7 @@ def run_game(game, use_learner, rounds=8):
                                vram_budget_kb=500_000, gpu_ms_budget=1e9)
     seq = _session(game, rounds)
     hits = total = warm_hits = warm_total = 0
-    warm_start = len(game["surfaces"])  # first full surface cycle = warmup
+    warm_start = len(game["surfaces"])
     round_idx = -1
     for kind, payload in seq:
         if kind == "ctx":

@@ -8,7 +8,6 @@ import numpy as np
 from predictive_sfx.sidecar import serve, SfxClient
 from predictive_sfx.types import AudioClip
 
-# (event_type, material) pairs the CLIENT sends; transient-heavy.
 EVENTS = [
     ("footstep", "wood"),
     ("impact", "glass"),
@@ -20,7 +19,6 @@ EVENTS = [
 
 
 def measure(c, engine, steps, outdir):
-    """Set the live tier, force fresh misses, measure full client round-trip per event, save WAV."""
     engine.gen.steps = steps
     engine.gen.sampler_type = "euler"
     engine.cache.clear()
@@ -30,7 +28,7 @@ def measure(c, engine, steps, outdir):
     rows = []
     for et, mat in EVENTS:
         t0 = time.perf_counter()
-        meta, pcm = c.event(et, mat, "normal", "default")     # real EVENT->AUDIO round-trip
+        meta, pcm = c.event(et, mat, "normal", "default")
         dt = (time.perf_counter() - t0) * 1000.0
         a = np.frombuffer(pcm, dtype=np.float32).copy()
         wav = os.path.join(outdir, f"{et}_{mat}.wav")
@@ -45,14 +43,14 @@ def main():
     srv = serve(generator="sa3", realtime=True, host="127.0.0.1", port=0, cache_dir=None,
                 gen_kwargs={"steps": 3, "sampler_type": "euler"}, learn=False, deepen=False,
                 vram_budget_kb=400_000, gpu_ms_budget=1e9)
-    TIER_STEPS = [8, 4, 3, 2]                 # 8=ref, 4=OLD default, 3=NEW default, 2=fast
+    TIER_STEPS = [8, 4, 3, 2]
     results = {}
     meta_keys = None
     try:
         with SfxClient(*srv.server_address) as c:
             print("welcome generator:", c.welcome.get("generator"))
             c.context(0.0, None, ["wood", "metal", "glass", "door", "water"], "arena")
-            c.event("footstep", "grass", "normal", "warm")          # warm kernels
+            c.event("footstep", "grass", "normal", "warm")
             for st in TIER_STEPS:
                 results[st] = measure(c, srv.engine, st, f"docs/e2e-bench/euler_{st}step")
             meta, _ = c.event("footstep", "stone", "normal", "apicheck")

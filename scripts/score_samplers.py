@@ -60,7 +60,6 @@ def main(argv=None):
     dead = np.array([is_dead(a) for a in clipsraw])
     crest = np.array([0.0 if d else crest_factor(a) for a, d in zip(clipsraw, dead)])
 
-    # CLAP rank-1 prompt match (1-of-N classification; chance = 1/N)
     clap_hit = np.zeros(len(rows))
     if "clap" in args.judges:
         from transformers import ClapModel, ClapProcessor
@@ -72,7 +71,7 @@ def main(argv=None):
             afeat = pr(audio=batch, sampling_rate=48000, return_tensors="pt", padding=True)
             inp = {k: v.to(dev) for k, v in {**afeat, **tfeat}.items()}
             with torch.no_grad():
-                logits = m(**inp).logits_per_audio.float().cpu().numpy()  # [n_audio, n_prompt]
+                logits = m(**inp).logits_per_audio.float().cpu().numpy()
             pred = logits.argmax(1)
             for j, p in enumerate(pred):
                 clap_hit[i0 + j] = float(p == truelabel[i0 + j])
@@ -85,14 +84,13 @@ def main(argv=None):
             from audiobox_aesthetics.infer import initialize_predictor
             pred = initialize_predictor()
             outs = []
-            for i0 in range(0, len(paths), 8):          # chunk: forward([all]) tries a ~12GB alloc
+            for i0 in range(0, len(paths), 8):
                 outs.extend(pred.forward([{"path": p} for p in paths[i0:i0 + 8]]))
             key = "PQ" if "PQ" in outs[0] else list(outs[0].keys())[0]
             pq = np.array([float(o.get("PQ", o.get(key))) for o in outs])
         except Exception as e:
             print("(audiobox skipped:", str(e)[:80], ")")
 
-    # aggregate per config
     agg = defaultdict(lambda: dict(n=0, hit=0.0, crest=0.0, pq=[], lat=[], dead=0))
     for i, k in enumerate(keys):
         a = agg[k]

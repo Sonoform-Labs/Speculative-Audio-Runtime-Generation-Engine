@@ -6,6 +6,8 @@ import os
 from .base import Generator
 from ..types import AudioClip, CacheKey
 
+CACHE_SCHEMA = "prompt_enrichment_v1"
+
 
 class CachedGenerator(Generator):
     def __init__(self, inner: Generator, cache_dir: str):
@@ -21,12 +23,39 @@ class CachedGenerator(Generator):
         if r:
             r()
 
-    def _tag(self) -> str:
-        return f"{self.inner.name}|{getattr(self.inner, 'steps', 0)}|{getattr(self.inner, 'cfg_scale', 0)}"
+    def _key_prompt(self, key: CacheKey) -> str:
+        fn = getattr(self.inner, "_prompt", None)
+        if fn is not None:
+            try:
+                return fn(key)
+            except Exception:
+                pass
+        return getattr(self.inner, "prompts", {}).get(str(key), "")
+
+    def _key_steps(self, key: CacheKey):
+        fn = getattr(self.inner, "_steps_for", None)
+        if fn is not None:
+            try:
+                return fn(key)
+            except Exception:
+                pass
+        return getattr(self.inner, "steps", 0)
 
     def _path(self, key: CacheKey, variant: int) -> str:
-        pr = getattr(self.inner, "prompts", {}).get(str(key), "")
-        h = hashlib.md5(f"{self._tag()}|{key}|{pr}|{variant}".encode()).hexdigest()[:16]
+        g = self.inner
+        sig = "|".join(str(x) for x in (
+            CACHE_SCHEMA,
+            getattr(g, "name", "?"), getattr(g, "model_name", ""),
+            key,
+            self._key_prompt(key),
+            getattr(g, "sampler_type", ""),
+            self._key_steps(key),
+            getattr(g, "cfg_scale", ""),
+            getattr(g, "gen_duration_s", ""), getattr(g, "duration_s", ""),
+            getattr(g, "sample_rate", ""),
+            variant,
+        ))
+        h = hashlib.md5(sig.encode()).hexdigest()[:16]
         return os.path.join(self.cache_dir, f"{h}.wav")
 
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:

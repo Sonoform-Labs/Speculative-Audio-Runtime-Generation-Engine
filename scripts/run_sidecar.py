@@ -6,12 +6,10 @@ import threading
 
 from predictive_sfx.sidecar import serve
 
-# Generation tiers (sampler_type, steps). RK4 is DISABLED/unsupported -- broken at low steps on this
-# checkpoint (flat ~38ms, CLAP=chance, PQ 5.68 in the 2026-06-28 sampler-swap bench). euler only.
 TIERS = {
-    "quality": ("euler", 8),   # reference / best quality
-    "default": ("euler", 3),   # safe default: full quality, ~190ms gen
-    "fast":    ("euler", 2),   # experimental: ~130ms gen, softer transients
+    "quality": ("euler", 8),
+    "default": ("euler", 3),
+    "fast":    ("euler", 2),
 }
 TIER_COST_MS = {"quality": 440.0, "default": 200.0, "fast": 150.0}
 

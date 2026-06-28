@@ -58,7 +58,7 @@ def _predictive_backend(args):
 
 def make_backend(args):
     if args.backend == "meanaudio":
-        from meanaudio_backend import meanaudio_backend  # noqa: provided in the isolated env
+        from meanaudio_backend import meanaudio_backend
         return meanaudio_backend(args)
     return _predictive_backend(args)
 

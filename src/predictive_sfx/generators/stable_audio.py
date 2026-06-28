@@ -14,6 +14,37 @@ _PROMPT_TEMPLATES = {
 }
 _DEFAULT_TEMPLATE = "a single {intensity} {event} on {material}, dry, isolated sound effect"
 
+_MATERIAL_ADJ = {
+    "metal": "metallic", "glass": "glassy", "water": "watery", "wood": "wooden",
+    "stone": "stone", "gravel": "gravelly", "grass": "grassy", "dirt": "earthy",
+    "ceramic": "ceramic", "plastic": "plastic", "cloth": "soft cloth",
+}
+_IMPACT_EVENTS = {"hit", "impact", "strike", "clang", "shatter", "break", "smash", "land"}
+_IMPACT_TAIL = {
+    "metal": "a bright ringing resonant clang with a sustained metallic tail",
+    "glass": "sharp shattering glass shards",
+    "wood": "a solid wooden knock",
+    "stone": "a hard stony thud",
+    "ceramic": "a brittle ceramic shatter",
+}
+_SPLASHY = {"water", "liquid", "mud"}
+
+
+def build_prompt(event: str, material: str, intensity: str = "normal") -> str:
+    lead = "" if intensity in (None, "", "normal") else f"{intensity} "
+    if event in ("splash", "drip", "pour") or material in _SPLASHY:
+        return f"a {lead}{event} in {material}, wet splashing water with droplets and bubbling, dry, isolated sound effect"
+    if event == "footstep":
+        adj = _MATERIAL_ADJ.get(material, material)
+        return f"a {lead}{adj} footstep on {material}, a clear distinct footstep, dry, isolated sound effect"
+    if event in _IMPACT_EVENTS:
+        tail = _IMPACT_TAIL.get(material)
+        if tail:
+            return f"a {lead}{event} on {material}, {tail}, dry, isolated sound effect"
+    adj = _MATERIAL_ADJ.get(material, "")
+    adj = f"{adj} " if adj else ""
+    return f"a {lead}{adj}{event} on {material}, dry, isolated sound effect"
+
 
 def _seed(key: CacheKey, variant: int) -> int:
     return seed_for(key, variant)

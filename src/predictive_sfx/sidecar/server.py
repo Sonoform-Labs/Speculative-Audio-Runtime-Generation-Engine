@@ -331,10 +331,6 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
           pcm: str = "f32le", recv_timeout: float = 30.0, warmup: bool = True,
           cache_dir: str | None = None, deepen: bool = False, gen_kwargs: dict | None = None,
           learn: bool = False, realtime: bool = False, **engine_kwargs) -> SfxServer:
-    # In realtime mode the background loop is kept ON, but since realtime never pins context
-    # candidates it ONLY drains the prediction-fed demand queue -> just-in-time generation of
-    # predicted sounds (e.g. the next footstep), off the audio lock. Nothing is pre-generated at
-    # startup (demand + pinned are both empty until the game actually predicts something).
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
@@ -347,7 +343,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
             engine_kwargs.setdefault("router", EventRouter())
         if realtime:
             engine_kwargs["realtime"] = True
-            engine_kwargs.setdefault("authored", set())  # no mock fallback: realtime makes the real sound
+            engine_kwargs.setdefault("authored", set())
         engine = AffordanceEngine(gen, **engine_kwargs)
     if warmup:
         try:

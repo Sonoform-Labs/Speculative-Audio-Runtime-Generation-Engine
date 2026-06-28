@@ -25,7 +25,7 @@ def test_demo_events_train_the_learner_live(learn_server):
             c.event("footstep", "grass", "normal", "arena")
             c.event("footstep", "metal", "normal", "arena")
             meta, _ = c.event("shoot", "metal", "normal", "arena")
-    assert meta["learned"] >= 2  # learned footstep + shoot from play
+    assert meta["learned"] >= 2
     assert learn_server.engine.learner.event_count["footstep"] > 0
 
 
@@ -35,7 +35,7 @@ def test_learner_generalizes_to_new_surface_live(learn_server):
         for _ in range(3):
             c.event("footstep", "grass", "normal", "default")
             c.event("footstep", "metal", "normal", "default")
-        c.context(5.0, None, ["wood"], "arena")  # surface never seen before
+        c.context(5.0, None, ["wood"], "arena")
     eng = learn_server.engine
     keys = set(eng.cache) | eng.demand_set
     assert any(k.event_type == "footstep" and k.material == "wood" for k in keys)

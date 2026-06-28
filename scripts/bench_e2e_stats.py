@@ -6,7 +6,7 @@ from predictive_sfx.sidecar import serve, SfxClient
 
 EVENTS = [("footstep", "wood"), ("impact", "glass"), ("hit", "metal"),
           ("scrape", "metal"), ("slam", "door"), ("splash", "water")]
-N = 30  # measured warm generations PER tier
+N = 30
 
 
 def pcts(xs):
@@ -17,7 +17,6 @@ def pcts(xs):
 
 
 def main():
-    # cold start = model load + warmup gen (serve(warmup=True))
     t0 = time.perf_counter()
     srv = serve(generator="sa3", realtime=True, host="127.0.0.1", port=0, cache_dir=None,
                 gen_kwargs={"steps": 3, "sampler_type": "euler"}, learn=False, deepen=False,
@@ -28,16 +27,16 @@ def main():
     try:
         with SfxClient(*srv.server_address) as c:
             c.context(0.0, None, ["wood", "metal", "glass", "door", "water"], "arena")
-            for st in (4, 3):                                   # extra warm, not counted
+            for st in (4, 3):
                 srv.engine.gen.steps = st
                 for k in range(3):
                     c.event("footstep", "grass", "normal", f"warm{st}{k}")
-            for i in range(N):                                  # INTERLEAVED: @4 then @3 each iter
+            for i in range(N):
                 et, mat = EVENTS[i % len(EVENTS)]
                 for st in (4, 3):
                     srv.engine.gen.steps = st
                     srv.engine.gen.sampler_type = "euler"
-                    ctx = f"m{st}_{i}"                           # unique key -> forced fresh miss -> real gen
+                    ctx = f"m{st}_{i}"
                     t = time.perf_counter()
                     meta, _ = c.event(et, mat, "normal", ctx)
                     dt = (time.perf_counter() - t) * 1000.0

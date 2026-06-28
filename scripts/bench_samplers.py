@@ -15,7 +15,6 @@ from predictive_sfx.generators.stable_audio import _extract
 from predictive_sfx.loudness import normalize_loudness, target_for
 from predictive_sfx.types import AudioClip
 
-# Transient-heavy SFX (not easy/sustained content).
 PROMPTS = [
     ("footstep_wood",   "a single footstep on a wooden floor, dry, isolated sound effect"),
     ("footstep_metal",  "a single footstep on a metal floor, dry, isolated sound effect"),
@@ -33,35 +32,30 @@ PROMPTS = [
     ("heavy_landing",   "a heavy object landing on the ground, dry, isolated sound effect"),
 ]
 
-# (sampler_type, steps). Same fixed seed/prompt/cfg/duration across ALL of these.
-# NOTE: rk4 is DISABLED/UNSUPPORTED for production -- broken at low steps on this checkpoint
-# (flat ~38ms, CLAP=chance, PQ 5.68 on 2026-06-28). Kept here ONLY to re-demonstrate the failure;
-# it is NOT a generation tier and must never be shipped.
 CONFIGS = (
     [("euler", s) for s in (8, 4, 3, 2, 1)]
     + [("dpmpp", s) for s in (4, 3, 2)]
-    + [("rk4", s) for s in (4, 3, 2)]       # DISABLED/UNSUPPORTED -- broken, do not use in prod
+    + [("rk4", s) for s in (4, 3, 2)]
     + [("pingpong", s) for s in (4, 3, 2)]
 )
 
 
 def gen_one(g, prompt, steps, sampler_type, cfg, seed, gen_dur, out_dur):
-    """One generation with an EXPLICIT sampler. Returns (mono float32, sr, latency_ms)."""
     torch.cuda.synchronize()
     t0 = time.perf_counter()
     with torch.no_grad():
         audio = g._model.generate(
             prompt=prompt, duration=gen_dur, steps=steps,
             cfg_scale=cfg, seed=seed, sampler_type=sampler_type, disable_tqdm=True)
-    torch.cuda.synchronize()                      # GPU is async -> sync before stopping the clock
+    torch.cuda.synchronize()
     latency_ms = (time.perf_counter() - t0) * 1000.0
     a = audio.detach().to(torch.float32).cpu().numpy()
     while a.ndim > 2:
         a = a[0]
     mono = a.mean(axis=0) if a.ndim == 2 else a
     sr = int(g.sample_rate)
-    mono = _extract(mono, sr, out_dur)            # same onset-extract the real pipeline uses
-    mono = normalize_loudness(mono, target_rms=target_for("normal"))  # same loudness norm
+    mono = _extract(mono, sr, out_dur)
+    mono = normalize_loudness(mono, target_rms=target_for("normal"))
     return mono.astype(np.float32), sr, latency_ms
 
 
@@ -88,7 +82,6 @@ def main(argv=None):
         json.dump(settings, f, indent=2)
     print("settings:", json.dumps(settings))
 
-    # warm CUDA kernels for each sampler so the FIRST timed call isn't paying lazy-init
     for s_type, _ in {(s, 0) for s, _ in CONFIGS}:
         try:
             gen_one(g, "warmup", 2, s_type, args.cfg, 0, args.gen_dur, args.out_dur)

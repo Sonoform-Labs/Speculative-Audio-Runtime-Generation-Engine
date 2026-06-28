@@ -5,7 +5,7 @@ import numpy as np
 from .base import Generator
 from ..loudness import normalize_loudness, target_for
 from ..types import AudioClip, CacheKey
-from .stable_audio import _DEFAULT_TEMPLATE, _PROMPT_TEMPLATES, _extract, _seed
+from .stable_audio import _extract, _seed, build_prompt
 
 
 class StableAudio3Generator(Generator):
@@ -16,11 +16,14 @@ class StableAudio3Generator(Generator):
                  steps: int = 3, cfg_scale: float = 2.0, gen_duration_s: float = 1.0,
                  duration_s: float = 0.6, sample_rate: int = 44_100,
                  prompt_template: str | None = None, negative_prompt: str | None = None,
-                 model_half: bool = True, sampler_type: str = "euler", **_):
+                 model_half: bool = True, sampler_type: str = "euler",
+                 detail_steps: int = 8, detail_keys=None, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
         self.sampler_type = str(sampler_type)
+        self.detail_steps = int(detail_steps)
+        self.detail_keys = set(detail_keys) if detail_keys is not None else {"splash", "water", "liquid"}
         self.cfg_scale = float(cfg_scale)
         self.gen_duration_s = float(gen_duration_s)
         self.duration_s = float(duration_s)
@@ -54,8 +57,14 @@ class StableAudio3Generator(Generator):
         override = self.prompts.get(str(key))
         if override:
             return override
-        tmpl = self.prompt_template or _PROMPT_TEMPLATES.get(key.event_type, _DEFAULT_TEMPLATE)
-        return tmpl.format(intensity=key.intensity, material=key.material, event=key.event_type)
+        if self.prompt_template:
+            return self.prompt_template.format(intensity=key.intensity, material=key.material, event=key.event_type)
+        return build_prompt(key.event_type, key.material, key.intensity)
+
+    def _steps_for(self, key: CacheKey) -> int:
+        if key.event_type in self.detail_keys or key.material in self.detail_keys:
+            return self.detail_steps
+        return self.steps
 
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         self._ensure_loaded()
@@ -68,7 +77,7 @@ class StableAudio3Generator(Generator):
             audio = self._model.generate(
                 prompt=self._prompt(key),
                 duration=self.gen_duration_s,
-                steps=self.steps,
+                steps=self._steps_for(key),
                 cfg_scale=self.cfg_scale,
                 seed=_seed(key, variant),
                 **kw,

@@ -32,3 +32,6 @@ Thumbs.db
 # runtime
 sidecar.log
 .cache/
+
+# submission drafts — keep LOCAL ONLY, never push to GitHub
+docs/submissions/
