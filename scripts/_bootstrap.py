@@ -1,6 +1,10 @@
-import os
 import sys
+from pathlib import Path
 
-_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
-if _SRC not in sys.path:
-    sys.path.insert(0, _SRC)
+_here = Path(__file__).resolve().parent
+for _p in [_here, *_here.parents]:
+    if (_p / "pyproject.toml").exists():
+        _src = _p / "src"
+        if _src.exists() and str(_src) not in sys.path:
+            sys.path.insert(0, str(_src))
+        break

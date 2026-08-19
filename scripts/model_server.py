@@ -34,8 +34,8 @@ def _recv(sock):
 
 def _predictive_backend(args):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
-    from predictive_sfx.generators import get_generator
-    from predictive_sfx.types import CacheKey
+    from sage.generators import get_generator
+    from sage.types import CacheKey
 
     kw = {}
     if args.steps is not None:

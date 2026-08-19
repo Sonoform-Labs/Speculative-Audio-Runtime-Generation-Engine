@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
-from predictive_sfx.affordance import AffordanceEngine, GameContext
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.generators.base import Generator
-from predictive_sfx.generators.cached import CachedGenerator
-from predictive_sfx.sidecar import serve, SfxClient
-from predictive_sfx.types import AudioClip, CacheKey
+from sage.affordance import AffordanceEngine, GameContext
+from sage.generators import MockGenerator
+from sage.generators.base import Generator
+from sage.generators.cached import CachedGenerator
+from sage.sidecar import serve, SfxClient
+from sage.types import AudioClip, CacheKey
 
 
 class _PromptStub(Generator):

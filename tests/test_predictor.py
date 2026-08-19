@@ -1,5 +1,5 @@
-from predictive_sfx.predictor import NoisyPredictor, Tier1DeterministicPredictor
-from predictive_sfx.types import GameEvent
+from sage.predictor import NoisyPredictor, Tier1DeterministicPredictor
+from sage.types import GameEvent
 
 
 def _events(n=50):

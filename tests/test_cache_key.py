@@ -1,8 +1,8 @@
 import hashlib
 
-from predictive_sfx.generators.cached import CachedGenerator, CACHE_SCHEMA
-from predictive_sfx.generators.mock import MockGenerator
-from predictive_sfx.types import CacheKey
+from sage.generators.cached import CachedGenerator, CACHE_SCHEMA
+from sage.generators.mock import MockGenerator
+from sage.types import CacheKey
 
 
 class FakeGen(MockGenerator):

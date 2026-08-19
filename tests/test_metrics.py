@@ -1,8 +1,8 @@
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.metrics import report, summarize
-from predictive_sfx.pipeline import PredictivePipeline
-from predictive_sfx.predictor import Tier1DeterministicPredictor
-from predictive_sfx.types import GameEvent
+from sage.generators import MockGenerator
+from sage.metrics import report, summarize
+from sage.pipeline import PredictivePipeline
+from sage.predictor import Tier1DeterministicPredictor
+from sage.types import GameEvent
 
 
 def _result(lead_ms=300, latency_ms=100, unique=False):

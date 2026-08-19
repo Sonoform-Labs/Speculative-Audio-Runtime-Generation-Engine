@@ -1,7 +1,7 @@
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.pipeline import PredictivePipeline
-from predictive_sfx.predictor import Tier1DeterministicPredictor
-from predictive_sfx.types import CacheKey, GameEvent
+from sage.generators import MockGenerator
+from sage.pipeline import PredictivePipeline
+from sage.predictor import Tier1DeterministicPredictor
+from sage.types import CacheKey, GameEvent
 
 
 def _events(n=30):
@@ -56,7 +56,7 @@ def test_silence_when_no_authored_fallback():
 
 def test_wasted_generations_counted():
     events = _events(10)
-    from predictive_sfx.predictor import Prediction
+    from sage.predictor import Prediction
     preds = [Prediction(CacheKey("footstep", "metal", "soft"), 0.0, 0.5)]
     pipe = PredictivePipeline(MockGenerator(), gen_latency_ms=100)
     res = pipe.run(events, preds)

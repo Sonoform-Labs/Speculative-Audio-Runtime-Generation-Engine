@@ -1,4 +1,4 @@
-from predictive_sfx.gamestate import AnticipatoryPredictor, simulate
+from sage.gamestate import AnticipatoryPredictor, simulate
 
 
 def test_simulate_produces_frames_and_events():

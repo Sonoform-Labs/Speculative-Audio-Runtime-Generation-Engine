@@ -1,8 +1,8 @@
-from predictive_sfx.affordance import AffordanceEngine, GameContext
-from predictive_sfx.affordance_learn import RuntimeAffordanceLearner
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.router import EventRouter
-from predictive_sfx.types import CacheKey
+from sage.affordance import AffordanceEngine, GameContext
+from sage.affordance_learn import RuntimeAffordanceLearner
+from sage.generators import MockGenerator
+from sage.router import EventRouter
+from sage.types import CacheKey
 
 
 def test_router_classifies_by_tolerance():

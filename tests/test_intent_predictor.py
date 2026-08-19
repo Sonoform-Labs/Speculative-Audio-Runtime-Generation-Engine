@@ -1,8 +1,8 @@
-from predictive_sfx.affordance import AffordanceEngine
-from predictive_sfx.fusion import PredictionFusion
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.predictor import EventSequencePredictor
-from predictive_sfx.types import CacheKey
+from sage.affordance import AffordanceEngine
+from sage.fusion import PredictionFusion
+from sage.generators import MockGenerator
+from sage.predictor import EventSequencePredictor
+from sage.types import CacheKey
 
 
 def _train_pattern(p, cycles=20):

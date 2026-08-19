@@ -1,0 +1,12 @@
+{
+  "name": "org.sonoform.sage",
+  "version": "0.1.0",
+  "displayName": "SAGE",
+  "description": "Real-time generated sound effects over a local sidecar.",
+  "unity": "2020.3",
+  "keywords": ["audio", "sfx", "procedural", "generative"],
+  "author": { "name": "Sonoform Labs" },
+  "samples": [
+    { "displayName": "Interactive Showcase", "description": "A/B old-way-vs-live demo with surface morph, gun affordance, and an on-screen HUD.", "path": "Samples~/Showcase" }
+  ]
+}

@@ -1,6 +1,6 @@
 import pytest
 
-from predictive_sfx.sidecar import serve, SfxClient
+from sage.sidecar import serve, SfxClient
 
 
 @pytest.fixture

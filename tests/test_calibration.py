@@ -1,6 +1,6 @@
 import numpy as np
 
-from predictive_sfx.calibration import Calibrator, PredictorCalibration
+from sage.calibration import Calibrator, PredictorCalibration
 
 
 def test_overconfident_predictor_is_pulled_down():

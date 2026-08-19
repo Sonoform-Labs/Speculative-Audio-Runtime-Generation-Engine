@@ -5,10 +5,10 @@ import time
 import numpy as np
 import pytest
 
-import predictive_sfx.sidecar as sidecar
-from predictive_sfx.sidecar import serve, SfxClient, ProtocolError, wire
-from predictive_sfx.sidecar.wire import MsgType
-from predictive_sfx.types import AudioClip, CacheKey
+import sage.sidecar as sidecar
+from sage.sidecar import serve, SfxClient, ProtocolError, wire
+from sage.sidecar.wire import MsgType
+from sage.types import AudioClip, CacheKey
 
 
 @pytest.fixture

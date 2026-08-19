@@ -1,4 +1,4 @@
-from predictive_sfx.multigame import GAMES, compare
+from sage.multigame import GAMES, compare
 
 
 def test_learner_generalizes_across_all_games():

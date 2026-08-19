@@ -1,6 +1,6 @@
 import numpy as np
 
-from predictive_sfx.predictor import KinematicGaitPredictor
+from sage.predictor import KinematicGaitPredictor
 
 
 def _straight_walk(speed=1.5, dur=3.0, dt=0.05, surface="grass"):

@@ -1,9 +1,9 @@
 import numpy as np
 
-from predictive_sfx.affordance import AffordanceEngine, GameContext
-from predictive_sfx.fusion import FusedProposal
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.types import CacheKey
+from sage.affordance import AffordanceEngine, GameContext
+from sage.fusion import FusedProposal
+from sage.generators import MockGenerator
+from sage.types import CacheKey
 
 
 def _engine(**kw):

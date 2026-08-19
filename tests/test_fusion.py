@@ -1,8 +1,8 @@
-from predictive_sfx.affordance import AffordanceEngine
-from predictive_sfx.calibration import PredictorCalibration
-from predictive_sfx.fusion import PredictionFusion
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.types import CacheKey
+from sage.affordance import AffordanceEngine
+from sage.calibration import PredictorCalibration
+from sage.fusion import PredictionFusion
+from sage.generators import MockGenerator
+from sage.types import CacheKey
 
 
 def test_duplicate_proposals_combine_noisy_or():

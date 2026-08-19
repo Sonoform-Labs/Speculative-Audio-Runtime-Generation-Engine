@@ -1,48 +1,30 @@
-# Unity in-editor verification (P4.1)
+# Unity verification
 
-This is the one step that needs a human at the Editor — everything else is verified by the
-119 passing Python tests + the benchmark. It validates the three integration risks the red-team
-flagged: main-thread AudioClip build, native-memory eviction over a long session, and a clean
-worker-thread join on stop.
+The one check that needs a human in the Editor. It covers the three integration risks: main-thread AudioClip build, native memory over a long session, and a clean worker-thread join on stop.
 
-## Setup (one-time)
-1. Open the test project `D:\PSfxUnityTest` in Unity 2022.3.8f1.
-2. The package is referenced from `D:\Python\Predictive-Neural-SFX\unity\PredictiveSfx`.
-3. Make sure the sidecar venv exists at `D:\Python\Predictive-Neural-SFX\.venv` (the Launcher
-   auto-starts `scripts\run_sidecar.py --generator sa3`). For a fast GPU-free check, edit the
-   `PredictiveSfxLauncher` component's `arguments` to `scripts\run_sidecar.py --generator mock`.
+## Setup
 
-## Build + run
-1. Menu: **PSFX -> Build Walk Environment**. This builds `WalkArena.unity` with 4 colored surface
-   tiles, a first-person player, the `PredictiveSfxLauncher`, and (now) the
-   `PredictiveSfxMotionPredictor` attached to the Player automatically.
-2. Press **Play**. The Launcher starts the sidecar (watch `D:\Python\Predictive-Neural-SFX\sidecar.log`
-   for `sidecar READY`). The "Starting sound engine..." overlay clears once connected.
+1. Open the test project `D:\PSfxUnityTest` in Unity 2022.3.
+2. The package lives at `D:\Python\SAGE\unity\Sage`, copied into the project's `Assets`.
+3. The launcher auto-starts the sidecar from `D:\Python\SAGE`. For a GPU-free check, set the `SageLauncher` arguments to `scripts\run_sidecar.py --generator mock`.
 
-## What to verify
-- **No console errors** on AudioClip.Create/SetData (main-thread clip build).
-- **Walk around.** Footsteps should be served from cache — `PredictiveSfxService.Instance.CachedCount`
-  climbs, `FallbackCount` stays low. The motion predictor pre-warms the surface you are *about to*
-  step on (check `sidecar.log` for PREDICT activity ahead of each footfall).
-- **Cross a surface boundary** (grass -> metal tile): the new surface should already be warm by the
-  time you arrive (no fallback burst), because the predictor raycasts ahead.
-- **Long session (a few minutes):** memory should be stable — the LRU caps at `maxCachedClips` (256)
-  and Destroys evicted clips (no native-memory leak).
-- **Stop Play:** clean exit, no hung-thread warning (worker joins on Shutdown).
+## Run
 
-## A/B demo (P4.3)
-To show the value on/off:
-- **OFF:** disable the `PredictiveSfxMotionPredictor` component on the Player (or set its
-  `leadSeconds` below the sidecar's gen latency, ~0.4s for sa3). Footsteps will miss more (cold) and
-  fall back. Watch `FallbackCount` climb.
-- **ON:** re-enable it. Footsteps become cache hits; `CachedCount` dominates.
+1. Menu: **Sage, Build Walk Environment**. This builds a scene with four surface tiles, a first-person player, the launcher, and the motion predictor.
+2. Press Play. Watch `sidecar.log` for `sidecar READY`. The starting overlay clears once connected.
 
-The quantitative A/B is already in `docs/benchmark-results.txt` (none = 0% hit, predicted ~100%; and
-the lead-vs-latency sweep showing ready_in_time climbs once lead exceeds the 393ms SA3 latency).
+## Verify
+
+- No console errors during play.
+- Walk around. Footsteps play, the HUD's cached and realtime counts climb, fallback stays 0.
+- Cross a surface boundary. The next surface should already be warm when you arrive.
+- Play for a few minutes. Memory stays flat, the clip cache caps at 256 and destroys evicted clips.
+- Stop Play. Clean exit, no hung-thread warning.
+
+## A/B
+
+Disable the `SageMotionPredictor` component on the player to see misses climb, re-enable it to see cache hits dominate.
 
 ## Notes
-- `leadSeconds` on the motion predictor MUST exceed the sidecar's per-clip gen latency, or the
-  server lead-gate drops the prediction (it can't finish in time) and the step falls back. Default
-  0.6s > sa3's 0.393s. If you raise generation steps/latency, raise leadSeconds too.
-- The predictor's confidence drops on sharp turns (EMA heading stability), so the ranker hedges
-  during erratic movement — expect slightly more fallback when juking.
+
+`leadSeconds` on the motion predictor must exceed the sidecar's generation latency or the prediction is dropped. The default 0.6 s clears the roughly 180 ms default tier. Confidence drops on sharp turns, so expect a few more fallbacks when juking.

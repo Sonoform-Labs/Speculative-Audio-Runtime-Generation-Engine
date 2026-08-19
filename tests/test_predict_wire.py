@@ -1,10 +1,10 @@
 import pytest
 
-from predictive_sfx.affordance import AffordanceEngine
-from predictive_sfx.fusion import FusedProposal
-from predictive_sfx.generators import MockGenerator
-from predictive_sfx.sidecar import serve, SfxClient
-from predictive_sfx.types import CacheKey
+from sage.affordance import AffordanceEngine
+from sage.fusion import FusedProposal
+from sage.generators import MockGenerator
+from sage.sidecar import serve, SfxClient
+from sage.types import CacheKey
 
 
 def test_register_predictions_queues_and_lead_gates():
@@ -46,7 +46,7 @@ def test_predict_then_background_warms_cache(server):
     import time
     server.deepening = True
     import threading
-    import predictive_sfx.sidecar.server as S
+    import sage.sidecar.server as S
     t = threading.Thread(target=S._deepen_loop, args=(server,), daemon=True)
     t.start()
     try:

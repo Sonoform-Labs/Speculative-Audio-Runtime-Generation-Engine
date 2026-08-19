@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "predictive-neural-sfx"
+name = "sage"
 version = "0.1.0"
-description = "Speculative prefetching for sound: predict game events, pre-generate neural SFX, cache by context, fall back to authored assets."
+description = "Speculative Audio Generation Engine: real-time sound effects for games."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -16,16 +16,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Local neural backend (the mock generator needs nothing beyond numpy).
 stableaudio = ["torch>=2.1", "stable-audio-tools>=0.0.16", "einops>=0.7"]
 dev = ["pytest>=7.4"]
 
 [project.scripts]
-psfx-sim = "predictive_sfx.cli:main_sim"
-psfx-bake = "predictive_sfx.cli:main_bake"
+sage-sim = "sage.cli:main_sim"
+sage-bake = "sage.cli:main_bake"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/predictive_sfx"]
+packages = ["src/sage"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

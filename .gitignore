@@ -1,4 +1,3 @@
-# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
@@ -8,30 +7,17 @@ dist/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-
-# Virtual environments
 .venv/
 venv/
 env/
-
-# Secrets / API keys
 .env
 *.key
-
-# Generated audio + bake artifacts (regenerate with scripts/bake_library.py)
 data/baked/**/*.wav
 data/baked/**/manifest.json
 *.wav
-
-# OS / editor
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
-
-# runtime
 sidecar.log
 .cache/
-
-# submission drafts — keep LOCAL ONLY, never push to GitHub
-docs/submissions/

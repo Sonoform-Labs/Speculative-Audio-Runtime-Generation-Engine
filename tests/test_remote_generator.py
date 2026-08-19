@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from predictive_sfx.generators import MockGenerator, get_generator
-from predictive_sfx.types import CacheKey
+from sage.generators import MockGenerator, get_generator
+from sage.types import CacheKey
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -59,7 +59,7 @@ def test_remote_generator_matches_local_mock():
 
 
 def test_remote_generator_drives_the_engine():
-    from predictive_sfx.affordance import AffordanceEngine, GameContext
+    from sage.affordance import AffordanceEngine, GameContext
     p, port = _start_server("mock")
     try:
         eng = AffordanceEngine(get_generator("remote", port=port),

@@ -1,7 +1,7 @@
 import numpy as np
 
-from predictive_sfx.cache import VariantCache
-from predictive_sfx.types import AudioClip, CacheKey
+from sage.cache import VariantCache
+from sage.types import AudioClip, CacheKey
 
 
 def _clip(n=128, variant=0):

@@ -4,8 +4,8 @@ import struct
 import numpy as np
 import pytest
 
-from predictive_sfx.sidecar import wire
-from predictive_sfx.sidecar.wire import ClientGone, FrameError, MsgType
+from sage.sidecar import wire
+from sage.sidecar.wire import ClientGone, FrameError, MsgType
 
 
 class _DripSock:
