@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
-    public class SageService : MonoBehaviour
+    public class SargeService : MonoBehaviour
     {
         public string host = "127.0.0.1";
         public int port = 8765;
@@ -15,19 +15,19 @@ namespace Sage
         public int keepaliveSeconds = 5;
         public int maxCachedClips = 256;
 
-        static SageService _instance;
+        static SargeService _instance;
 
-        public static SageService Instance
+        public static SargeService Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    _instance = FindObjectOfType<SageService>();
+                    _instance = FindObjectOfType<SargeService>();
                     if (_instance == null)
                     {
-                        var go = new GameObject("SageService");
-                        _instance = go.AddComponent<SageService>();
+                        var go = new GameObject("SargeService");
+                        _instance = go.AddComponent<SargeService>();
                     }
                 }
                 return _instance;
@@ -66,7 +66,7 @@ namespace Sage
         readonly ManualResetEventSlim _stop = new ManualResetEventSlim(false);
         readonly object _clientLock = new object();
 
-        SageClient _client;
+        SargeClient _client;
         Thread _worker;
         volatile bool _running;
         volatile bool _connected;
@@ -90,7 +90,7 @@ namespace Sage
             _instance = this;
             DontDestroyOnLoad(gameObject);
             _running = true;
-            _worker = new Thread(WorkerLoop) { IsBackground = true, Name = "SageWorker" };
+            _worker = new Thread(WorkerLoop) { IsBackground = true, Name = "SargeWorker" };
             _worker.Start();
         }
 
@@ -244,13 +244,13 @@ namespace Sage
             SafeClose();
         }
 
-        SageClient EnsureConnected()
+        SargeClient EnsureConnected()
         {
             if (_connected)
             {
                 lock (_clientLock) { if (_client != null) return _client; }
             }
-            var c = new SageClient();
+            var c = new SargeClient();
             c.Connect(host, port, pcm);
             Generator = c.Welcome != null ? c.Welcome.generator : null;
             lock (_clientLock) { _client = c; }
@@ -262,7 +262,7 @@ namespace Sage
 
         void SafeClose()
         {
-            SageClient c;
+            SargeClient c;
             lock (_clientLock) { c = _client; _client = null; }
             if (c != null) { try { c.Close(); } catch { } }
         }

@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
-    public class SageSurface : MonoBehaviour
+    public class SargeSurface : MonoBehaviour
     {
         public string material = "grass";
     }

@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from sage.benchmark import compare_predictors, footstep_stream, gait_scenario, surface_seam
+from sarge.benchmark import compare_predictors, footstep_stream, gait_scenario, surface_seam
 
 _COLS = ["hit_rate", "fallback_rate", "cold_hit_rate", "warm_hit_rate",
          "ready_in_time_among_predicted", "speculation_precision", "immediate_repeat_rate"]

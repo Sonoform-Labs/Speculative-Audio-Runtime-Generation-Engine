@@ -6,8 +6,8 @@ import numpy as np
 import torch
 import torchaudio.functional as AF
 
-from sage.generators.stable_audio import StableAudioGenerator
-from sage.types import CacheKey
+from sarge.generators.stable_audio import StableAudioGenerator
+from sarge.types import CacheKey
 
 CATEGORIES = ["a footstep", "a gunshot", "music", "speech", "silence", "rain", "an explosion"]
 FOOT = ("footstep", "walk")

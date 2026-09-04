@@ -4,8 +4,8 @@ import struct
 import numpy as np
 import pytest
 
-from sage.sidecar import wire
-from sage.sidecar.wire import ClientGone, FrameError, MsgType
+from sarge.sidecar import wire
+from sarge.sidecar.wire import ClientGone, FrameError, MsgType
 
 
 class _DripSock:

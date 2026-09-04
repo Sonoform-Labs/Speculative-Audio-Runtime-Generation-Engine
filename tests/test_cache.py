@@ -1,7 +1,7 @@
 import numpy as np
 
-from sage.cache import VariantCache
-from sage.types import AudioClip, CacheKey
+from sarge.cache import VariantCache
+from sarge.types import AudioClip, CacheKey
 
 
 def _clip(n=128, variant=0):

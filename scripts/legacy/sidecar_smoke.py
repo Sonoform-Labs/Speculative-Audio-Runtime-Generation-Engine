@@ -5,9 +5,9 @@ import os
 
 import numpy as np
 
-from sage.affordance import make_session
-from sage.sidecar import serve, SfxClient
-from sage.types import AudioClip
+from sarge.affordance import make_session
+from sarge.sidecar import serve, SfxClient
+from sarge.types import AudioClip
 
 
 def main(argv=None) -> int:

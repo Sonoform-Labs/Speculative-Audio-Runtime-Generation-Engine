@@ -1,9 +1,9 @@
 import pytest
 
-from sage.affordance import AffordanceEngine, GameContext
-from sage.generators.mock import MockGenerator
-from sage.types import CacheKey
-from sage.sidecar import serve, SfxClient
+from sarge.affordance import AffordanceEngine, GameContext
+from sarge.generators.mock import MockGenerator
+from sarge.types import CacheKey
+from sarge.sidecar import serve, SfxClient
 
 
 def _engine():
@@ -47,7 +47,7 @@ def test_generalizes_to_an_event_no_table_ever_defined():
 
 
 def test_prediction_pregenerates_just_in_time_so_first_event_is_instant():
-    from sage.fusion import FusedProposal
+    from sarge.fusion import FusedProposal
     eng = _engine()
     k = CacheKey("footstep", "grass", "normal")
     res = eng.register_predictions([FusedProposal(k, eta_s=0.6, p_use=0.9, sources=("motion",))], now=0.0)

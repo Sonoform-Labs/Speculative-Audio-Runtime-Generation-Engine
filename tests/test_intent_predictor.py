@@ -1,8 +1,8 @@
-from sage.affordance import AffordanceEngine
-from sage.fusion import PredictionFusion
-from sage.generators import MockGenerator
-from sage.predictor import EventSequencePredictor
-from sage.types import CacheKey
+from sarge.affordance import AffordanceEngine
+from sarge.fusion import PredictionFusion
+from sarge.generators import MockGenerator
+from sarge.predictor import EventSequencePredictor
+from sarge.types import CacheKey
 
 
 def _train_pattern(p, cycles=20):

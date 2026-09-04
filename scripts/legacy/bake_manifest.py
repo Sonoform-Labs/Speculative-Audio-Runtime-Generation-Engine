@@ -3,7 +3,7 @@ import _bootstrap
 import argparse
 import json
 
-from sage.sidecar import SfxClient
+from sarge.sidecar import SfxClient
 
 
 def main(argv=None) -> int:

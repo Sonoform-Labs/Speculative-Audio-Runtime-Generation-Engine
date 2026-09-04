@@ -5,8 +5,8 @@ import os
 
 import numpy as np
 
-from sage.logs import save_events
-from sage.types import GameEvent
+from sarge.logs import save_events
+from sarge.types import GameEvent
 
 _SEGMENTS = [
     ("grass", 8.0, 0.52),

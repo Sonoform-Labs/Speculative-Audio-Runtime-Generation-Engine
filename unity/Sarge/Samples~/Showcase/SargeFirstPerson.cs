@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
     [RequireComponent(typeof(AudioSource))]
-    public class SageFirstPerson : MonoBehaviour
+    public class SargeFirstPerson : MonoBehaviour
     {
         public AudioSource source;
         public Camera cam;
@@ -47,12 +47,12 @@ namespace Sage
 
         void PushContext()
         {
-            SageService.Instance.SetContext(_hasGun ? "gun" : null, arenaSurfaces, "arena", 0.3f);
+            SargeService.Instance.SetContext(_hasGun ? "gun" : null, arenaSurfaces, "arena", 0.3f);
         }
 
         void Update()
         {
-            if (!SageService.Instance.IsConnected) return;
+            if (!SargeService.Instance.IsConnected) return;
 
             _yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
             _pitch = Mathf.Clamp(_pitch - Input.GetAxisRaw("Mouse Y") * mouseSensitivity, -80f, 80f);
@@ -118,7 +118,7 @@ namespace Sage
         void Fire(string ev, string mat)
         {
             var src = source;
-            SageService.Instance.Request(ev, mat ?? defaultMaterial, "normal", "default",
+            SargeService.Instance.Request(ev, mat ?? defaultMaterial, "normal", "default",
                 c => { if (src != null) src.PlayOneShot(c); },
                 () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); });
         }
@@ -128,7 +128,7 @@ namespace Sage
             RaycastHit hit;
             if (Physics.Raycast(transform.position + Vector3.up * 0.5f, Vector3.down, out hit, rayDistance))
             {
-                var s = hit.collider.GetComponentInParent<SageSurface>();
+                var s = hit.collider.GetComponentInParent<SargeSurface>();
                 if (s != null && !string.IsNullOrEmpty(s.material)) return s.material;
             }
             return defaultMaterial;
@@ -150,7 +150,7 @@ namespace Sage
             if (surf != _predLandSurface)
             {
                 _predLandSurface = surf;
-                SageService.Instance.SendPredictions(
+                SargeService.Instance.SendPredictions(
                     new System.Collections.Generic.List<SfxPrediction>(1)
                     {
                         new SfxPrediction { source = "motion", eventType = "land", material = surf,
@@ -167,7 +167,7 @@ namespace Sage
             if (Physics.Raycast(new Vector3(p.x, _groundY + 5f, p.z), Vector3.down, out hit, 10f))
             {
                 hitPoint = hit.point;
-                var s = hit.collider.GetComponentInParent<SageSurface>();
+                var s = hit.collider.GetComponentInParent<SargeSurface>();
                 if (s != null && !string.IsNullOrEmpty(s.material)) return s.material;
             }
             return defaultMaterial;
@@ -200,7 +200,7 @@ namespace Sage
 
         void OnGUI()
         {
-            var svc = SageService.Instance;
+            var svc = SargeService.Instance;
             if (!svc.IsConnected)
             {
                 float w = 460f, hh = 64f;

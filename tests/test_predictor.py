@@ -1,5 +1,5 @@
-from sage.predictor import NoisyPredictor, Tier1DeterministicPredictor
-from sage.types import GameEvent
+from sarge.predictor import NoisyPredictor, Tier1DeterministicPredictor
+from sarge.types import GameEvent
 
 
 def _events(n=50):

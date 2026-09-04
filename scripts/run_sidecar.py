@@ -4,7 +4,7 @@ import argparse
 import os
 import threading
 
-from sage.sidecar import serve
+from sarge.sidecar import serve
 
 TIERS = {
     "quality": ("euler", 8),
@@ -27,7 +27,7 @@ def main(argv=None) -> int:
     ap.add_argument("--target-variants", type=int, default=6)
     ap.add_argument("--tier", default=None, choices=["quality", "default", "fast"],
                     help="quality=euler@8 (reference), default=euler@3 (safe), fast=euler@2 (experimental). "
-                         "Falls back to SAGE_GEN_TIER env var then 'default'. --steps/--sampler override it.")
+                         "Falls back to SARGE_GEN_TIER env var then 'default'. --steps/--sampler override it.")
     ap.add_argument("--steps", type=int, default=None, help="override the tier's step count")
     ap.add_argument("--sampler", default=None, help="override the tier's sampler (euler; rk4 DISABLED)")
     ap.add_argument("--topk", type=int, default=4)
@@ -40,7 +40,7 @@ def main(argv=None) -> int:
                     help="generate each sound on-demand at fire time and cache it; nothing pre-generated at startup")
     args = ap.parse_args(argv)
 
-    tier = (args.tier or os.environ.get("SAGE_GEN_TIER") or "default").lower()
+    tier = (args.tier or os.environ.get("SARGE_GEN_TIER") or "default").lower()
     sampler, steps = TIERS.get(tier, TIERS["default"])
     if args.sampler is not None:
         sampler = args.sampler

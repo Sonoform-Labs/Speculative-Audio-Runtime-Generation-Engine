@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
-    public class SageShowcase : MonoBehaviour
+    public class SargeShowcase : MonoBehaviour
     {
         public AudioSource source;
         public AudioClip authoredFallback;
@@ -37,7 +37,7 @@ namespace Sage
 
         void PushContext()
         {
-            SageService.Instance.SetContext(_equipped ? "gun" : null, new[] { Surface }, "field");
+            SargeService.Instance.SetContext(_equipped ? "gun" : null, new[] { Surface }, "field");
         }
 
         void Update()
@@ -68,7 +68,7 @@ namespace Sage
             _steps++;
             if (_live)
             {
-                SageService.Instance.Request("footstep", Surface, "normal", "default", OnFootstep, OnFailed);
+                SargeService.Instance.Request("footstep", Surface, "normal", "default", OnFootstep, OnFailed);
             }
             else if (_frozen.TryGetValue(Surface, out var clip) && clip != null)
             {
@@ -76,7 +76,7 @@ namespace Sage
             }
             else
             {
-                SageService.Instance.Request("footstep", Surface, "normal", "default",
+                SargeService.Instance.Request("footstep", Surface, "normal", "default",
                     c => { _frozen[Surface] = c; source.PlayOneShot(c); }, OnFailed);
             }
         }
@@ -99,11 +99,11 @@ namespace Sage
             {
                 _ammo--;
                 _shots++;
-                SageService.Instance.Request("shoot", "metal", "normal", "default", c => source.PlayOneShot(c), OnFailed);
+                SargeService.Instance.Request("shoot", "metal", "normal", "default", c => source.PlayOneShot(c), OnFailed);
             }
             else
             {
-                SageService.Instance.Request("empty_click", "metal", "normal", "default", c => source.PlayOneShot(c), OnFailed);
+                SargeService.Instance.Request("empty_click", "metal", "normal", "default", c => source.PlayOneShot(c), OnFailed);
             }
         }
 
@@ -112,7 +112,7 @@ namespace Sage
             if (!_equipped) return;
             _reloads++;
             _ammo = 6;
-            SageService.Instance.Request("reload", "metal", "normal", "default", c => source.PlayOneShot(c), OnFailed);
+            SargeService.Instance.Request("reload", "metal", "normal", "default", c => source.PlayOneShot(c), OnFailed);
         }
 
         void OnFailed()
@@ -134,7 +134,7 @@ namespace Sage
                 _style = new GUIStyle(GUI.skin.label) { fontSize = 16, richText = true, wordWrap = true };
                 _banner = new GUIStyle(GUI.skin.box) { fontSize = 18, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             }
-            var svc = SageService.Instance;
+            var svc = SargeService.Instance;
             float x = 10, y = 10, w = 400;
             var bg = GUI.backgroundColor;
 

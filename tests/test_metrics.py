@@ -1,8 +1,8 @@
-from sage.generators import MockGenerator
-from sage.metrics import report, summarize
-from sage.pipeline import PredictivePipeline
-from sage.predictor import Tier1DeterministicPredictor
-from sage.types import GameEvent
+from sarge.generators import MockGenerator
+from sarge.metrics import report, summarize
+from sarge.pipeline import PredictivePipeline
+from sarge.predictor import Tier1DeterministicPredictor
+from sarge.types import GameEvent
 
 
 def _result(lead_ms=300, latency_ms=100, unique=False):

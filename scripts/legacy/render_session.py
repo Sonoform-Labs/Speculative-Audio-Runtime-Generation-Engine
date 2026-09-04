@@ -5,9 +5,9 @@ import os
 
 import numpy as np
 
-from sage.affordance import AffordanceEngine, make_session
-from sage.generators import get_generator
-from sage.types import AudioClip
+from sarge.affordance import AffordanceEngine, make_session
+from sarge.generators import get_generator
+from sarge.types import AudioClip
 
 
 def main(argv=None) -> int:

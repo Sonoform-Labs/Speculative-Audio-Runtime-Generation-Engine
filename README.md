@@ -1,8 +1,8 @@
-# Speculative Audio Generation Engine
+# Speculative Audio Runtime Generation Engine
 
 Generates game sound effects in real time, predicting events before they happen and caching every result in the instance of repeat events.
 
-Games are shipped with dozens of variants per sound to avoid repetition fatigue. SAGE generates them on the fly instead, so the game isn't limited to the sounds it came with.
+Games are shipped with dozens of variants per sound to avoid repetition fatigue. SARGE generates them on the fly instead, so the game isn't limited to the sounds it came with.
 
 ## How it works
 
@@ -19,14 +19,14 @@ python scripts/run_sidecar.py --realtime
 
 Unity:
 
-1. Copy `unity/Sage` into your project's `Assets` folder.
-2. Add `SageService` to a scene object.
-3. Tag walkable meshes with `SageSurface` and fire events from your controller.
-4. Press Play. See `unity/Sage/Samples~` for a working first-person scene.
+1. Copy `unity/Sarge` into your project's `Assets` folder.
+2. Add `SargeService` to a scene object.
+3. Tag walkable meshes with `SargeSurface` and fire events from your controller.
+4. Press Play. See `unity/Sarge/Samples~` for a working first-person scene.
 
 ## Generation tiers
 
-Choose with `--tier` or the `SAGE_GEN_TIER` environment variable:
+Choose with `--tier` or the `SARGE_GEN_TIER` environment variable:
 
 | tier | sampler / steps | first-hit latency | notes |
 |---|---|---|---|

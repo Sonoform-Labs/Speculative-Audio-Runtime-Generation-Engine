@@ -1,7 +1,7 @@
-from sage.affordance import AffordanceEngine, GameContext
-from sage.affordance_learn import RuntimeAffordanceLearner
-from sage.generators import MockGenerator
-from sage.types import CacheKey
+from sarge.affordance import AffordanceEngine, GameContext
+from sarge.affordance_learn import RuntimeAffordanceLearner
+from sarge.generators import MockGenerator
+from sarge.types import CacheKey
 
 
 def test_empty_before_observation():

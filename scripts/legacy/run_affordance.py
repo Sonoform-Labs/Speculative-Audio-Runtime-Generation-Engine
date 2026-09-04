@@ -3,8 +3,8 @@ import _bootstrap
 import argparse
 from collections import defaultdict
 
-from sage.affordance import AffordanceEngine, make_session
-from sage.generators import get_generator
+from sarge.affordance import AffordanceEngine, make_session
+from sarge.generators import get_generator
 
 
 def main(argv=None) -> int:

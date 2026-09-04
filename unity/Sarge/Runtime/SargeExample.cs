@@ -1,8 +1,8 @@
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
-    public class SageExample : MonoBehaviour
+    public class SargeExample : MonoBehaviour
     {
         public AudioSource source;
         public float footstepInterval = 0.5f;
@@ -13,7 +13,7 @@ namespace Sage
         void Start()
         {
             if (source == null) source = gameObject.AddComponent<AudioSource>();
-            SageService.Instance.SetContext("gun", new[] { "grass" }, "field");
+            SargeService.Instance.SetContext("gun", new[] { "grass" }, "field");
         }
 
         void Update()
@@ -22,13 +22,13 @@ namespace Sage
             if (_footT >= footstepInterval)
             {
                 _footT = 0f;
-                SageService.Instance.Play("footstep", "grass", source);
+                SargeService.Instance.Play("footstep", "grass", source);
             }
             _shootT += Time.deltaTime;
             if (_shootT >= shootInterval)
             {
                 _shootT = 0f;
-                SageService.Instance.Play("shoot", "metal", source);
+                SargeService.Instance.Play("shoot", "metal", source);
             }
         }
     }

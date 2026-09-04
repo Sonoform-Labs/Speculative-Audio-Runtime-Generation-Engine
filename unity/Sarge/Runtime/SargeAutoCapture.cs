@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
     [RequireComponent(typeof(AudioSource))]
-    public class SageAutoCapture : MonoBehaviour
+    public class SargeAutoCapture : MonoBehaviour
     {
         public AudioSource source;
         public string eventType = "impact";
@@ -30,14 +30,14 @@ namespace Sage
             string mat = MaterialOf(c.collider) ?? defaultMaterial;
             string intensity = v >= hardVelocity ? "hard" : (v <= softVelocity ? "soft" : "normal");
             var src = source;
-            SageService.Instance.Request(eventType, mat, intensity, "default",
+            SargeService.Instance.Request(eventType, mat, intensity, "default",
                 clip => { if (src != null) src.PlayOneShot(clip); }, null);
         }
 
         static string MaterialOf(Collider col)
         {
             if (col == null) return null;
-            var surf = col.GetComponentInParent<SageSurface>();
+            var surf = col.GetComponentInParent<SargeSurface>();
             if (surf != null && !string.IsNullOrEmpty(surf.material)) return surf.material;
             var pm = col.sharedMaterial;
             if (pm != null && !string.IsNullOrEmpty(pm.name))

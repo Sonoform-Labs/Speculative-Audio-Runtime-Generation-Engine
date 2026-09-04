@@ -4,8 +4,8 @@ import argparse
 import json
 import time
 
-from sage.generators import get_generator
-from sage.types import CacheKey
+from sarge.generators import get_generator
+from sarge.types import CacheKey
 
 
 def _vram():

@@ -8,8 +8,8 @@ import numpy as np
 import torch
 import torchaudio.functional as AF
 
-from sage.generators import get_generator
-from sage.types import AudioClip, CacheKey
+from sarge.generators import get_generator
+from sarge.types import AudioClip, CacheKey
 
 CATEGORIES = ["a footstep", "a gunshot", "music", "speech", "silence", "rain", "an explosion"]
 MUSIC_IDX = {CATEGORIES.index("music"), CATEGORIES.index("speech")}

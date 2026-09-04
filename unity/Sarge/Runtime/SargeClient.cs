@@ -4,7 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
     [Serializable]
     public class Welcome
@@ -73,7 +73,7 @@ namespace Sage
         }
     }
 
-    public class SageClient
+    public class SargeClient
     {
         const byte Version = 1;
         const int HeaderSize = 16;

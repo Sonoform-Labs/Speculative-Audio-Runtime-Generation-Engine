@@ -5,8 +5,8 @@ import time
 
 import numpy as np
 
-from sage.sidecar import serve, SfxClient
-from sage.types import AudioClip
+from sarge.sidecar import serve, SfxClient
+from sarge.types import AudioClip
 
 EVENTS = [
     ("footstep", "wood"),

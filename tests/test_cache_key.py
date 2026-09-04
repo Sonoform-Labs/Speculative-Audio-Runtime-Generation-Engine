@@ -1,8 +1,8 @@
 import hashlib
 
-from sage.generators.cached import CachedGenerator, CACHE_SCHEMA
-from sage.generators.mock import MockGenerator
-from sage.types import CacheKey
+from sarge.generators.cached import CachedGenerator, CACHE_SCHEMA
+from sarge.generators.mock import MockGenerator
+from sarge.types import CacheKey
 
 
 class FakeGen(MockGenerator):

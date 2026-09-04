@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
     [RequireComponent(typeof(AudioSource))]
-    public class SageFootsteps : MonoBehaviour
+    public class SargeFootsteps : MonoBehaviour
     {
         public AudioSource source;
         public string equipped = null;
@@ -53,14 +53,14 @@ namespace Sage
         {
             string mat = _surface ?? defaultMaterial;
             var src = source;
-            SageService.Instance.Request("footstep", mat, "normal", "default",
+            SargeService.Instance.Request("footstep", mat, "normal", "default",
                 clip => { if (src != null) src.PlayOneShot(clip); },
                 () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); });
         }
 
         void PushContext()
         {
-            SageService.Instance.SetContext(equipped, new[] { _surface ?? defaultMaterial }, "default");
+            SargeService.Instance.SetContext(equipped, new[] { _surface ?? defaultMaterial }, "default");
         }
 
         string DetectSurface()
@@ -68,7 +68,7 @@ namespace Sage
             RaycastHit hit;
             if (Physics.Raycast(transform.position + Vector3.up * 0.1f, Vector3.down, out hit, rayDistance))
             {
-                var surf = hit.collider.GetComponentInParent<SageSurface>();
+                var surf = hit.collider.GetComponentInParent<SargeSurface>();
                 if (surf != null && !string.IsNullOrEmpty(surf.material)) return surf.material;
             }
             return defaultMaterial;

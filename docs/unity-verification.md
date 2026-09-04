@@ -5,12 +5,12 @@ The one check that needs a human in the Editor. It covers the three integration 
 ## Setup
 
 1. Open the test project `D:\PSfxUnityTest` in Unity 2022.3.
-2. The package lives at `D:\Python\SAGE\unity\Sage`, copied into the project's `Assets`.
-3. The launcher auto-starts the sidecar from `D:\Python\SAGE`. For a GPU-free check, set the `SageLauncher` arguments to `scripts\run_sidecar.py --generator mock`.
+2. The package lives at `D:\Python\SARGE\unity\Sarge`, copied into the project's `Assets`.
+3. The launcher auto-starts the sidecar from `D:\Python\SARGE`. For a GPU-free check, set the `SargeLauncher` arguments to `scripts\run_sidecar.py --generator mock`.
 
 ## Run
 
-1. Menu: **Sage, Build Walk Environment**. This builds a scene with four surface tiles, a first-person player, the launcher, and the motion predictor.
+1. Menu: **Sarge, Build Walk Environment**. This builds a scene with four surface tiles, a first-person player, the launcher, and the motion predictor.
 2. Press Play. Watch `sidecar.log` for `sidecar READY`. The starting overlay clears once connected.
 
 ## Verify
@@ -23,7 +23,7 @@ The one check that needs a human in the Editor. It covers the three integration 
 
 ## A/B
 
-Disable the `SageMotionPredictor` component on the player to see misses climb, re-enable it to see cache hits dominate.
+Disable the `SargeMotionPredictor` component on the player to see misses climb, re-enable it to see cache hits dominate.
 
 ## Notes
 

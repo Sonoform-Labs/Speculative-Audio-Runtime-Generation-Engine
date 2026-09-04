@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
-    public class SageMotionPredictor : MonoBehaviour
+    public class SargeMotionPredictor : MonoBehaviour
     {
         public float strideMeters = 0.75f;
         public float leadSeconds = 0.6f;
@@ -81,7 +81,7 @@ namespace Sage
                     confidence = _stab,
                 },
             };
-            SageService.Instance.SendPredictions(preds, Time.time);
+            SargeService.Instance.SendPredictions(preds, Time.time);
             _emittedStep = _stepCount;
         }
 
@@ -92,7 +92,7 @@ namespace Sage
             if (Physics.Raycast(worldPos + Vector3.up * 0.5f, Vector3.down, out hit, rayDistance + 0.5f))
             {
                 hitPoint = hit.point;
-                var surf = hit.collider.GetComponentInParent<SageSurface>();
+                var surf = hit.collider.GetComponentInParent<SargeSurface>();
                 if (surf != null && !string.IsNullOrEmpty(surf.material)) return surf.material;
             }
             return defaultMaterial;

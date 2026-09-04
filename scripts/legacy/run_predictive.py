@@ -4,10 +4,10 @@ import argparse
 
 import numpy as np
 
-from sage.gamestate import AnticipatoryPredictor, simulate
-from sage.generators import get_generator
-from sage.metrics import summarize
-from sage.pipeline import PredictivePipeline
+from sarge.gamestate import AnticipatoryPredictor, simulate
+from sarge.generators import get_generator
+from sarge.metrics import summarize
+from sarge.pipeline import PredictivePipeline
 
 
 def match_metrics(preds, events, tol=0.15):

@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "sage"
+name = "sarge"
 version = "0.1.0"
-description = "Speculative Audio Generation Engine: real-time sound effects for games."
+description = "Speculative Audio Runtime Generation Engine: real-time sound effects for games."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -20,11 +20,11 @@ stableaudio = ["torch>=2.1", "stable-audio-tools>=0.0.16", "einops>=0.7"]
 dev = ["pytest>=7.4"]
 
 [project.scripts]
-sage-sim = "sage.cli:main_sim"
-sage-bake = "sage.cli:main_bake"
+sarge-sim = "sarge.cli:main_sim"
+sarge-bake = "sarge.cli:main_bake"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/sage"]
+packages = ["src/sarge"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

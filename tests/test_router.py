@@ -1,8 +1,8 @@
-from sage.affordance import AffordanceEngine, GameContext
-from sage.affordance_learn import RuntimeAffordanceLearner
-from sage.generators import MockGenerator
-from sage.router import EventRouter
-from sage.types import CacheKey
+from sarge.affordance import AffordanceEngine, GameContext
+from sarge.affordance_learn import RuntimeAffordanceLearner
+from sarge.generators import MockGenerator
+from sarge.router import EventRouter
+from sarge.types import CacheKey
 
 
 def test_router_classifies_by_tolerance():

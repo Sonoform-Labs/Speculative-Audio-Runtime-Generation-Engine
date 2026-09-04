@@ -4,8 +4,8 @@ import argparse
 
 import numpy as np
 
-from sage.generators import get_generator
-from sage.types import CacheKey
+from sarge.generators import get_generator
+from sarge.types import CacheKey
 
 CATEGORIES = ["a footstep", "a gunshot", "music", "human speech", "silence", "rain", "an explosion"]
 

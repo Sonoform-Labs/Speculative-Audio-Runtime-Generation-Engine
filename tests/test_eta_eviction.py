@@ -1,9 +1,9 @@
 import numpy as np
 
-from sage.affordance import AffordanceEngine, GameContext
-from sage.fusion import FusedProposal
-from sage.generators import MockGenerator
-from sage.types import CacheKey
+from sarge.affordance import AffordanceEngine, GameContext
+from sarge.fusion import FusedProposal
+from sarge.generators import MockGenerator
+from sarge.types import CacheKey
 
 
 def _engine(**kw):

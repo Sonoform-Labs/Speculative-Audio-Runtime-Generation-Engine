@@ -1,8 +1,8 @@
 import numpy as np
 
-from sage.generators import MockGenerator
-from sage.loudness import normalize_loudness, rms, target_for
-from sage.types import CacheKey
+from sarge.generators import MockGenerator
+from sarge.loudness import normalize_loudness, rms, target_for
+from sarge.types import CacheKey
 
 
 def test_normalize_hits_target_rms_regardless_of_input_level():

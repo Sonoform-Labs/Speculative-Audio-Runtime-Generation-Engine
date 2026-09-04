@@ -5,7 +5,7 @@ import json
 import os
 import urllib.request
 
-from sage.affordance import ITEM_MATERIAL, ITEM_SOUNDS
+from sarge.affordance import ITEM_MATERIAL, ITEM_SOUNDS
 
 OLLAMA = "http://localhost:11434/api/generate"
 

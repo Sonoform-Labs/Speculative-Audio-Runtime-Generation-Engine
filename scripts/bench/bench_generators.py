@@ -6,8 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from sage.generators import get_generator
-from sage.types import CacheKey
+from sarge.generators import get_generator
+from sarge.types import CacheKey
 
 KEYS = [
     CacheKey("footstep", "grass", "normal"),

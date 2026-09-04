@@ -5,8 +5,8 @@ import os
 
 import numpy as np
 
-from sage.generators import get_generator
-from sage.types import AudioClip, CacheKey
+from sarge.generators import get_generator
+from sarge.types import AudioClip, CacheKey
 
 
 def _sequence(clips, sr, gait_s):

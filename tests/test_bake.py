@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
-from sage.affordance import AffordanceEngine, GameContext
-from sage.generators import MockGenerator
-from sage.generators.base import Generator
-from sage.generators.cached import CachedGenerator
-from sage.sidecar import serve, SfxClient
-from sage.types import AudioClip, CacheKey
+from sarge.affordance import AffordanceEngine, GameContext
+from sarge.generators import MockGenerator
+from sarge.generators.base import Generator
+from sarge.generators.cached import CachedGenerator
+from sarge.sidecar import serve, SfxClient
+from sarge.types import AudioClip, CacheKey
 
 
 class _PromptStub(Generator):

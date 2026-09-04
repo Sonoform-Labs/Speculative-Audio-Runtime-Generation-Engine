@@ -1,6 +1,6 @@
-from sage.affordance import AffordanceEngine, GameContext, candidates, make_session
-from sage.generators import MockGenerator
-from sage.types import CacheKey
+from sarge.affordance import AffordanceEngine, GameContext, candidates, make_session
+from sarge.generators import MockGenerator
+from sarge.types import CacheKey
 
 
 def test_candidates_from_context():

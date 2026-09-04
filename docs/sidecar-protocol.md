@@ -2,7 +2,7 @@
 
 The sidecar is a local process that generates sound effects for a game over a socket. The game sends context changes and events, the server answers each event with a PCM clip plus metadata.
 
-Transport is loopback TCP on `127.0.0.1`, default port 8765, everything little-endian. Start the server with `python scripts/run_sidecar.py`, or from Python use `sage.sidecar.serve`. The reference client is `sage.sidecar.SfxClient`.
+Transport is loopback TCP on `127.0.0.1`, default port 8765, everything little-endian. Start the server with `python scripts/run_sidecar.py`, or from Python use `sarge.sidecar.serve`. The reference client is `sarge.sidecar.SfxClient`.
 
 ## Frame layout
 
@@ -86,4 +86,4 @@ The default format `f32le` is raw float32 little-endian mono in `[-1, 1]`, ready
 
 ## Clients
 
-The Python client is `sage.sidecar.SfxClient`. The Unity client is the package at `unity/Sage`, where `SageClient.cs` is the transport and `SageService` wraps it in a background-thread MonoBehaviour. An Unreal port would mirror the same layout with `FSocket` and `USoundWaveProcedural::QueueAudio`.
+The Python client is `sarge.sidecar.SfxClient`. The Unity client is the package at `unity/Sarge`, where `SargeClient.cs` is the transport and `SargeService` wraps it in a background-thread MonoBehaviour. An Unreal port would mirror the same layout with `FSocket` and `USoundWaveProcedural::QueueAudio`.

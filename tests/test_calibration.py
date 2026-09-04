@@ -1,6 +1,6 @@
 import numpy as np
 
-from sage.calibration import Calibrator, PredictorCalibration
+from sarge.calibration import Calibrator, PredictorCalibration
 
 
 def test_overconfident_predictor_is_pulled_down():

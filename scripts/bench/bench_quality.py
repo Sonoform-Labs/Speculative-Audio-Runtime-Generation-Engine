@@ -5,8 +5,8 @@ import os
 
 import torch
 
-from sage.generators import get_generator
-from sage.types import AudioClip, CacheKey
+from sarge.generators import get_generator
+from sarge.types import AudioClip, CacheKey
 from validate_panel import _resample, judge_clap
 
 MATS = ["wood", "stone", "grass", "metal"]

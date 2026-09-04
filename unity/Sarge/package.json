@@ -1,7 +1,7 @@
 {
-  "name": "org.sonoform.sage",
+  "name": "org.sonoform.sarge",
   "version": "0.1.0",
-  "displayName": "SAGE",
+  "displayName": "SARGE",
   "description": "Real-time generated sound effects over a local sidecar.",
   "unity": "2020.3",
   "keywords": ["audio", "sfx", "procedural", "generative"],

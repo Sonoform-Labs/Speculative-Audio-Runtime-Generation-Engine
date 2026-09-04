@@ -1,6 +1,6 @@
 import pytest
 
-from sage.sidecar import serve, SfxClient
+from sarge.sidecar import serve, SfxClient
 
 
 @pytest.fixture

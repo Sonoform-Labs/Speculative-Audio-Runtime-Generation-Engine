@@ -1,4 +1,4 @@
-from sage.benchmark import compare_predictors, footstep_stream, gait_scenario
+from sarge.benchmark import compare_predictors, footstep_stream, gait_scenario
 
 
 def test_prediction_beats_no_prediction():

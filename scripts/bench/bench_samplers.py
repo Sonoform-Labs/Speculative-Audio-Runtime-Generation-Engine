@@ -10,10 +10,10 @@ import traceback
 import numpy as np
 import torch
 
-from sage.generators.stable_audio3 import StableAudio3Generator
-from sage.generators.stable_audio import _extract
-from sage.loudness import normalize_loudness, target_for
-from sage.types import AudioClip
+from sarge.generators.stable_audio3 import StableAudio3Generator
+from sarge.generators.stable_audio import _extract
+from sarge.loudness import normalize_loudness, target_for
+from sarge.types import AudioClip
 
 PROMPTS = [
     ("footstep_wood",   "a single footstep on a wooden floor, dry, isolated sound effect"),

@@ -2,7 +2,7 @@ import _bootstrap
 
 import time
 
-from sage.sidecar import serve, SfxClient
+from sarge.sidecar import serve, SfxClient
 
 EVENTS = [("footstep", "wood"), ("impact", "glass"), ("hit", "metal"),
           ("scrape", "metal"), ("slam", "door"), ("splash", "water")]

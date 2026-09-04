@@ -1,7 +1,7 @@
 import numpy as np
 
-from sage.generators import MockGenerator
-from sage.types import CacheKey, seed_for
+from sarge.generators import MockGenerator
+from sarge.types import CacheKey, seed_for
 
 
 def test_seed_for_is_stable_across_calls():

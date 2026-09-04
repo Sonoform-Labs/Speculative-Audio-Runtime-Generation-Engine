@@ -5,10 +5,10 @@ import time
 import numpy as np
 import pytest
 
-import sage.sidecar as sidecar
-from sage.sidecar import serve, SfxClient, ProtocolError, wire
-from sage.sidecar.wire import MsgType
-from sage.types import AudioClip, CacheKey
+import sarge.sidecar as sidecar
+from sarge.sidecar import serve, SfxClient, ProtocolError, wire
+from sarge.sidecar.wire import MsgType
+from sarge.types import AudioClip, CacheKey
 
 
 @pytest.fixture

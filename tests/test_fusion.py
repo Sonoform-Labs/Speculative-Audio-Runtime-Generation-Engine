@@ -1,8 +1,8 @@
-from sage.affordance import AffordanceEngine
-from sage.calibration import PredictorCalibration
-from sage.fusion import PredictionFusion
-from sage.generators import MockGenerator
-from sage.types import CacheKey
+from sarge.affordance import AffordanceEngine
+from sarge.calibration import PredictorCalibration
+from sarge.fusion import PredictionFusion
+from sarge.generators import MockGenerator
+from sarge.types import CacheKey
 
 
 def test_duplicate_proposals_combine_noisy_or():

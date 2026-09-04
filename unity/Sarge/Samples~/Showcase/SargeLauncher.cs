@@ -1,19 +1,19 @@
 using System.Diagnostics;
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
-    public class SageLauncher : MonoBehaviour
+    public class SargeLauncher : MonoBehaviour
     {
         public bool autoStart = true;
-        public string pythonExe = @"D:\Python\SAGE\.venv\Scripts\python.exe";
-        public string workingDir = @"D:\Python\SAGE";
+        public string pythonExe = @"D:\Python\SARGE\.venv\Scripts\python.exe";
+        public string workingDir = @"D:\Python\SARGE";
         public string arguments = @"scripts\run_sidecar.py --generator sa3 --tier default --realtime --learn";
         public string hfHome = @"D:\hf_cache";
         public string host = "127.0.0.1";
         public int port = 8765;
 
-        static SageLauncher _instance;
+        static SargeLauncher _instance;
         Process _proc;
         bool _spawned;
 
@@ -36,7 +36,7 @@ namespace Sage
             if (!System.IO.File.Exists(pythonExe))
             {
                 UnityEngine.Debug.LogWarning("[PSFX] python not found at '" + pythonExe +
-                    "'. Fix the paths on the Sage Launcher component, or start the sidecar manually.");
+                    "'. Fix the paths on the Sarge Launcher component, or start the sidecar manually.");
                 return;
             }
             try
@@ -69,7 +69,7 @@ namespace Sage
             catch (System.Exception e)
             {
                 UnityEngine.Debug.LogWarning("[PSFX] could not launch sidecar (" + e.Message +
-                    "). Check the paths on the Sage Launcher, or run the sidecar manually.");
+                    "). Check the paths on the Sarge Launcher, or run the sidecar manually.");
             }
         }
 

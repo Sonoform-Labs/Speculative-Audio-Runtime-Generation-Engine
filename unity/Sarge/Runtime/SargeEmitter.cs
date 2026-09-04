@@ -1,9 +1,9 @@
 using UnityEngine;
 
-namespace Sage
+namespace Sarge
 {
     [RequireComponent(typeof(AudioSource))]
-    public class SageEmitter : MonoBehaviour
+    public class SargeEmitter : MonoBehaviour
     {
         public AudioSource source;
         public string eventType = "shoot";
@@ -29,7 +29,7 @@ namespace Sage
         public void Emit(string ev, string mat)
         {
             var src = source != null ? source : GetComponent<AudioSource>();
-            SageService.Instance.Request(ev, mat, intensity, "default",
+            SargeService.Instance.Request(ev, mat, intensity, "default",
                 clip => { if (src != null) src.PlayOneShot(clip); },
                 () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); });
         }
