@@ -71,6 +71,7 @@ def main():
     ap.add_argument("--real", default=os.path.join("data", "real_footsteps"))
     ap.add_argument("--out", default=os.path.join("scripts", "bench", "out_gate.json"))
     ap.add_argument("--tag", default="")
+    ap.add_argument("--batch", type=int, default=1)
     args = ap.parse_args()
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -85,20 +86,25 @@ def main():
     configs = {}
     for s in steps_list:
         gen.steps = s
-        tag = "steps%d%s" % (s, args.tag)
+        tag = "steps%d_b%d%s" % (s, args.batch, args.tag)
         d = os.path.join("data", "_gate", tag)
         os.makedirs(d, exist_ok=True)
         clips, labels, paths, ms = [], [], [], []
-        for mat in args.materials:
-            for v in range(args.variants):
-                torch.cuda.synchronize()
-                t0 = time.perf_counter()
-                clip = gen.generate(CacheKey("footstep", mat, "normal"), variant=v)
-                torch.cuda.synchronize()
-                ms.append((time.perf_counter() - t0) * 1000.0)
-                pth = os.path.join(d, "%s_%02d.wav" % (mat, v))
+        items = [(CacheKey("footstep", mat, "normal"), v)
+                 for mat in args.materials for v in range(args.variants)]
+        for i in range(0, len(items), args.batch):
+            chunk = items[i: i + args.batch]
+            torch.cuda.synchronize()
+            t0 = time.perf_counter()
+            made = (gen.generate_batch(chunk) if args.batch > 1
+                    else [gen.generate(k, variant=v) for k, v in chunk])
+            torch.cuda.synchronize()
+            per = (time.perf_counter() - t0) * 1000.0 / len(chunk)
+            for (k, v), clip in zip(chunk, made):
+                ms.append(per)
+                pth = os.path.join(d, "%s_%02d.wav" % (k.material, v))
                 clip.to_wav(pth)
-                clips.append(clip.samples); labels.append(mat); paths.append(pth)
+                clips.append(clip.samples); labels.append(k.material); paths.append(pth)
         configs[tag] = {"steps": s, "clips": clips, "labels": labels, "paths": paths,
                         "gen_ms": float(np.median(ms))}
         print("generated %-10s %3d clips  median %.1f ms" % (tag, len(clips), np.median(ms)))

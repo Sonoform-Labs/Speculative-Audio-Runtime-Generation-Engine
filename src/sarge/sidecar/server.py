@@ -311,7 +311,7 @@ def _deepen_loop(server):
                 time.sleep(0.05 if did else 0.5)
                 continue
             with engine_lock:
-                batch, stat = planner(max_items=1)
+                batch, stat = planner(max_items=getattr(server, "deepen_batch", 1))
             if batch:
                 clips = eng.gen.generate_batch(batch)
                 with engine_lock:
@@ -330,7 +330,8 @@ def _deepen_loop(server):
 def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
           pcm: str = "f32le", recv_timeout: float = 30.0, warmup: bool = True,
           cache_dir: str | None = None, deepen: bool = False, gen_kwargs: dict | None = None,
-          learn: bool = False, realtime: bool = False, **engine_kwargs) -> SfxServer:
+          learn: bool = False, realtime: bool = False, deepen_batch: int = 2,
+          **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
@@ -369,6 +370,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     thread = threading.Thread(target=server.serve_forever, name="sfx-sidecar", daemon=True)
     thread.start()
     server.runner = thread
+    server.deepen_batch = max(1, int(deepen_batch))
     if deepen:
         server.deepening = True
         dthread = threading.Thread(target=_deepen_loop, args=(server,), name="sfx-deepener", daemon=True)

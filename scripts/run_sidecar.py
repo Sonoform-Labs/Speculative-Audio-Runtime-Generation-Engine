@@ -34,6 +34,8 @@ def main(argv=None) -> int:
     ap.add_argument("--cache-dir", default=os.path.join(".cache", "sfx_bake"))
     ap.add_argument("--no-cache", action="store_true")
     ap.add_argument("--no-deepen", action="store_true")
+    ap.add_argument("--deepen-batch", type=int, default=2,
+                    help="clips per background generation; 2 nearly doubles throughput for +17 ms of GPU hold")
     ap.add_argument("--learn", action="store_true",
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--realtime", action="store_true",
@@ -64,7 +66,7 @@ def main(argv=None) -> int:
     server = serve(generator=args.generator, host=args.host, port=args.port, pcm=args.pcm,
                    cache_dir=cache_dir, deepen=not args.no_deepen,
                    gen_kwargs={"steps": steps, "sampler_type": sampler},
-                   learn=args.learn, realtime=args.realtime, **kwargs)
+                   learn=args.learn, realtime=args.realtime, deepen_batch=args.deepen_batch, **kwargs)
     host, port = server.server_address
     mode = "realtime-on-demand" if args.realtime else "predict+prewarm"
     print(f"sidecar READY on {host}:{port}  generator={args.generator}  tier={tier} "

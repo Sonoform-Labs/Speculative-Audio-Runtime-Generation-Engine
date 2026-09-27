@@ -95,24 +95,29 @@ class StableAudio3Generator(Generator):
             return []
         self._ensure_loaded()
         import torch
-        prompts = [self._prompt(key) for key, _v in items]
         kw = {}
         if self.negative_prompt:
             kw["negative_prompt"] = self.negative_prompt
         kw["sampler_type"] = self.sampler_type
-        with torch.no_grad():
-            audio = self._model.generate(
-                prompt=prompts, duration=self.gen_duration_s, steps=self.steps,
-                cfg_scale=self.cfg_scale, seed=_seed(items[0][0], items[0][1]),
-                batch_size=len(prompts), **kw)
-        a = audio.detach().to(torch.float32).cpu().numpy() if hasattr(audio, "detach") else np.asarray(audio, dtype=np.float32)
-        out = []
-        for i, (key, variant) in enumerate(items):
-            clip = a[i]
-            while clip.ndim > 2:
-                clip = clip[0]
-            mono = clip.mean(axis=0) if clip.ndim == 2 else clip
-            mono = _extract(mono, self.sample_rate, self.duration_s)
-            mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
-            out.append(AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant))
+        groups = {}
+        for i, (key, _v) in enumerate(items):
+            groups.setdefault(self._steps_for(key), []).append(i)
+        out = [None] * len(items)
+        for steps, idx in groups.items():
+            sub = [items[i] for i in idx]
+            with torch.no_grad():
+                audio = self._model.generate(
+                    prompt=[self._prompt(key) for key, _v in sub],
+                    duration=self.gen_duration_s, steps=steps,
+                    cfg_scale=self.cfg_scale, seed=_seed(sub[0][0], sub[0][1]),
+                    batch_size=len(sub), **kw)
+            a = audio.detach().to(torch.float32).cpu().numpy() if hasattr(audio, "detach") else np.asarray(audio, dtype=np.float32)
+            for j, (key, variant) in enumerate(sub):
+                clip = a[j]
+                while clip.ndim > 2:
+                    clip = clip[0]
+                mono = clip.mean(axis=0) if clip.ndim == 2 else clip
+                mono = _extract(mono, self.sample_rate, self.duration_s)
+                mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
+                out[idx[j]] = AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant)
         return out
