@@ -6,25 +6,29 @@ using UnityEngine;
 
 namespace Sarge
 {
-    [RequireComponent(typeof(CharacterController))]
     public class SargeImpulseProbe : MonoBehaviour
     {
         public float mass = 70f;
+        public float fallThreshold = 0.6f;
+        public float gaitInterval = 0.25f;
+        public float movingThreshold = 0.2f;
         public int keepOnScreen = 10;
         public bool writeCsv = true;
         public bool logToConsole = true;
 
         CharacterController _cc;
         Rigidbody _rb;
-        bool _wasGrounded;
-        float _prevVy;
-        Vector3 _prevVel;
-        float _leftGroundAt;
-        float _lastNormalY = 1f;
-        bool _sawHit;
-        bool _sawRigidbodyImpulse;
-        float _maxRigidbodyImpulse;
+        Vector3 _prevPos;
+        bool _falling;
+        float _minVy;
+        float _fallStart;
+        float _nextGait;
         int _landings;
+        int _gait;
+        float _minSpeed = float.MaxValue;
+        float _maxSpeed;
+        bool _sawCollisionImpulse;
+        float _maxCollisionImpulse;
         string _csvPath;
         readonly List<string> _rows = new List<string>();
         readonly Queue<string> _screen = new Queue<string>();
@@ -33,57 +37,81 @@ namespace Sarge
         {
             _cc = GetComponent<CharacterController>();
             _rb = GetComponent<Rigidbody>();
+            _prevPos = transform.position;
             _csvPath = Path.Combine(Application.persistentDataPath,
                                     "sarge_impulse_probe.csv");
-            _rows.Add("landing,t,airborne_s,vy_before,vy_after,dv," +
-                      "impulse_proxy_Ns,normal_y,horizontal_speed");
-            _wasGrounded = _cc.isGrounded;
+            _rows.Add("event,t,airborne_s,vy_before,vy_after,dv," +
+                      "impulse_proxy_Ns,horizontal_speed");
+        }
+
+        string ControllerKind()
+        {
+            if (_cc != null) return "CharacterController";
+            if (_rb != null) return _rb.isKinematic ? "kinematic Rigidbody" : "dynamic Rigidbody";
+            return "custom transform controller (no physics component)";
         }
 
         void Update()
         {
-            bool grounded = _cc.isGrounded;
-            Vector3 vel = _cc.velocity;
+            float dt = Time.deltaTime;
+            if (dt <= 0f) return;
 
-            if (!grounded && _wasGrounded)
-                _leftGroundAt = Time.time;
+            Vector3 pos = transform.position;
+            Vector3 vel = (pos - _prevPos) / dt;
+            _prevPos = pos;
+            float horiz = new Vector2(vel.x, vel.z).magnitude;
 
-            if (grounded && !_wasGrounded)
-                Record(vel);
+            if (!_falling && vel.y < -fallThreshold)
+            {
+                _falling = true;
+                _minVy = vel.y;
+                _fallStart = Time.time;
+            }
 
-            _wasGrounded = grounded;
-            _prevVy = vel.y;
-            _prevVel = vel;
+            if (_falling)
+            {
+                if (vel.y < _minVy) _minVy = vel.y;
+                if (vel.y > -fallThreshold * 0.25f)
+                {
+                    RecordLanding(_minVy, vel.y, Time.time - _fallStart, horiz);
+                    _falling = false;
+                }
+            }
+            else if (horiz > movingThreshold && Time.time >= _nextGait)
+            {
+                _nextGait = Time.time + gaitInterval;
+                RecordGait(horiz);
+            }
         }
 
-        void Record(Vector3 velAfter)
+        void RecordLanding(float vyBefore, float vyAfter, float air, float horiz)
         {
             _landings++;
-            float vyBefore = _prevVy;
-            float vyAfter = velAfter.y;
             float dv = Mathf.Abs(vyAfter - vyBefore);
             float impulse = mass * dv;
-            float air = Mathf.Max(0f, Time.time - _leftGroundAt);
-            float horiz = new Vector2(_prevVel.x, _prevVel.z).magnitude;
-
             _rows.Add(string.Format(CultureInfo.InvariantCulture,
-                "{0},{1:F3},{2:F3},{3:F3},{4:F3},{5:F3},{6:F1},{7:F3},{8:F3}",
-                _landings, Time.time, air, vyBefore, vyAfter, dv, impulse,
-                _lastNormalY, horiz));
-
-            string line = string.Format(CultureInfo.InvariantCulture,
+                "landing,{0:F3},{1:F3},{2:F3},{3:F3},{4:F3},{5:F1},{6:F3}",
+                Time.time, air, vyBefore, vyAfter, dv, impulse, horiz));
+            Push(string.Format(CultureInfo.InvariantCulture,
                 "landing {0}  air {1:F2}s  vy {2:F2}  dv {3:F2}  impulse {4:F0} Ns",
-                _landings, air, vyBefore, dv, impulse);
+                _landings, air, vyBefore, dv, impulse));
+        }
 
+        void RecordGait(float horiz)
+        {
+            _gait++;
+            _minSpeed = Mathf.Min(_minSpeed, horiz);
+            _maxSpeed = Mathf.Max(_maxSpeed, horiz);
+            _rows.Add(string.Format(CultureInfo.InvariantCulture,
+                "gait,{0:F3},0,0,0,0,0,{1:F3}", Time.time, horiz));
+        }
+
+        void Push(string line)
+        {
             _screen.Enqueue(line);
-            while (_screen.Count > keepOnScreen)
-                _screen.Dequeue();
-
-            if (logToConsole)
-                Debug.Log("[SargeImpulseProbe] " + line);
-
-            if (writeCsv)
-                Flush();
+            while (_screen.Count > keepOnScreen) _screen.Dequeue();
+            if (logToConsole) Debug.Log("[SargeImpulseProbe] " + line);
+            if (writeCsv) Flush();
         }
 
         void Flush()
@@ -98,16 +126,10 @@ namespace Sarge
             }
         }
 
-        void OnControllerColliderHit(ControllerColliderHit hit)
-        {
-            _sawHit = true;
-            _lastNormalY = hit.normal.y;
-        }
-
         void OnCollisionEnter(Collision c)
         {
-            _sawRigidbodyImpulse = true;
-            _maxRigidbodyImpulse = Mathf.Max(_maxRigidbodyImpulse, c.impulse.magnitude);
+            _sawCollisionImpulse = true;
+            _maxCollisionImpulse = Mathf.Max(_maxCollisionImpulse, c.impulse.magnitude);
         }
 
         void OnGUI()
@@ -115,36 +137,33 @@ namespace Sarge
             var sb = new StringBuilder();
             sb.AppendLine("SARGE impulse probe");
             sb.AppendLine();
-            sb.AppendLine("CharacterController is kinematic.");
-            sb.AppendLine("ControllerColliderHit exposes: collider, controller, " +
-                          "gameObject, moveDirection, moveLength, normal, point, " +
-                          "rigidbody, transform.");
-            sb.AppendLine("It exposes NO impulse and NO force field.");
-            sb.AppendLine();
-            sb.AppendLine("Rigidbody present on this object: " +
-                          (_rb != null ? "yes" : "no"));
-            sb.AppendLine("Collision.impulse ever received: " +
-                          (_sawRigidbodyImpulse
-                           ? _maxRigidbodyImpulse.ToString("F1") + " Ns max"
+            sb.AppendLine("controller: " + ControllerKind());
+            sb.AppendLine("native Collision.impulse received: " +
+                          (_sawCollisionImpulse
+                           ? _maxCollisionImpulse.ToString("F1") + " Ns max"
                            : "no"));
-            sb.AppendLine("OnControllerColliderHit fired: " + (_sawHit ? "yes" : "no"));
             sb.AppendLine();
-            sb.AppendLine("Derived impulse proxy = mass * |delta vy| at the " +
-                          "airborne to grounded edge.");
-            sb.AppendLine("landings: " + _landings);
-            if (writeCsv)
-                sb.AppendLine("csv: " + _csvPath);
+            sb.AppendLine("landings (jumps and drops): " + _landings +
+                          "   impulse = mass * |delta vy|");
+            sb.AppendLine("gait samples while walking: " + _gait +
+                          (_gait > 0
+                           ? string.Format(CultureInfo.InvariantCulture,
+                               "   speed {0:F2} to {1:F2} m/s", _minSpeed, _maxSpeed)
+                           : ""));
             sb.AppendLine();
-            foreach (var s in _screen)
-                sb.AppendLine(s);
-
-            GUI.Label(new Rect(10, 10, 900, 620), sb.ToString());
+            sb.AppendLine("Walking on flat ground has no vertical velocity change, so a");
+            sb.AppendLine("footfall carries no derivable impulse here. Only jumps and drops do.");
+            sb.AppendLine("Footstep intensity has to come from gait: speed and cadence.");
+            sb.AppendLine();
+            if (writeCsv) sb.AppendLine("csv: " + _csvPath);
+            sb.AppendLine();
+            foreach (var s in _screen) sb.AppendLine(s);
+            GUI.Label(new Rect(10, 10, 900, 640), sb.ToString());
         }
 
         void OnApplicationQuit()
         {
-            if (writeCsv)
-                Flush();
+            if (writeCsv) Flush();
         }
     }
 }

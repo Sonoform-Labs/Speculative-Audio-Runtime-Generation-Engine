@@ -52,6 +52,12 @@ def main(argv=None) -> int:
                   variants_per_key=args.variants, target_variants=args.target_variants,
                   continuous_topk=args.topk, gen_cost_ms=gen_cost)
     cache_dir = None if args.no_cache else args.cache_dir
+    cleared = 0
+    if cache_dir and os.path.isdir(cache_dir):
+        for f in os.listdir(cache_dir):
+            if f.endswith(".wav"):
+                os.remove(os.path.join(cache_dir, f))
+                cleared += 1
 
     if args.generator != "mock":
         print(f"loading + warming {args.generator} model (first time can take ~30s)...")
@@ -63,7 +69,7 @@ def main(argv=None) -> int:
     mode = "realtime-on-demand" if args.realtime else "predict+prewarm"
     print(f"sidecar READY on {host}:{port}  generator={args.generator}  tier={tier} "
           f"sampler={sampler} steps={steps}  gen_cost_ms={gen_cost:.0f}  mode={mode}  "
-          f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'}")
+          f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'} (cleared {cleared})")
     print("ctrl-c to stop")
 
     stop = threading.Event()
