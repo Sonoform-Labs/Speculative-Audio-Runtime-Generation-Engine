@@ -1,0 +1,86 @@
+{
+ "real_full_5s": {
+  "ast": {
+   "footstep_rate": 0.725,
+   "top1": [
+    "walk, footsteps",
+    "walk, footsteps",
+    "walk, footsteps",
+    "clapping",
+    "fireworks",
+    "walk, footsteps"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.675,
+   "top1": [
+    "walk, footsteps",
+    "walk, footsteps",
+    "walk, footsteps",
+    "walk, footsteps",
+    "walk, footsteps",
+    "walk, footsteps"
+   ]
+  },
+  "clap": {
+   "footstep_rate": 0.975,
+   "material_acc": 0.3
+  }
+ },
+ "real_crop_0.6s": {
+  "ast": {
+   "footstep_rate": 0.275,
+   "top1": [
+    "applause",
+    "clapping",
+    "clapping",
+    "clapping",
+    "speech",
+    "speech"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.0,
+   "top1": [
+    "music",
+    "chop",
+    "music",
+    "fireworks",
+    "music",
+    "music"
+   ]
+  },
+  "clap": {
+   "footstep_rate": 0.95,
+   "material_acc": 0.35
+  }
+ },
+ "gen_steps3_0.6s": {
+  "ast": {
+   "footstep_rate": 0.0,
+   "top1": [
+    "typewriter",
+    "sound effect",
+    "speech",
+    "speech",
+    "coin (dropping)",
+    "door"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.0,
+   "top1": [
+    "music",
+    "artillery fire",
+    "music",
+    "zipper (clothing)",
+    "music",
+    "music"
+   ]
+  },
+  "clap": {
+   "footstep_rate": 0.9,
+   "material_acc": 0.3
+  }
+ }
+}

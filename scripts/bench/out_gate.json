@@ -1,0 +1,114 @@
+{
+ "real_footsteps": {
+  "transients": {
+   "crest_db": 18.74921669960022,
+   "crest_sd": 4.766129533651326,
+   "attack_ms": 10.396825396825399,
+   "n": 40
+  }
+ },
+ "steps4": {
+  "steps": 4,
+  "gen_ms": 221.74145001918077,
+  "transients": {
+   "crest_db": 19.38868761062622,
+   "crest_sd": 3.4617074731449984,
+   "attack_ms": 5.272108843537415,
+   "n": 20
+  },
+  "clap": {
+   "footstep_rate": 0.8,
+   "material_acc": 0.25
+  },
+  "ast": {
+   "footstep_rate": 0.0
+  },
+  "panns": {
+   "footstep_rate": 0.0
+  },
+  "audiobox": {
+   "CE": 3.2687687277793884,
+   "CU": 6.8538411378860475,
+   "PC": 1.9928837299346924,
+   "PQ": 7.293325138092041
+  }
+ },
+ "steps3": {
+  "steps": 3,
+  "gen_ms": 174.99959998531267,
+  "transients": {
+   "crest_db": 19.12313838005066,
+   "crest_sd": 4.548744655849325,
+   "attack_ms": 4.648526077097506,
+   "n": 20
+  },
+  "clap": {
+   "footstep_rate": 0.9,
+   "material_acc": 0.5
+  },
+  "ast": {
+   "footstep_rate": 0.0
+  },
+  "panns": {
+   "footstep_rate": 0.0
+  },
+  "audiobox": {
+   "CE": 3.234531784057617,
+   "CU": 6.848470377922058,
+   "PC": 2.0119294464588164,
+   "PQ": 7.3128965377807615
+  }
+ },
+ "steps2": {
+  "steps": 2,
+  "gen_ms": 129.56229998962954,
+  "transients": {
+   "crest_db": 16.122484350204466,
+   "crest_sd": 5.634896461508401,
+   "attack_ms": 11.099773242630384,
+   "n": 20
+  },
+  "clap": {
+   "footstep_rate": 0.35,
+   "material_acc": 0.4
+  },
+  "ast": {
+   "footstep_rate": 0.0
+  },
+  "panns": {
+   "footstep_rate": 0.0
+  },
+  "audiobox": {
+   "CE": 3.2673306465148926,
+   "CU": 6.59972186088562,
+   "PC": 2.0105113983154297,
+   "PQ": 6.946472978591919
+  }
+ },
+ "steps1": {
+  "steps": 1,
+  "gen_ms": 84.34129998204298,
+  "transients": {
+   "crest_db": 5.201710486412049,
+   "crest_sd": 2.036695011740601,
+   "attack_ms": 18.401360544217688,
+   "n": 20
+  },
+  "clap": {
+   "footstep_rate": 0.05,
+   "material_acc": 0.2
+  },
+  "ast": {
+   "footstep_rate": 0.0
+  },
+  "panns": {
+   "footstep_rate": 0.0
+  },
+  "audiobox": {
+   "CE": 3.1343501448631286,
+   "CU": 5.8752796173095705,
+   "PC": 2.1454461991786955,
+   "PQ": 6.11992199420929
+  }
+ }
+}

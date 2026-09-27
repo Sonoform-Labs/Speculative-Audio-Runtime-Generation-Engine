@@ -1,0 +1,35 @@
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xFFFFFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+C:\Users\alanc\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\huggingface_hub\file_download.py:138: UserWarning: `huggingface_hub` cache-system uses symlinks by default to efficiently store duplicated files but your machine does not support them in F:\AI\cache\hf\hub\models--stabilityai--stable-audio-3-small-sfx. Caching files will still work but in a degraded version that might require more space on your disk. This warning can be disabled by setting the `HF_HUB_DISABLE_SYMLINKS_WARNING` environment variable. For more details, see https://huggingface.co/docs/huggingface_hub/how-to-cache#limitations.
+To support symlinks on Windows, you either need to activate Developer Mode or to run Python as an administrator. In order to activate developer mode, see this article: https://docs.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development
+  warnings.warn(message)
+device=cuda steps=3 sampler=euler cfg=2.0
+gen_dur=1.0s out_dur=0.6s sr=44100
+
+stage                   ms/gen   % total
+----------------------------------------
+1_build_prompt             0.0      0.0%
+2_model_generate         174.3     98.8%
+3_to_numpy                 0.2      0.1%
+4_extract                  1.6      0.9%
+5_loudness                 0.1      0.1%
+6_pcm_encode               0.0      0.0%
+----------------------------------------
+TOTAL                    176.5
+
+cfg sweep (model.generate only, same seed/steps):
+  cfg=2.0   median  171.2 ms
+  cfg=1.5   median  172.0 ms
+  cfg=1.0   median  171.4 ms
+
+step sweep (cfg=1.0):
+  steps=8   median  392.1 ms
+  steps=4   median  215.1 ms
+  steps=3   median  168.1 ms
+  steps=2   median  124.6 ms
+  steps=1   median   79.4 ms
+
+fixed-overhead estimate: intercept of the step sweep = per-gen cost independent of steps
+if intercept is large, the text encoder / VAE decode dominate and caching wins
