@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+
 import numpy as np
 
 from .base import Generator
@@ -33,6 +35,7 @@ class StableAudio3Generator(Generator):
         self.model_half = model_half
         self.prompts: dict = {}
         self._model = None
+        self._lock = threading.Lock()
 
     def _ensure_loaded(self):
         if self._model is not None:
@@ -73,7 +76,7 @@ class StableAudio3Generator(Generator):
         if self.negative_prompt:
             kw["negative_prompt"] = self.negative_prompt
         kw["sampler_type"] = self.sampler_type
-        with torch.no_grad():
+        with self._lock, torch.no_grad():
             audio = self._model.generate(
                 prompt=self._prompt(key),
                 duration=self.gen_duration_s,
@@ -105,7 +108,7 @@ class StableAudio3Generator(Generator):
         out = [None] * len(items)
         for steps, idx in groups.items():
             sub = [items[i] for i in idx]
-            with torch.no_grad():
+            with self._lock, torch.no_grad():
                 audio = self._model.generate(
                     prompt=[self._prompt(key) for key, _v in sub],
                     duration=self.gen_duration_s, steps=steps,
