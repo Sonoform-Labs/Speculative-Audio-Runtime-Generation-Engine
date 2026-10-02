@@ -1,0 +1,5976 @@
+{
+ "cells": [
+  {
+   "code": "11100",
+   "n": 80,
+   "hard_foot": 0.4875,
+   "attack": 4.501133786848072,
+   "crest": 19.253256928920745,
+   "top": [
+    [
+     "a footstep",
+     39
+    ],
+    [
+     "an explosion",
+     13
+    ],
+    [
+     "hands clapping",
+     10
+    ]
+   ]
+  },
+  {
+   "code": "01000",
+   "n": 80,
+   "hard_foot": 0.4625,
+   "attack": 5.782312925170068,
+   "crest": 19.87307094335556,
+   "top": [
+    [
+     "a footstep",
+     37
+    ],
+    [
+     "hands clapping",
+     18
+    ],
+    [
+     "a ball bouncing",
+     11
+    ]
+   ]
+  },
+  {
+   "code": "11111",
+   "n": 80,
+   "hard_foot": 0.4125,
+   "attack": 6.45124716553288,
+   "crest": 20.166488993167878,
+   "top": [
+    [
+     "a footstep",
+     33
+    ],
+    [
+     "hands clapping",
+     20
+    ],
+    [
+     "an explosion",
+     12
+    ]
+   ]
+  },
+  {
+   "code": "00110",
+   "n": 80,
+   "hard_foot": 0.3875,
+   "attack": 4.206349206349206,
+   "crest": 19.421243488788605,
+   "top": [
+    [
+     "a footstep",
+     31
+    ],
+    [
+     "a ball bouncing",
+     27
+    ],
+    [
+     "hands clapping",
+     12
+    ]
+   ]
+  },
+  {
+   "code": "11110",
+   "n": 80,
+   "hard_foot": 0.3375,
+   "attack": 4.784580498866213,
+   "crest": 20.943967378139497,
+   "top": [
+    [
+     "a ball bouncing",
+     30
+    ],
+    [
+     "a footstep",
+     27
+    ],
+    [
+     "an explosion",
+     12
+    ]
+   ]
+  },
+  {
+   "code": "01101",
+   "n": 80,
+   "hard_foot": 0.325,
+   "attack": 11.24716553287982,
+   "crest": 18.406415390968323,
+   "top": [
+    [
+     "a footstep",
+     26
+    ],
+    [
+     "a door closing",
+     19
+    ],
+    [
+     "hands clapping",
+     17
+    ]
+   ]
+  },
+  {
+   "code": "01110",
+   "n": 80,
+   "hard_foot": 0.3125,
+   "attack": 4.807256235827665,
+   "crest": 20.33201801776886,
+   "top": [
+    [
+     "a footstep",
+     25
+    ],
+    [
+     "a ball bouncing",
+     23
+    ],
+    [
+     "hands clapping",
+     20
+    ]
+   ]
+  },
+  {
+   "code": "11001",
+   "n": 80,
+   "hard_foot": 0.075,
+   "attack": 7.98185941043084,
+   "crest": 20.1981249332428,
+   "top": [
+    [
+     "hands clapping",
+     41
+    ],
+    [
+     "a ball bouncing",
+     12
+    ],
+    [
+     "an explosion",
+     8
+    ]
+   ]
+  }
+ ],
+ "effects": [
+  {
+   "factor": "single",
+   "pairs": 80,
+   "on": 0.3375,
+   "off": 0.3125,
+   "gain": 11,
+   "loss": 9,
+   "p": 0.8238029479980469,
+   "d_attack_median": 0.24943310657596474
+  },
+  {
+   "factor": "normal",
+   "pairs": 80,
+   "on": 0.3125,
+   "off": 0.3875,
+   "gain": 11,
+   "loss": 17,
+   "p": 0.34492845088243484,
+   "d_attack_median": -0.10204081632653006
+  },
+  {
+   "factor": "clear",
+   "pairs": 80,
+   "on": 0.3375,
+   "off": 0.4875,
+   "gain": 15,
+   "loss": 27,
+   "p": 0.08842954698775429,
+   "d_attack_median": 0.3174603174603168
+  },
+  {
+   "factor": "closemic",
+   "pairs": 80,
+   "on": 0.4125,
+   "off": 0.3375,
+   "gain": 19,
+   "loss": 13,
+   "p": 0.37708558747544885,
+   "d_attack_median": 0.8730158730158728
+  }
+ ],
+ "rows": [
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 10,
+   "crest": 18.510089874267578,
+   "attack": 25.714285714285715,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 11,
+   "crest": 10.43111801147461,
+   "attack": 23.696145124716555,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 12,
+   "crest": 14.481514930725098,
+   "attack": 24.12698412698413,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 13,
+   "crest": 12.510380744934082,
+   "attack": 25.62358276643991,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 14,
+   "crest": 12.765222549438477,
+   "attack": 25.238095238095237,
+   "hard_foot": 0,
+   "hard_top1": "typing on a keyboard"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 15,
+   "crest": 13.581372261047363,
+   "attack": 25.64625850340136,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 16,
+   "crest": 11.866293907165527,
+   "attack": 25.192743764172338,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 17,
+   "crest": 13.837065696716309,
+   "attack": 26.73469387755102,
+   "hard_foot": 0,
+   "hard_top1": "silence"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 18,
+   "crest": 12.367345809936523,
+   "attack": 24.92063492063492,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 19,
+   "crest": 12.741233825683594,
+   "attack": 25.28344671201814,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 20,
+   "crest": 10.501357078552246,
+   "attack": 3.9229024943310655,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 21,
+   "crest": 14.705289840698242,
+   "attack": 24.557823129251698,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 22,
+   "crest": 13.561494827270508,
+   "attack": 23.197278911564624,
+   "hard_foot": 0,
+   "hard_top1": "a clock ticking"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 23,
+   "crest": 12.482990264892578,
+   "attack": 25.374149659863946,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 24,
+   "crest": 14.32571792602539,
+   "attack": 24.784580498866212,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 25,
+   "crest": 10.380743980407715,
+   "attack": 24.965986394557824,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 26,
+   "crest": 12.256671905517578,
+   "attack": 24.444444444444446,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 27,
+   "crest": 13.472644805908203,
+   "attack": 25.238095238095237,
+   "hard_foot": 0,
+   "hard_top1": "silence"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 28,
+   "crest": 11.17296028137207,
+   "attack": 12.312925170068027,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "grass",
+   "v": 29,
+   "crest": 13.44528579711914,
+   "attack": 25.691609977324262,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 10,
+   "crest": 23.0747013092041,
+   "attack": 2.199546485260771,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 11,
+   "crest": 22.918684005737305,
+   "attack": 2.4489795918367347,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 12,
+   "crest": 23.215845108032227,
+   "attack": 2.1768707482993195,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 13,
+   "crest": 23.62964630126953,
+   "attack": 2.5396825396825395,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 14,
+   "crest": 22.641592025756836,
+   "attack": 2.3356009070294785,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 15,
+   "crest": 23.65160369873047,
+   "attack": 1.7233560090702948,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 16,
+   "crest": 23.135364532470703,
+   "attack": 2.8798185941043086,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 17,
+   "crest": 21.855697631835938,
+   "attack": 1.8594104308390023,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 18,
+   "crest": 21.657094955444336,
+   "attack": 2.766439909297052,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 19,
+   "crest": 23.877696990966797,
+   "attack": 2.3809523809523814,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 20,
+   "crest": 22.66790199279785,
+   "attack": 1.99546485260771,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 21,
+   "crest": 22.01947784423828,
+   "attack": 2.3356009070294785,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 22,
+   "crest": 21.304676055908203,
+   "attack": 2.35827664399093,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 23,
+   "crest": 22.627212524414062,
+   "attack": 2.2448979591836733,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 24,
+   "crest": 20.574350357055664,
+   "attack": 5.034013605442177,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 25,
+   "crest": 22.747329711914062,
+   "attack": 2.1541950113378685,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 26,
+   "crest": 21.86173439025879,
+   "attack": 2.35827664399093,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 27,
+   "crest": 24.132383346557617,
+   "attack": 4.5578231292517,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 28,
+   "crest": 23.305660247802734,
+   "attack": 2.131519274376417,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "metal",
+   "v": 29,
+   "crest": 22.47498321533203,
+   "attack": 3.560090702947846,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 10,
+   "crest": 23.01588249206543,
+   "attack": 2.35827664399093,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 11,
+   "crest": 21.421085357666016,
+   "attack": 4.195011337868481,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 12,
+   "crest": 18.392993927001953,
+   "attack": 2.0634920634920637,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 13,
+   "crest": 24.771514892578125,
+   "attack": 3.1746031746031744,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 14,
+   "crest": 22.405540466308594,
+   "attack": 4.535147392290249,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 15,
+   "crest": 20.100069046020508,
+   "attack": 19.523809523809522,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 16,
+   "crest": 23.176769256591797,
+   "attack": 4.01360544217687,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 17,
+   "crest": 21.10657501220703,
+   "attack": 14.149659863945578,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 18,
+   "crest": 22.359825134277344,
+   "attack": 3.1065759637188206,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 19,
+   "crest": 22.781599044799805,
+   "attack": 5.873015873015873,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 20,
+   "crest": 21.383834838867188,
+   "attack": 4.353741496598639,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 21,
+   "crest": 20.03211212158203,
+   "attack": 4.217687074829931,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 22,
+   "crest": 18.102609634399414,
+   "attack": 101.36054421768708,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 23,
+   "crest": 23.298046112060547,
+   "attack": 3.378684807256236,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 24,
+   "crest": 18.058317184448242,
+   "attack": 1.9047619047619047,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 25,
+   "crest": 22.549423217773438,
+   "attack": 3.6054421768707483,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 26,
+   "crest": 19.857187271118164,
+   "attack": 9.1156462585034,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 27,
+   "crest": 22.711803436279297,
+   "attack": 3.2653061224489797,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 28,
+   "crest": 23.26552391052246,
+   "attack": 2.312925170068027,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "stone",
+   "v": 29,
+   "crest": 19.340896606445312,
+   "attack": 20.18140589569161,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 10,
+   "crest": 21.81817054748535,
+   "attack": 5.1020408163265305,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 11,
+   "crest": 20.994102478027344,
+   "attack": 6.054421768707483,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 12,
+   "crest": 19.461856842041016,
+   "attack": 6.00907029478458,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 13,
+   "crest": 20.24013328552246,
+   "attack": 4.01360544217687,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 14,
+   "crest": 18.934783935546875,
+   "attack": 5.124716553287982,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 15,
+   "crest": 20.353652954101562,
+   "attack": 7.09750566893424,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 16,
+   "crest": 20.81232452392578,
+   "attack": 22.879818594104307,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 17,
+   "crest": 21.130584716796875,
+   "attack": 2.7891156462585034,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 18,
+   "crest": 19.21686363220215,
+   "attack": 4.195011337868481,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 19,
+   "crest": 20.65606117248535,
+   "attack": 4.988662131519274,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 20,
+   "crest": 21.846004486083984,
+   "attack": 2.5170068027210886,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 21,
+   "crest": 20.94259262084961,
+   "attack": 4.149659863945578,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 22,
+   "crest": 19.853778839111328,
+   "attack": 8.231292517006803,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 23,
+   "crest": 21.75278663635254,
+   "attack": 3.9455782312925174,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 24,
+   "crest": 21.212322235107422,
+   "attack": 2.5850340136054424,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 25,
+   "crest": 18.657800674438477,
+   "attack": 4.444444444444445,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 26,
+   "crest": 21.12372589111328,
+   "attack": 3.6734693877551017,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 27,
+   "crest": 21.422883987426758,
+   "attack": 2.6077097505668934,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 28,
+   "crest": 21.62710952758789,
+   "attack": 4.263038548752834,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "00110",
+   "mat": "wood",
+   "v": 29,
+   "crest": 20.739900588989258,
+   "attack": 4.01360544217687,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 10,
+   "crest": 17.169919967651367,
+   "attack": 29.002267573696145,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 11,
+   "crest": 18.232452392578125,
+   "attack": 21.088435374149658,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 12,
+   "crest": 15.113790512084961,
+   "attack": 27.346938775510203,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 13,
+   "crest": 17.64274787902832,
+   "attack": 24.58049886621315,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 14,
+   "crest": 17.6032772064209,
+   "attack": 24.308390022675734,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 15,
+   "crest": 20.159210205078125,
+   "attack": 6.6893424036281175,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 16,
+   "crest": 18.48166847229004,
+   "attack": 26.666666666666668,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 17,
+   "crest": 14.247125625610352,
+   "attack": 26.462585034013603,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 18,
+   "crest": 15.597000122070312,
+   "attack": 26.485260770975056,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 19,
+   "crest": 16.752944946289062,
+   "attack": 27.551020408163264,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 20,
+   "crest": 15.324053764343262,
+   "attack": 26.712018140589567,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 21,
+   "crest": 23.139110565185547,
+   "attack": 21.45124716553288,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 22,
+   "crest": 16.805789947509766,
+   "attack": 27.369614512471657,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 23,
+   "crest": 18.431198120117188,
+   "attack": 14.149659863945578,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 24,
+   "crest": 16.638553619384766,
+   "attack": 11.201814058956916,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 25,
+   "crest": 15.594564437866211,
+   "attack": 24.331065759637188,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 26,
+   "crest": 16.232221603393555,
+   "attack": 25.759637188208618,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 27,
+   "crest": 20.22509765625,
+   "attack": 25.85034013605442,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 28,
+   "crest": 17.050613403320312,
+   "attack": 7.913832199546486,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "grass",
+   "v": 29,
+   "crest": 13.830190658569336,
+   "attack": 27.43764172335601,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 10,
+   "crest": 21.04315948486328,
+   "attack": 4.467120181405895,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 11,
+   "crest": 19.85172462463379,
+   "attack": 5.011337868480726,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 12,
+   "crest": 21.085737228393555,
+   "attack": 3.401360544217687,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 13,
+   "crest": 21.7755126953125,
+   "attack": 4.444444444444445,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 14,
+   "crest": 20.803260803222656,
+   "attack": 5.419501133786848,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 15,
+   "crest": 21.429153442382812,
+   "attack": 5.464852607709751,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 16,
+   "crest": 20.5753116607666,
+   "attack": 25.918367346938773,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 17,
+   "crest": 20.809946060180664,
+   "attack": 22.92517006802721,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 18,
+   "crest": 20.411327362060547,
+   "attack": 6.054421768707483,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 19,
+   "crest": 20.140167236328125,
+   "attack": 26.145124716553287,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 20,
+   "crest": 20.703773498535156,
+   "attack": 5.714285714285714,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 21,
+   "crest": 21.345460891723633,
+   "attack": 4.172335600907029,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 22,
+   "crest": 20.4898624420166,
+   "attack": 4.421768707482993,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 23,
+   "crest": 22.342330932617188,
+   "attack": 4.603174603174603,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 24,
+   "crest": 19.063732147216797,
+   "attack": 2.0634920634920637,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 25,
+   "crest": 20.824962615966797,
+   "attack": 4.195011337868481,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 26,
+   "crest": 19.836353302001953,
+   "attack": 27.845804988662135,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 27,
+   "crest": 19.509979248046875,
+   "attack": 3.696145124716553,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 28,
+   "crest": 20.36892318725586,
+   "attack": 7.596371882086168,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01000",
+   "mat": "metal",
+   "v": 29,
+   "crest": 21.162979125976562,
+   "attack": 5.714285714285714,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 10,
+   "crest": 23.95146369934082,
+   "attack": 4.807256235827664,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 11,
+   "crest": 23.437332153320312,
+   "attack": 2.9705215419501134,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 12,
+   "crest": 23.743633270263672,
+   "attack": 6.167800453514739,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 13,
+   "crest": 24.007953643798828,
+   "attack": 1.8594104308390023,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 14,
+   "crest": 20.4533748626709,
+   "attack": 4.036281179138323,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 15,
+   "crest": 20.412307739257812,
+   "attack": 21.519274376417233,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 16,
+   "crest": 21.83267593383789,
+   "attack": 5.26077097505669,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 17,
+   "crest": 23.398212432861328,
+   "attack": 3.7868480725623583,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 18,
+   "crest": 20.48597526550293,
+   "attack": 19.09297052154195,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 19,
+   "crest": 23.1436767578125,
+   "attack": 2.403628117913832,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 20,
+   "crest": 21.236867904663086,
+   "attack": 4.489795918367347,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 21,
+   "crest": 24.056589126586914,
+   "attack": 4.285714285714286,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 22,
+   "crest": 18.927019119262695,
+   "attack": 21.950113378684804,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 23,
+   "crest": 26.356571197509766,
+   "attack": 3.8095238095238093,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 24,
+   "crest": 24.753454208374023,
+   "attack": 2.494331065759637,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 25,
+   "crest": 25.78925323486328,
+   "attack": 11.519274376417235,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 26,
+   "crest": 24.12738609313965,
+   "attack": 3.650793650793651,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 27,
+   "crest": 24.06637954711914,
+   "attack": 8.798185941043084,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 28,
+   "crest": 20.004512786865234,
+   "attack": 9.977324263038549,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "stone",
+   "v": 29,
+   "crest": 23.313617706298828,
+   "attack": 8.390022675736962,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 10,
+   "crest": 22.22505760192871,
+   "attack": 5.850340136054422,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 11,
+   "crest": 17.016645431518555,
+   "attack": 5.555555555555555,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 12,
+   "crest": 18.516952514648438,
+   "attack": 6.099773242630386,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 13,
+   "crest": 17.727205276489258,
+   "attack": 5.804988662131519,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 14,
+   "crest": 20.123260498046875,
+   "attack": 5.600907029478458,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 15,
+   "crest": 18.93606948852539,
+   "attack": 5.98639455782313,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 16,
+   "crest": 16.608348846435547,
+   "attack": 3.968253968253968,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 17,
+   "crest": 17.573402404785156,
+   "attack": 3.4467120181405897,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 18,
+   "crest": 19.4688777923584,
+   "attack": 5.1020408163265305,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 19,
+   "crest": 19.393253326416016,
+   "attack": 4.376417233560091,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 20,
+   "crest": 18.674291610717773,
+   "attack": 5.782312925170068,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 21,
+   "crest": 19.311494827270508,
+   "attack": 4.807256235827664,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 22,
+   "crest": 19.18564224243164,
+   "attack": 6.213151927437641,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 23,
+   "crest": 18.93505096435547,
+   "attack": 5.668934240362812,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 24,
+   "crest": 19.408157348632812,
+   "attack": 5.1473922902494325,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 25,
+   "crest": 16.908090591430664,
+   "attack": 5.782312925170068,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 26,
+   "crest": 18.08100700378418,
+   "attack": 5.351473922902494,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 27,
+   "crest": 19.222122192382812,
+   "attack": 5.28344671201814,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 28,
+   "crest": 18.216840744018555,
+   "attack": 5.668934240362812,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01000",
+   "mat": "wood",
+   "v": 29,
+   "crest": 18.970458984375,
+   "attack": 4.852607709750567,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 10,
+   "crest": 11.70274829864502,
+   "attack": 6.2811791383219955,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 11,
+   "crest": 17.17193031311035,
+   "attack": 24.376417233560094,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 12,
+   "crest": 19.089866638183594,
+   "attack": 19.183673469387756,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 13,
+   "crest": 10.494529724121094,
+   "attack": 25.4875283446712,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 14,
+   "crest": 12.336134910583496,
+   "attack": 4.8979591836734695,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 15,
+   "crest": 13.010457992553711,
+   "attack": 4.217687074829931,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 16,
+   "crest": 17.48705291748047,
+   "attack": 21.541950113378686,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 17,
+   "crest": 20.10516929626465,
+   "attack": 20.725623582766442,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 18,
+   "crest": 12.080686569213867,
+   "attack": 25.306122448979593,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 19,
+   "crest": 18.247188568115234,
+   "attack": 25.396825396825395,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 20,
+   "crest": 14.245607376098633,
+   "attack": 25.736961451247165,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 21,
+   "crest": 13.949460983276367,
+   "attack": 4.965986394557824,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 22,
+   "crest": 14.90967845916748,
+   "attack": 20.907029478458053,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 23,
+   "crest": 12.457914352416992,
+   "attack": 24.943310657596374,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 24,
+   "crest": 13.589395523071289,
+   "attack": 4.512471655328798,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 25,
+   "crest": 17.242042541503906,
+   "attack": 17.346938775510203,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 26,
+   "crest": 13.077610969543457,
+   "attack": 25.691609977324262,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 27,
+   "crest": 14.426753997802734,
+   "attack": 26.598639455782312,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 28,
+   "crest": 13.525146484375,
+   "attack": 27.07482993197279,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "grass",
+   "v": 29,
+   "crest": 10.935419082641602,
+   "attack": 4.512471655328798,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 10,
+   "crest": 15.83532428741455,
+   "attack": 18.1859410430839,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 11,
+   "crest": 16.906400680541992,
+   "attack": 13.44671201814059,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 12,
+   "crest": 17.236675262451172,
+   "attack": 20.453514739229025,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 13,
+   "crest": 17.761436462402344,
+   "attack": 17.482993197278912,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 14,
+   "crest": 17.998685836791992,
+   "attack": 14.058956916099774,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 15,
+   "crest": 23.60167694091797,
+   "attack": 6.054421768707483,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 16,
+   "crest": 18.48219108581543,
+   "attack": 24.852607709750565,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 17,
+   "crest": 16.60333251953125,
+   "attack": 21.179138321995467,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 18,
+   "crest": 16.06455421447754,
+   "attack": 15.170068027210885,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 19,
+   "crest": 17.968685150146484,
+   "attack": 21.26984126984127,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 20,
+   "crest": 18.16718101501465,
+   "attack": 21.31519274376417,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 21,
+   "crest": 17.169479370117188,
+   "attack": 25.14739229024943,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 22,
+   "crest": 16.573373794555664,
+   "attack": 21.768707482993197,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 23,
+   "crest": 20.263174057006836,
+   "attack": 15.170068027210885,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 24,
+   "crest": 17.180688858032227,
+   "attack": 21.020408163265305,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 25,
+   "crest": 18.910730361938477,
+   "attack": 26.19047619047619,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 26,
+   "crest": 19.45392608642578,
+   "attack": 19.160997732426303,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 27,
+   "crest": 17.200252532958984,
+   "attack": 9.773242630385488,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 28,
+   "crest": 15.290140151977539,
+   "attack": 18.97959183673469,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "01101",
+   "mat": "metal",
+   "v": 29,
+   "crest": 16.585847854614258,
+   "attack": 14.01360544217687,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 10,
+   "crest": 23.464231491088867,
+   "attack": 4.444444444444445,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 11,
+   "crest": 23.791887283325195,
+   "attack": 4.648526077097506,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 12,
+   "crest": 23.53036117553711,
+   "attack": 5.510204081632653,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 13,
+   "crest": 21.499942779541016,
+   "attack": 4.353741496598639,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 14,
+   "crest": 22.6065673828125,
+   "attack": 3.5147392290249435,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 15,
+   "crest": 22.730403900146484,
+   "attack": 5.0566893424036286,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 16,
+   "crest": 21.406782150268555,
+   "attack": 9.546485260770975,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 17,
+   "crest": 24.750213623046875,
+   "attack": 2.7437641723356005,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 18,
+   "crest": 22.923606872558594,
+   "attack": 3.7188208616780045,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 19,
+   "crest": 21.36420249938965,
+   "attack": 11.609977324263038,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 20,
+   "crest": 23.126323699951172,
+   "attack": 4.036281179138323,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 21,
+   "crest": 22.00657844543457,
+   "attack": 6.145124716553288,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 22,
+   "crest": 21.48459243774414,
+   "attack": 4.489795918367347,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 23,
+   "crest": 21.251737594604492,
+   "attack": 7.414965986394558,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 24,
+   "crest": 21.43811798095703,
+   "attack": 1.4965986394557824,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 25,
+   "crest": 21.76917839050293,
+   "attack": 7.324263038548753,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 26,
+   "crest": 21.74055290222168,
+   "attack": 4.240362811791384,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 27,
+   "crest": 21.237842559814453,
+   "attack": 24.376417233560094,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 28,
+   "crest": 24.369834899902344,
+   "attack": 3.6054421768707483,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "stone",
+   "v": 29,
+   "crest": 22.477510452270508,
+   "attack": 3.2426303854875282,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 10,
+   "crest": 18.36002540588379,
+   "attack": 15.419501133786849,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 11,
+   "crest": 19.113061904907227,
+   "attack": 6.00907029478458,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 12,
+   "crest": 18.344520568847656,
+   "attack": 9.705215419501133,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 13,
+   "crest": 16.34870147705078,
+   "attack": 14.988662131519275,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 14,
+   "crest": 18.10773468017578,
+   "attack": 11.609977324263038,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 15,
+   "crest": 17.41558837890625,
+   "attack": 26.39455782312925,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 16,
+   "crest": 18.335472106933594,
+   "attack": 8.798185941043084,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 17,
+   "crest": 17.35944366455078,
+   "attack": 10.045351473922901,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 18,
+   "crest": 19.33513641357422,
+   "attack": 5.941043083900227,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 19,
+   "crest": 18.336673736572266,
+   "attack": 9.27437641723356,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 20,
+   "crest": 19.256370544433594,
+   "attack": 7.324263038548753,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 21,
+   "crest": 22.530858993530273,
+   "attack": 3.968253968253968,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 22,
+   "crest": 19.627248764038086,
+   "attack": 7.959183673469388,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 23,
+   "crest": 20.418331146240234,
+   "attack": 7.755102040816327,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 24,
+   "crest": 21.93073272705078,
+   "attack": 5.464852607709751,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 25,
+   "crest": 15.642605781555176,
+   "attack": 11.79138321995465,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 26,
+   "crest": 17.975202560424805,
+   "attack": 11.156462585034014,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 27,
+   "crest": 18.081809997558594,
+   "attack": 10.158730158730158,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 28,
+   "crest": 22.27666473388672,
+   "attack": 5.668934240362812,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01101",
+   "mat": "wood",
+   "v": 29,
+   "crest": 19.40802764892578,
+   "attack": 11.337868480725623,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 10,
+   "crest": 20.88824462890625,
+   "attack": 25.96371882086168,
+   "hard_foot": 0,
+   "hard_top1": "a gunshot"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 11,
+   "crest": 11.647587776184082,
+   "attack": 27.46031746031746,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 12,
+   "crest": 17.57887077331543,
+   "attack": 12.630385487528345,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 13,
+   "crest": 14.967870712280273,
+   "attack": 26.50793650793651,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 14,
+   "crest": 15.107192039489746,
+   "attack": 25.124716553287982,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 15,
+   "crest": 16.611536026000977,
+   "attack": 26.848072562358276,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 16,
+   "crest": 13.125606536865234,
+   "attack": 25.124716553287982,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 17,
+   "crest": 14.668676376342773,
+   "attack": 26.575963718820862,
+   "hard_foot": 0,
+   "hard_top1": "a clock ticking"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 18,
+   "crest": 12.570505142211914,
+   "attack": 24.988662131519273,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 19,
+   "crest": 12.233879089355469,
+   "attack": 24.467120181405896,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 20,
+   "crest": 11.239192962646484,
+   "attack": 24.784580498866212,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 21,
+   "crest": 15.832995414733887,
+   "attack": 25.419501133786845,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 22,
+   "crest": 15.28095817565918,
+   "attack": 27.324263038548754,
+   "hard_foot": 0,
+   "hard_top1": "a gunshot"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 23,
+   "crest": 12.986272811889648,
+   "attack": 25.4875283446712,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 24,
+   "crest": 11.804601669311523,
+   "attack": 23.12925170068027,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 25,
+   "crest": 11.923237800598145,
+   "attack": 24.807256235827662,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 26,
+   "crest": 14.73090648651123,
+   "attack": 22.312925170068027,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 27,
+   "crest": 16.178722381591797,
+   "attack": 24.17233560090703,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 28,
+   "crest": 12.563782691955566,
+   "attack": 24.217687074829932,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "grass",
+   "v": 29,
+   "crest": 14.590805053710938,
+   "attack": 26.87074829931973,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 10,
+   "crest": 22.863224029541016,
+   "attack": 1.383219954648526,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 11,
+   "crest": 22.583484649658203,
+   "attack": 2.35827664399093,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 12,
+   "crest": 23.040800094604492,
+   "attack": 1.7913832199546487,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 13,
+   "crest": 22.851083755493164,
+   "attack": 2.2222222222222223,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 14,
+   "crest": 21.7745361328125,
+   "attack": 1.8140589569160999,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 15,
+   "crest": 22.444129943847656,
+   "attack": 1.6780045351473922,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 16,
+   "crest": 22.562374114990234,
+   "attack": 2.5170068027210886,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 17,
+   "crest": 21.812183380126953,
+   "attack": 1.5419501133786848,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 18,
+   "crest": 20.00210952758789,
+   "attack": 3.129251700680272,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 19,
+   "crest": 23.958728790283203,
+   "attack": 2.2675736961451247,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 20,
+   "crest": 22.111101150512695,
+   "attack": 1.7913832199546487,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 21,
+   "crest": 21.512956619262695,
+   "attack": 1.927437641723356,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 22,
+   "crest": 21.515043258666992,
+   "attack": 1.9501133786848073,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 23,
+   "crest": 21.821901321411133,
+   "attack": 2.131519274376417,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 24,
+   "crest": 20.163564682006836,
+   "attack": 4.399092970521542,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 25,
+   "crest": 23.071706771850586,
+   "attack": 2.0408163265306123,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 26,
+   "crest": 21.927200317382812,
+   "attack": 2.199546485260771,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 27,
+   "crest": 24.09467315673828,
+   "attack": 1.9047619047619047,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 28,
+   "crest": 23.014007568359375,
+   "attack": 2.0408163265306123,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "metal",
+   "v": 29,
+   "crest": 22.647706985473633,
+   "attack": 3.197278911564626,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 10,
+   "crest": 24.944198608398438,
+   "attack": 4.263038548752834,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 11,
+   "crest": 23.971223831176758,
+   "attack": 3.5827664399092973,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 12,
+   "crest": 21.297243118286133,
+   "attack": 4.761904761904763,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 13,
+   "crest": 23.404081344604492,
+   "attack": 5.215419501133787,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 14,
+   "crest": 23.318580627441406,
+   "attack": 3.378684807256236,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 15,
+   "crest": 24.356271743774414,
+   "attack": 3.492063492063492,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 16,
+   "crest": 23.343894958496094,
+   "attack": 10.997732426303855,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 17,
+   "crest": 25.349334716796875,
+   "attack": 3.197278911564626,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 18,
+   "crest": 24.363162994384766,
+   "attack": 3.129251700680272,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 19,
+   "crest": 23.609846115112305,
+   "attack": 6.099773242630386,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 20,
+   "crest": 22.764026641845703,
+   "attack": 3.4467120181405897,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 21,
+   "crest": 22.98725128173828,
+   "attack": 3.764172335600907,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 22,
+   "crest": 24.078994750976562,
+   "attack": 3.2653061224489797,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 23,
+   "crest": 23.24456024169922,
+   "attack": 7.188208616780045,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 24,
+   "crest": 25.01874542236328,
+   "attack": 4.489795918367347,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 25,
+   "crest": 20.283414840698242,
+   "attack": 81.58730158730158,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 26,
+   "crest": 25.5650634765625,
+   "attack": 4.399092970521542,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 27,
+   "crest": 22.283308029174805,
+   "attack": 11.133786848072562,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 28,
+   "crest": 25.845504760742188,
+   "attack": 3.8775510204081636,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "stone",
+   "v": 29,
+   "crest": 25.36758041381836,
+   "attack": 3.7414965986394555,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 10,
+   "crest": 21.0523681640625,
+   "attack": 5.374149659863946,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 11,
+   "crest": 20.011409759521484,
+   "attack": 5.0566893424036286,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 12,
+   "crest": 21.182662963867188,
+   "attack": 4.784580498866213,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 13,
+   "crest": 20.03017807006836,
+   "attack": 4.829931972789116,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 14,
+   "crest": 21.44352912902832,
+   "attack": 5.442176870748299,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 15,
+   "crest": 21.49317169189453,
+   "attack": 5.510204081632653,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 16,
+   "crest": 20.703126907348633,
+   "attack": 5.804988662131519,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 17,
+   "crest": 20.187171936035156,
+   "attack": 7.09750566893424,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 18,
+   "crest": 20.64897918701172,
+   "attack": 4.852607709750567,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 19,
+   "crest": 22.187726974487305,
+   "attack": 4.5578231292517,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 20,
+   "crest": 22.059925079345703,
+   "attack": 4.353741496598639,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 21,
+   "crest": 20.86531639099121,
+   "attack": 4.9433106575963714,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 22,
+   "crest": 21.23312759399414,
+   "attack": 6.825396825396826,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 23,
+   "crest": 22.49355697631836,
+   "attack": 4.353741496598639,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 24,
+   "crest": 21.273910522460938,
+   "attack": 4.5578231292517,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 25,
+   "crest": 19.84959602355957,
+   "attack": 4.172335600907029,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 26,
+   "crest": 18.992469787597656,
+   "attack": 5.714285714285714,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 27,
+   "crest": 21.12244415283203,
+   "attack": 5.442176870748299,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 28,
+   "crest": 21.058780670166016,
+   "attack": 5.442176870748299,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "01110",
+   "mat": "wood",
+   "v": 29,
+   "crest": 20.97174072265625,
+   "attack": 5.918367346938775,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 10,
+   "crest": 14.566678047180176,
+   "attack": 8.140589569160998,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 11,
+   "crest": 17.955699920654297,
+   "attack": 27.09750566893424,
+   "hard_foot": 0,
+   "hard_top1": "a gunshot"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 12,
+   "crest": 16.287107467651367,
+   "attack": 27.800453514739228,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 13,
+   "crest": 16.58494758605957,
+   "attack": 35.941043083900226,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 14,
+   "crest": 18.9830322265625,
+   "attack": 20.158730158730158,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 15,
+   "crest": 19.01697540283203,
+   "attack": 19.387755102040817,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 16,
+   "crest": 18.078857421875,
+   "attack": 27.07482993197279,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 17,
+   "crest": 10.3923978805542,
+   "attack": 23.832199546485263,
+   "hard_foot": 0,
+   "hard_top1": "silence"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 18,
+   "crest": 14.696039199829102,
+   "attack": 16.00907029478458,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 19,
+   "crest": 14.229178428649902,
+   "attack": 26.258503401360546,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 20,
+   "crest": 15.148971557617188,
+   "attack": 25.691609977324262,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 21,
+   "crest": 18.47864532470703,
+   "attack": 22.448979591836732,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 22,
+   "crest": 17.325103759765625,
+   "attack": 19.79591836734694,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 23,
+   "crest": 17.767539978027344,
+   "attack": 22.15419501133787,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 24,
+   "crest": 18.20279884338379,
+   "attack": 20.997732426303855,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 25,
+   "crest": 17.3660888671875,
+   "attack": 26.689342403628117,
+   "hard_foot": 0,
+   "hard_top1": "a gunshot"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 26,
+   "crest": 10.49735164642334,
+   "attack": 17.913832199546484,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 27,
+   "crest": 16.69234275817871,
+   "attack": 26.099773242630384,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 28,
+   "crest": 10.77017593383789,
+   "attack": 24.829931972789115,
+   "hard_foot": 0,
+   "hard_top1": "a clock ticking"
+  },
+  {
+   "code": "11001",
+   "mat": "grass",
+   "v": 29,
+   "crest": 16.140045166015625,
+   "attack": 26.91609977324263,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 10,
+   "crest": 23.60476303100586,
+   "attack": 7.324263038548753,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 11,
+   "crest": 21.170310974121094,
+   "attack": 9.750566893424036,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 12,
+   "crest": 23.440534591674805,
+   "attack": 7.392290249433106,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 13,
+   "crest": 24.28066635131836,
+   "attack": 7.369614512471656,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 14,
+   "crest": 22.251604080200195,
+   "attack": 7.188208616780045,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 15,
+   "crest": 24.468704223632812,
+   "attack": 6.757369614512472,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 16,
+   "crest": 22.514211654663086,
+   "attack": 7.052154195011338,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 17,
+   "crest": 22.347631454467773,
+   "attack": 7.324263038548753,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 18,
+   "crest": 23.96384048461914,
+   "attack": 7.27891156462585,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 19,
+   "crest": 23.242965698242188,
+   "attack": 8.321995464852609,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 20,
+   "crest": 23.886978149414062,
+   "attack": 7.27891156462585,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 21,
+   "crest": 23.32257080078125,
+   "attack": 7.2562358276643995,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 22,
+   "crest": 22.645986557006836,
+   "attack": 8.231292517006803,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 23,
+   "crest": 21.45856475830078,
+   "attack": 9.319727891156463,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 24,
+   "crest": 21.99270248413086,
+   "attack": 10.045351473922901,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 25,
+   "crest": 23.819772720336914,
+   "attack": 7.27891156462585,
+   "hard_foot": 0,
+   "hard_top1": "music"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 26,
+   "crest": 21.558725357055664,
+   "attack": 9.229024943310657,
+   "hard_foot": 0,
+   "hard_top1": "speech"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 27,
+   "crest": 22.41399574279785,
+   "attack": 7.27891156462585,
+   "hard_foot": 0,
+   "hard_top1": "music"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 28,
+   "crest": 21.444284439086914,
+   "attack": 7.301587301587302,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "metal",
+   "v": 29,
+   "crest": 22.744354248046875,
+   "attack": 8.88888888888889,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 10,
+   "crest": 22.574769973754883,
+   "attack": 6.417233560090702,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 11,
+   "crest": 24.361957550048828,
+   "attack": 1.2925170068027212,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 12,
+   "crest": 22.435165405273438,
+   "attack": 1.9047619047619047,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 13,
+   "crest": 22.2685604095459,
+   "attack": 2.3356009070294785,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 14,
+   "crest": 22.372737884521484,
+   "attack": 5.1473922902494325,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 15,
+   "crest": 25.00911521911621,
+   "attack": 10.022675736961451,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 16,
+   "crest": 20.888134002685547,
+   "attack": 4.965986394557824,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 17,
+   "crest": 24.441619873046875,
+   "attack": 4.784580498866213,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 18,
+   "crest": 22.98996353149414,
+   "attack": 1.927437641723356,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 19,
+   "crest": 24.216960906982422,
+   "attack": 4.648526077097506,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 20,
+   "crest": 20.618762969970703,
+   "attack": 5.464852607709751,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 21,
+   "crest": 23.430471420288086,
+   "attack": 5.1020408163265305,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 22,
+   "crest": 23.64772605895996,
+   "attack": 4.603174603174603,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 23,
+   "crest": 20.0931453704834,
+   "attack": 9.546485260770975,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 24,
+   "crest": 22.954994201660156,
+   "attack": 5.306122448979592,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 25,
+   "crest": 22.991046905517578,
+   "attack": 4.512471655328798,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 26,
+   "crest": 22.836650848388672,
+   "attack": 5.079365079365079,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 27,
+   "crest": 23.026235580444336,
+   "attack": 6.984126984126984,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 28,
+   "crest": 21.763683319091797,
+   "attack": 10.204081632653061,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "stone",
+   "v": 29,
+   "crest": 24.41374969482422,
+   "attack": 5.963718820861678,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 10,
+   "crest": 18.341543197631836,
+   "attack": 6.825396825396826,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 11,
+   "crest": 20.471479415893555,
+   "attack": 24.943310657596374,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 12,
+   "crest": 18.458974838256836,
+   "attack": 24.14965986394558,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 13,
+   "crest": 16.052310943603516,
+   "attack": 22.607709750566894,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 14,
+   "crest": 17.009132385253906,
+   "attack": 4.081632653061225,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 15,
+   "crest": 21.99399757385254,
+   "attack": 7.823129251700681,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 16,
+   "crest": 18.632699966430664,
+   "attack": 7.6643990929705215,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 17,
+   "crest": 19.94857406616211,
+   "attack": 7.6643990929705215,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 18,
+   "crest": 15.292774200439453,
+   "attack": 26.485260770975056,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 19,
+   "crest": 20.395097732543945,
+   "attack": 26.643990929705215,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 20,
+   "crest": 14.75122356414795,
+   "attack": 27.959183673469386,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 21,
+   "crest": 20.801334381103516,
+   "attack": 4.126984126984127,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 22,
+   "crest": 22.09560203552246,
+   "attack": 6.6439909297052155,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 23,
+   "crest": 19.631412506103516,
+   "attack": 25.82766439909297,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 24,
+   "crest": 22.026596069335938,
+   "attack": 1.655328798185941,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 25,
+   "crest": 21.67816162109375,
+   "attack": 1.5419501133786848,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 26,
+   "crest": 19.772615432739258,
+   "attack": 24.195011337868483,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 27,
+   "crest": 13.802451133728027,
+   "attack": 24.081632653061224,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 28,
+   "crest": 21.62035369873047,
+   "attack": 20.54421768707483,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11001",
+   "mat": "wood",
+   "v": 29,
+   "crest": 19.985063552856445,
+   "attack": 4.920634920634921,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 10,
+   "crest": 21.145263671875,
+   "attack": 27.709750566893423,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 11,
+   "crest": 11.452375411987305,
+   "attack": 25.691609977324262,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 12,
+   "crest": 18.20992088317871,
+   "attack": 26.984126984126984,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 13,
+   "crest": 10.733098983764648,
+   "attack": 23.718820861678005,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 14,
+   "crest": 16.68886375427246,
+   "attack": 27.43764172335601,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 15,
+   "crest": 17.985031127929688,
+   "attack": 27.256235827664398,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 16,
+   "crest": 13.783778190612793,
+   "attack": 25.64625850340136,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 17,
+   "crest": 13.391465187072754,
+   "attack": 17.2562358276644,
+   "hard_foot": 0,
+   "hard_top1": "a clock ticking"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 18,
+   "crest": 10.461935997009277,
+   "attack": 12.607709750566894,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 19,
+   "crest": 14.21390151977539,
+   "attack": 11.360544217687075,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 20,
+   "crest": 9.401086807250977,
+   "attack": 36.96145124716553,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 21,
+   "crest": 17.573314666748047,
+   "attack": 26.30385487528345,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 22,
+   "crest": 16.721752166748047,
+   "attack": 27.41496598639456,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 23,
+   "crest": 16.269453048706055,
+   "attack": 26.93877551020408,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 24,
+   "crest": 8.951725006103516,
+   "attack": 21.156462585034014,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 25,
+   "crest": 12.242737770080566,
+   "attack": 15.396825396825397,
+   "hard_foot": 0,
+   "hard_top1": "rain"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 26,
+   "crest": 14.961296081542969,
+   "attack": 25.46485260770975,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 27,
+   "crest": 19.52815818786621,
+   "attack": 28.276643990929703,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 28,
+   "crest": 10.985502243041992,
+   "attack": 20.158730158730158,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11100",
+   "mat": "grass",
+   "v": 29,
+   "crest": 9.656123161315918,
+   "attack": 19.523809523809522,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 10,
+   "crest": 20.16452407836914,
+   "attack": 2.9024943310657596,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 11,
+   "crest": 20.422658920288086,
+   "attack": 2.6077097505668934,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 12,
+   "crest": 20.595352172851562,
+   "attack": 4.625850340136054,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 13,
+   "crest": 20.097408294677734,
+   "attack": 6.099773242630386,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 14,
+   "crest": 19.166038513183594,
+   "attack": 6.190476190476191,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 15,
+   "crest": 22.089996337890625,
+   "attack": 2.653061224489796,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 16,
+   "crest": 18.717248916625977,
+   "attack": 6.099773242630386,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 17,
+   "crest": 20.56081771850586,
+   "attack": 4.104308390022676,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 18,
+   "crest": 18.13321876525879,
+   "attack": 4.535147392290249,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 19,
+   "crest": 18.138545989990234,
+   "attack": 5.170068027210885,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 20,
+   "crest": 18.970993041992188,
+   "attack": 7.006802721088435,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 21,
+   "crest": 17.55946159362793,
+   "attack": 3.378684807256236,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 22,
+   "crest": 18.820331573486328,
+   "attack": 3.038548752834467,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 23,
+   "crest": 20.187274932861328,
+   "attack": 2.35827664399093,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 24,
+   "crest": 18.290390014648438,
+   "attack": 5.941043083900227,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 25,
+   "crest": 20.35466766357422,
+   "attack": 6.213151927437641,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 26,
+   "crest": 16.775217056274414,
+   "attack": 9.297052154195011,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 27,
+   "crest": 21.268404006958008,
+   "attack": 3.5827664399092973,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 28,
+   "crest": 19.27214813232422,
+   "attack": 6.258503401360544,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "metal",
+   "v": 29,
+   "crest": 19.363128662109375,
+   "attack": 8.571428571428571,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 10,
+   "crest": 21.718748092651367,
+   "attack": 5.668934240362812,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 11,
+   "crest": 26.11931800842285,
+   "attack": 4.353741496598639,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 12,
+   "crest": 24.008338928222656,
+   "attack": 5.623582766439909,
+   "hard_foot": 0,
+   "hard_top1": "speech"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 13,
+   "crest": 23.135009765625,
+   "attack": 2.857142857142857,
+   "hard_foot": 0,
+   "hard_top1": "speech"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 14,
+   "crest": 23.228946685791016,
+   "attack": 4.285714285714286,
+   "hard_foot": 0,
+   "hard_top1": "speech"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 15,
+   "crest": 19.833717346191406,
+   "attack": 21.45124716553288,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 16,
+   "crest": 22.388290405273438,
+   "attack": 3.8321995464852607,
+   "hard_foot": 0,
+   "hard_top1": "speech"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 17,
+   "crest": 23.280765533447266,
+   "attack": 4.058956916099773,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 18,
+   "crest": 23.57030487060547,
+   "attack": 1.5192743764172334,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 19,
+   "crest": 23.24650764465332,
+   "attack": 2.9705215419501134,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 20,
+   "crest": 20.695682525634766,
+   "attack": 70.9750566893424,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 21,
+   "crest": 24.371736526489258,
+   "attack": 3.038548752834467,
+   "hard_foot": 0,
+   "hard_top1": "speech"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 22,
+   "crest": 24.21912384033203,
+   "attack": 3.5374149659863945,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 23,
+   "crest": 21.016990661621094,
+   "attack": 21.99546485260771,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 24,
+   "crest": 21.981731414794922,
+   "attack": 8.866213151927438,
+   "hard_foot": 0,
+   "hard_top1": "speech"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 25,
+   "crest": 23.552770614624023,
+   "attack": 1.8820861678004535,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 26,
+   "crest": 23.840816497802734,
+   "attack": 1.9501133786848073,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 27,
+   "crest": 22.22038459777832,
+   "attack": 3.3333333333333335,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 28,
+   "crest": 24.940814971923828,
+   "attack": 3.560090702947846,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "stone",
+   "v": 29,
+   "crest": 23.795570373535156,
+   "attack": 2.1541950113378685,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 10,
+   "crest": 19.724836349487305,
+   "attack": 3.650793650793651,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 11,
+   "crest": 17.601057052612305,
+   "attack": 4.285714285714286,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 12,
+   "crest": 18.930076599121094,
+   "attack": 6.462585034013605,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 13,
+   "crest": 19.875226974487305,
+   "attack": 4.308390022675737,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 14,
+   "crest": 18.557056427001953,
+   "attack": 4.535147392290249,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 15,
+   "crest": 21.726884841918945,
+   "attack": 2.9478458049886624,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 16,
+   "crest": 21.299373626708984,
+   "attack": 4.036281179138323,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 17,
+   "crest": 21.17287826538086,
+   "attack": 2.7891156462585034,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 18,
+   "crest": 20.999515533447266,
+   "attack": 3.9229024943310655,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 19,
+   "crest": 21.63996124267578,
+   "attack": 4.240362811791384,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 20,
+   "crest": 21.214616775512695,
+   "attack": 3.7868480725623583,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 21,
+   "crest": 20.41959571838379,
+   "attack": 2.766439909297052,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 22,
+   "crest": 20.95992088317871,
+   "attack": 2.766439909297052,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 23,
+   "crest": 20.07523536682129,
+   "attack": 4.01360544217687,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 24,
+   "crest": 19.982582092285156,
+   "attack": 3.9002267573696145,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 25,
+   "crest": 19.760391235351562,
+   "attack": 2.9024943310657596,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 26,
+   "crest": 19.153301239013672,
+   "attack": 4.467120181405895,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 27,
+   "crest": 22.52389907836914,
+   "attack": 3.5827664399092973,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 28,
+   "crest": 19.668132781982422,
+   "attack": 4.104308390022676,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11100",
+   "mat": "wood",
+   "v": 29,
+   "crest": 20.50583267211914,
+   "attack": 3.0158730158730163,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 10,
+   "crest": 10.821674346923828,
+   "attack": 9.138321995464853,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 11,
+   "crest": 13.565388679504395,
+   "attack": 26.077097505668934,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 12,
+   "crest": 16.825485229492188,
+   "attack": 26.30385487528345,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 13,
+   "crest": 14.854331016540527,
+   "attack": 27.05215419501134,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 14,
+   "crest": 15.57286262512207,
+   "attack": 27.41496598639456,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 15,
+   "crest": 16.31881332397461,
+   "attack": 27.07482993197279,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 16,
+   "crest": 14.23250675201416,
+   "attack": 25.66893424036281,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 17,
+   "crest": 15.897224426269531,
+   "attack": 27.07482993197279,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 18,
+   "crest": 14.29953384399414,
+   "attack": 11.360544217687075,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 19,
+   "crest": 12.146652221679688,
+   "attack": 23.854875283446713,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 20,
+   "crest": 12.319063186645508,
+   "attack": 24.12698412698413,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 21,
+   "crest": 16.201831817626953,
+   "attack": 26.30385487528345,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 22,
+   "crest": 15.559722900390625,
+   "attack": 25.691609977324262,
+   "hard_foot": 0,
+   "hard_top1": "a gunshot"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 23,
+   "crest": 13.809021949768066,
+   "attack": 26.167800453514737,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 24,
+   "crest": 11.999170303344727,
+   "attack": 21.65532879818594,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 25,
+   "crest": 13.643011093139648,
+   "attack": 22.494331065759635,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 26,
+   "crest": 13.202099800109863,
+   "attack": 21.746031746031747,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 27,
+   "crest": 16.72669219970703,
+   "attack": 25.941043083900226,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 28,
+   "crest": 13.740398406982422,
+   "attack": 23.877551020408163,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "grass",
+   "v": 29,
+   "crest": 16.311054229736328,
+   "attack": 26.712018140589567,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 10,
+   "crest": 22.411279678344727,
+   "attack": 4.5578231292517,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 11,
+   "crest": 23.07186508178711,
+   "attack": 4.73922902494331,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 12,
+   "crest": 23.287752151489258,
+   "attack": 4.761904761904763,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 13,
+   "crest": 23.30152130126953,
+   "attack": 5.124716553287982,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 14,
+   "crest": 22.04855728149414,
+   "attack": 5.034013605442177,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 15,
+   "crest": 22.31903839111328,
+   "attack": 5.192743764172335,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 16,
+   "crest": 22.6904296875,
+   "attack": 3.2426303854875282,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 17,
+   "crest": 23.04450035095215,
+   "attack": 4.671201814058957,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 18,
+   "crest": 20.54195785522461,
+   "attack": 5.124716553287982,
+   "hard_foot": 0,
+   "hard_top1": "a hammer hitting"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 19,
+   "crest": 23.857269287109375,
+   "attack": 4.761904761904763,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 20,
+   "crest": 21.529342651367188,
+   "attack": 5.238095238095238,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 21,
+   "crest": 22.326383590698242,
+   "attack": 5.1473922902494325,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 22,
+   "crest": 21.611738204956055,
+   "attack": 5.328798185941043,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 23,
+   "crest": 22.736112594604492,
+   "attack": 4.671201814058957,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 24,
+   "crest": 19.763874053955078,
+   "attack": 5.555555555555555,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 25,
+   "crest": 23.46562385559082,
+   "attack": 4.852607709750567,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 26,
+   "crest": 22.73004150390625,
+   "attack": 4.535147392290249,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 27,
+   "crest": 24.615659713745117,
+   "attack": 4.648526077097506,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 28,
+   "crest": 23.424560546875,
+   "attack": 4.580498866213152,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "metal",
+   "v": 29,
+   "crest": 23.454788208007812,
+   "attack": 5.1473922902494325,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 10,
+   "crest": 24.049694061279297,
+   "attack": 2.3809523809523814,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 11,
+   "crest": 24.015960693359375,
+   "attack": 2.5170068027210886,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 12,
+   "crest": 23.058006286621094,
+   "attack": 4.467120181405895,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 13,
+   "crest": 25.10991096496582,
+   "attack": 2.6077097505668934,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 14,
+   "crest": 23.532533645629883,
+   "attack": 3.650793650793651,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 15,
+   "crest": 25.413841247558594,
+   "attack": 4.807256235827664,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 16,
+   "crest": 25.30052947998047,
+   "attack": 3.696145124716553,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 17,
+   "crest": 24.957883834838867,
+   "attack": 4.5578231292517,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 18,
+   "crest": 25.31522560119629,
+   "attack": 5.532879818594104,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 19,
+   "crest": 23.537567138671875,
+   "attack": 7.09750566893424,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 20,
+   "crest": 24.1340274810791,
+   "attack": 9.024943310657596,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 21,
+   "crest": 26.14161491394043,
+   "attack": 2.6984126984126986,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 22,
+   "crest": 22.82440948486328,
+   "attack": 3.99092970521542,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 23,
+   "crest": 22.936405181884766,
+   "attack": 6.417233560090702,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 24,
+   "crest": 24.194778442382812,
+   "attack": 4.5578231292517,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 25,
+   "crest": 24.965930938720703,
+   "attack": 3.5147392290249435,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 26,
+   "crest": 25.0748233795166,
+   "attack": 2.7437641723356005,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 27,
+   "crest": 24.23028564453125,
+   "attack": 4.376417233560091,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 28,
+   "crest": 25.080486297607422,
+   "attack": 9.47845804988662,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11110",
+   "mat": "stone",
+   "v": 29,
+   "crest": 26.828344345092773,
+   "attack": 3.1065759637188206,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 10,
+   "crest": 22.033750534057617,
+   "attack": 2.9024943310657596,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 11,
+   "crest": 21.148601531982422,
+   "attack": 4.467120181405895,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 12,
+   "crest": 21.521608352661133,
+   "attack": 5.351473922902494,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 13,
+   "crest": 22.302274703979492,
+   "attack": 4.6938775510204085,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 14,
+   "crest": 20.8161563873291,
+   "attack": 6.2811791383219955,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 15,
+   "crest": 22.828269958496094,
+   "attack": 4.217687074829931,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 16,
+   "crest": 23.146879196166992,
+   "attack": 4.399092970521542,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 17,
+   "crest": 22.91855239868164,
+   "attack": 4.01360544217687,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 18,
+   "crest": 21.345727920532227,
+   "attack": 5.26077097505669,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 19,
+   "crest": 22.756174087524414,
+   "attack": 4.512471655328798,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 20,
+   "crest": 23.684110641479492,
+   "attack": 4.217687074829931,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 21,
+   "crest": 22.233135223388672,
+   "attack": 4.036281179138323,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 22,
+   "crest": 22.02417755126953,
+   "attack": 3.9455782312925174,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 23,
+   "crest": 22.88936996459961,
+   "attack": 4.444444444444445,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 24,
+   "crest": 23.111377716064453,
+   "attack": 4.625850340136054,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 25,
+   "crest": 21.18877410888672,
+   "attack": 4.71655328798186,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 26,
+   "crest": 21.040708541870117,
+   "attack": 4.5578231292517,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 27,
+   "crest": 22.18194007873535,
+   "attack": 4.353741496598639,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 28,
+   "crest": 23.102195739746094,
+   "attack": 4.104308390022676,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11110",
+   "mat": "wood",
+   "v": 29,
+   "crest": 22.26251220703125,
+   "attack": 5.918367346938775,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 10,
+   "crest": 17.627330780029297,
+   "attack": 27.845804988662135,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 11,
+   "crest": 16.280691146850586,
+   "attack": 8.458049886621316,
+   "hard_foot": 0,
+   "hard_top1": "typing on a keyboard"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 12,
+   "crest": 21.253028869628906,
+   "attack": 25.759637188208618,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 13,
+   "crest": 11.381841659545898,
+   "attack": 21.45124716553288,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 14,
+   "crest": 18.724668502807617,
+   "attack": 26.077097505668934,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 15,
+   "crest": 17.810447692871094,
+   "attack": 28.0952380952381,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 16,
+   "crest": 18.25454330444336,
+   "attack": 26.39455782312925,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 17,
+   "crest": 18.061681747436523,
+   "attack": 27.278911564625847,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 18,
+   "crest": 11.300009727478027,
+   "attack": 20.68027210884354,
+   "hard_foot": 0,
+   "hard_top1": "silence"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 19,
+   "crest": 18.26707649230957,
+   "attack": 27.120181405895693,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 20,
+   "crest": 18.20630645751953,
+   "attack": 26.145124716553287,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 21,
+   "crest": 19.16514015197754,
+   "attack": 27.98185941043084,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 22,
+   "crest": 20.054359436035156,
+   "attack": 25.578231292517007,
+   "hard_foot": 0,
+   "hard_top1": "a gunshot"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 23,
+   "crest": 17.955968856811523,
+   "attack": 27.188208616780045,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 24,
+   "crest": 16.974002838134766,
+   "attack": 26.689342403628117,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 25,
+   "crest": 19.040910720825195,
+   "attack": 25.396825396825395,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 26,
+   "crest": 17.05756378173828,
+   "attack": 5.464852607709751,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 27,
+   "crest": 18.40235137939453,
+   "attack": 24.852607709750565,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 28,
+   "crest": 20.397846221923828,
+   "attack": 26.50793650793651,
+   "hard_foot": 0,
+   "hard_top1": "an explosion"
+  },
+  {
+   "code": "11111",
+   "mat": "grass",
+   "v": 29,
+   "crest": 17.39807891845703,
+   "attack": 24.761904761904763,
+   "hard_foot": 0,
+   "hard_top1": "typing on a keyboard"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 10,
+   "crest": 20.263097763061523,
+   "attack": 21.746031746031747,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 11,
+   "crest": 20.9714298248291,
+   "attack": 25.351473922902493,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 12,
+   "crest": 19.556739807128906,
+   "attack": 3.650793650793651,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 13,
+   "crest": 19.237045288085938,
+   "attack": 28.34467120181406,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 14,
+   "crest": 19.478546142578125,
+   "attack": 25.011337868480727,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 15,
+   "crest": 19.356231689453125,
+   "attack": 28.480725623582767,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 16,
+   "crest": 21.5428466796875,
+   "attack": 24.03628117913832,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 17,
+   "crest": 19.929636001586914,
+   "attack": 24.92063492063492,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 18,
+   "crest": 20.36966323852539,
+   "attack": 24.081632653061224,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 19,
+   "crest": 21.937532424926758,
+   "attack": 28.68480725623583,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 20,
+   "crest": 19.84335708618164,
+   "attack": 23.5827664399093,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 21,
+   "crest": 19.80619239807129,
+   "attack": 3.5147392290249435,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 22,
+   "crest": 22.460201263427734,
+   "attack": 25.510204081632654,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 23,
+   "crest": 19.687076568603516,
+   "attack": 28.503401360544217,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 24,
+   "crest": 17.260915756225586,
+   "attack": 26.077097505668934,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 25,
+   "crest": 21.449296951293945,
+   "attack": 4.761904761904763,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 26,
+   "crest": 20.510406494140625,
+   "attack": 3.7868480725623583,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 27,
+   "crest": 20.610618591308594,
+   "attack": 23.356009070294785,
+   "hard_foot": 0,
+   "hard_top1": "a door closing"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 28,
+   "crest": 20.46961784362793,
+   "attack": 3.7868480725623583,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "metal",
+   "v": 29,
+   "crest": 18.232330322265625,
+   "attack": 7.142857142857142,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 10,
+   "crest": 25.08907127380371,
+   "attack": 3.8095238095238093,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 11,
+   "crest": 22.10454559326172,
+   "attack": 5.578231292517007,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 12,
+   "crest": 23.698015213012695,
+   "attack": 4.875283446712018,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 13,
+   "crest": 21.75399398803711,
+   "attack": 3.560090702947846,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 14,
+   "crest": 22.93475914001465,
+   "attack": 2.4489795918367347,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 15,
+   "crest": 20.745800018310547,
+   "attack": 11.428571428571429,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 16,
+   "crest": 23.299694061279297,
+   "attack": 7.505668934240363,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 17,
+   "crest": 19.526487350463867,
+   "attack": 5.578231292517007,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 18,
+   "crest": 25.454721450805664,
+   "attack": 3.129251700680272,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 19,
+   "crest": 23.452789306640625,
+   "attack": 4.5578231292517,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 20,
+   "crest": 25.02305793762207,
+   "attack": 2.3809523809523814,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 21,
+   "crest": 22.028026580810547,
+   "attack": 5.192743764172335,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 22,
+   "crest": 21.87749671936035,
+   "attack": 3.038548752834467,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 23,
+   "crest": 22.079008102416992,
+   "attack": 3.492063492063492,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 24,
+   "crest": 20.94414710998535,
+   "attack": 6.621315192743764,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 25,
+   "crest": 23.76540184020996,
+   "attack": 3.1065759637188206,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 26,
+   "crest": 19.556081771850586,
+   "attack": 8.752834467120183,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 27,
+   "crest": 18.837169647216797,
+   "attack": 6.2811791383219955,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 28,
+   "crest": 24.686256408691406,
+   "attack": 2.1088435374149657,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "stone",
+   "v": 29,
+   "crest": 24.226999282836914,
+   "attack": 3.968253968253968,
+   "hard_foot": 0,
+   "hard_top1": "hands clapping"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 10,
+   "crest": 21.054880142211914,
+   "attack": 5.011337868480726,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 11,
+   "crest": 17.668025970458984,
+   "attack": 14.19501133786848,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 12,
+   "crest": 19.088041305541992,
+   "attack": 6.8480725623582765,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 13,
+   "crest": 18.881574630737305,
+   "attack": 4.580498866213152,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 14,
+   "crest": 22.30613899230957,
+   "attack": 5.442176870748299,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 15,
+   "crest": 21.71617317199707,
+   "attack": 4.149659863945578,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 16,
+   "crest": 19.863527297973633,
+   "attack": 4.648526077097506,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 17,
+   "crest": 20.12902069091797,
+   "attack": 4.104308390022676,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 18,
+   "crest": 19.376689910888672,
+   "attack": 4.376417233560091,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 19,
+   "crest": 22.616374969482422,
+   "attack": 4.240362811791384,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 20,
+   "crest": 21.95073127746582,
+   "attack": 4.331065759637188,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 21,
+   "crest": 20.730823516845703,
+   "attack": 4.920634920634921,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 22,
+   "crest": 20.428354263305664,
+   "attack": 5.374149659863946,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 23,
+   "crest": 19.560203552246094,
+   "attack": 4.421768707482993,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 24,
+   "crest": 21.52679443359375,
+   "attack": 4.01360544217687,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 25,
+   "crest": 18.285247802734375,
+   "attack": 1.9501133786848073,
+   "hard_foot": 0,
+   "hard_top1": "a ball bouncing"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 26,
+   "crest": 19.65264892578125,
+   "attack": 4.331065759637188,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 27,
+   "crest": 21.528844833374023,
+   "attack": 4.263038548752834,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 28,
+   "crest": 18.799964904785156,
+   "attack": 4.399092970521542,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  },
+  {
+   "code": "11111",
+   "mat": "wood",
+   "v": 29,
+   "crest": 20.484905242919922,
+   "attack": 4.240362811791384,
+   "hard_foot": 1,
+   "hard_top1": "a footstep"
+  }
+ ]
+}

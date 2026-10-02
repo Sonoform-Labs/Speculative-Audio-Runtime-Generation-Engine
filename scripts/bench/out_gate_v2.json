@@ -1,0 +1,243 @@
+{
+ "real_footsteps": {
+  "transients": {
+   "crest_db": 18.74921669960022,
+   "crest_sd": 4.766129533651326,
+   "attack_ms": 10.396825396825399,
+   "n": 40
+  }
+ },
+ "real_crop": {
+  "clap": {
+   "footstep_rate": 0.875,
+   "p_foot": 0.784449428319931,
+   "material_acc": NaN
+  },
+  "ast": {
+   "footstep_rate": 0.225,
+   "p_foot": 0.0042717596516013145,
+   "top1": [
+    "fireworks",
+    "clapping",
+    "clapping",
+    "fireworks",
+    "fireworks",
+    "clapping"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.45,
+   "p_foot": 0.037205636501312256,
+   "top1": [
+    "basketball bounce",
+    "basketball bounce",
+    "walk, footsteps",
+    "walk, footsteps",
+    "walk, footsteps",
+    "basketball bounce"
+   ]
+  },
+  "audiobox": {
+   "CE": 3.3138821601867674,
+   "CU": 5.982273280620575,
+   "PC": 2.5468933641910554,
+   "PQ": 6.216923177242279
+  }
+ },
+ "neg": {
+  "clap": {
+   "footstep_rate": 0.18,
+   "p_foot": 0.10590487718582153,
+   "material_acc": NaN
+  },
+  "ast": {
+   "footstep_rate": 0.0,
+   "p_foot": 0.0004055177851114422,
+   "top1": [
+    "static",
+    "clapping",
+    "tick-tock",
+    "hum",
+    "music",
+    "sound effect"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.02,
+   "p_foot": 0.0012862198054790497,
+   "top1": [
+    "chop",
+    "crumpling, crinkling",
+    "patter",
+    "pigeon, dove",
+    "whip",
+    "typewriter"
+   ]
+  }
+ },
+ "steps3_b1_v2": {
+  "steps": 3,
+  "gen_ms": 67.66385000082664,
+  "transients": {
+   "crest_db": 20.023874497413637,
+   "crest_sd": 4.183520258527574,
+   "attack_ms": 4.4104308390022675,
+   "n": 40
+  },
+  "clap": {
+   "footstep_rate": 0.15,
+   "p_foot": 0.14769208431243896,
+   "material_acc": 0.8
+  },
+  "ast": {
+   "footstep_rate": 0.0,
+   "p_foot": 0.001522569393273443,
+   "top1": [
+    "music",
+    "heart sounds, heartbeat",
+    "heart murmur",
+    "heart sounds, heartbeat",
+    "heart murmur",
+    "heart sounds, heartbeat"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.125,
+   "p_foot": 0.0035527466097846627,
+   "top1": [
+    "knock",
+    "knock",
+    "knock",
+    "knock",
+    "knock",
+    "knock"
+   ]
+  },
+  "audiobox": {
+   "CE": 3.3851794600486755,
+   "CU": 6.962171363830566,
+   "PC": 2.0114780008792876,
+   "PQ": 7.432764756679535
+  },
+  "gate": {
+   "consensus": 0.17142857142857143,
+   "judges": {
+    "clap": {
+     "gen": 0.15,
+     "real": 0.875,
+     "neg": 0.18,
+     "ratio": 0.17142857142857143,
+     "valid": true
+    },
+    "ast": {
+     "gen": 0.0,
+     "real": 0.225,
+     "neg": 0.0,
+     "ratio": 0.0,
+     "valid": false
+    },
+    "panns": {
+     "gen": 0.125,
+     "real": 0.45,
+     "neg": 0.02,
+     "ratio": 0.2777777777777778,
+     "valid": false
+    }
+   },
+   "checks": {
+    "taggers": false,
+    "crest": true,
+    "pq": true
+   },
+   "pass": false
+  }
+ },
+ "steps1_b1_v2": {
+  "steps": 1,
+  "gen_ms": 28.36560000287136,
+  "transients": {
+   "crest_db": 6.6666860520839695,
+   "crest_sd": 2.93809744498094,
+   "attack_ms": 21.3718820861678,
+   "n": 40
+  },
+  "clap": {
+   "footstep_rate": 0.0,
+   "p_foot": 0.1025543063879013,
+   "material_acc": 0.25
+  },
+  "ast": {
+   "footstep_rate": 0.0,
+   "p_foot": 0.0002285690134158358,
+   "top1": [
+    "gunshot, gunfire",
+    "tick",
+    "static",
+    "sound effect",
+    "music",
+    "gunshot, gunfire"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.0,
+   "p_foot": 0.0006330626492854208,
+   "top1": [
+    "music",
+    "clock",
+    "speech",
+    "music",
+    "music",
+    "clock"
+   ]
+  },
+  "audiobox": {
+   "CE": 3.358323359489441,
+   "CU": 6.536181843280792,
+   "PC": 1.9986849069595336,
+   "PQ": 6.732989549636841
+  },
+  "gate": {
+   "consensus": 0.0,
+   "judges": {
+    "clap": {
+     "gen": 0.0,
+     "real": 0.875,
+     "neg": 0.18,
+     "ratio": 0.0,
+     "valid": true
+    },
+    "ast": {
+     "gen": 0.0,
+     "real": 0.225,
+     "neg": 0.0,
+     "ratio": 0.0,
+     "valid": false
+    },
+    "panns": {
+     "gen": 0.0,
+     "real": 0.45,
+     "neg": 0.02,
+     "ratio": 0.0,
+     "valid": false
+    }
+   },
+   "checks": {
+    "taggers": false,
+    "crest": false,
+    "pq": true
+   },
+   "pass": false
+  }
+ },
+ "gate_args": {
+  "fit": "tile",
+  "clap_set": "hard",
+  "k": 0.8,
+  "crest_sd": 1.0,
+  "pq_margin": 0.5,
+  "min_real": 0.5,
+  "min_gap": 0.3,
+  "variants": 10,
+  "real_keep": 0.0
+ }
+}
