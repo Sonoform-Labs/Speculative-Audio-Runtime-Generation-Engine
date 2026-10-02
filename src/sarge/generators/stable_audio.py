@@ -19,6 +19,7 @@ _MATERIAL_ADJ = {
     "stone": "stone", "gravel": "gravelly", "grass": "grassy", "dirt": "earthy",
     "ceramic": "ceramic", "plastic": "plastic", "cloth": "soft cloth",
 }
+_FOOTSTEP_PLAIN = {"grass"}
 _IMPACT_EVENTS = {"hit", "impact", "strike", "clang", "shatter", "break", "smash", "land"}
 _IMPACT_TAIL = {
     "metal": "a bright ringing resonant clang with a sustained metallic tail",
@@ -35,8 +36,8 @@ def build_prompt(event: str, material: str, intensity: str = "normal") -> str:
     if event in ("splash", "drip", "pour") or material in _SPLASHY:
         return f"a {lead}{event} in {material}, wet splashing water with droplets and bubbling, dry, isolated sound effect"
     if event == "footstep":
-        adj = _MATERIAL_ADJ.get(material, material)
-        return f"a {intensity or 'normal'} {adj} footstep on {material}, a clear distinct footstep, dry, isolated sound effect"
+        adj = "" if material in _FOOTSTEP_PLAIN else _MATERIAL_ADJ.get(material, material) + " "
+        return f"a {intensity or 'normal'} {adj}footstep on {material}, a clear distinct footstep, dry, isolated sound effect"
     if event in _IMPACT_EVENTS:
         tail = _IMPACT_TAIL.get(material)
         if tail:
