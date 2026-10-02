@@ -5,7 +5,7 @@ The one check that needs a human in the Editor. It covers the three integration 
 ## Setup
 
 1. Open the test project `D:\PSfxUnityTest` in Unity 2022.3.
-2. The package lives at `D:\Python\SARGE\unity\Sarge`, copied into the project's `Assets`.
+2. The project reads the package straight from the repo through `Packages\manifest.json` (`"org.sonoform.sarge": "file:D:/Python/SARGE/unity/Sarge"`). The package ships its `.meta` files, so scene references survive edits on either side.
 3. The launcher auto-starts the sidecar from `D:\Python\SARGE`. For a GPU-free check, set the `SargeLauncher` arguments to `scripts\run_sidecar.py --generator mock`.
 
 ## Run
@@ -27,7 +27,7 @@ Disable the `SargeMotionPredictor` component on the player to see misses climb, 
 
 ## Notes
 
-`leadSeconds` on the motion predictor must exceed the sidecar's generation latency or the prediction is dropped. The default 0.6 s clears the roughly 180 ms default tier. Confidence drops on sharp turns, so expect a few more fallbacks when juking.
+A prediction whose lead is shorter than the tier's generation cost gets dropped. The default tier now costs about 53 ms per clip on the RTX 3060 (74 ms round trip for a first hit over the wire), so the default `leadSeconds` of 0.6 s clears it with a wide margin. Confidence drops on sharp turns, so expect a few more fallbacks when juking.
 
 ## Phase 3, the engine question
 
@@ -43,7 +43,7 @@ Roadmap Phase 3 asks whether a kinematic character controller emits a usable con
 
 ### What the panel answers
 
-The top half is the Phase 3 answer. `ControllerColliderHit` carries collider, controller, gameObject, moveDirection, moveLength, normal, point, rigidbody and transform, and no impulse or force field of any kind. The panel reports whether `Collision.impulse` ever arrived, which it will not for a purely kinematic controller. If both stay negative, the conditioning input is derived rather than solver-provided, and that is the finding.
+The top half is the Phase 3 answer. `ControllerColliderHit` carries collider, controller, gameObject, moveDirection, moveLength, normal, point, rigidbody and transform, and no impulse or force field of any kind. The panel reports whether `Collision.impulse` ever arrived, which it will not for a purely kinematic controller. If both stay negative, the conditioning input has to be derived, and that is the finding. The first run found exactly that: every landing came out at 337 Ns and every gait sample at 4.00 m/s, so this controller carries no continuous intensity.
 
 The bottom half is the derived quantity: mass times the change in vertical velocity across the airborne to grounded edge, in newton-seconds, logged per landing.
 
@@ -55,3 +55,13 @@ The bottom half is the derived quantity: mass times the change in vertical veloc
 That reports the impulse distribution, sweeps the parametric path over the full conditioning axis and over the band a typical landing actually occupies, and scores five descriptors for monotonicity. The number to watch is the ratio at the end. A low ratio means real play clusters into a narrow slice of the axis, so a player hears little variation even where the control is monotonic.
 
 `p1h_impulse.py` has been validated end to end against `_synthetic_probe_check.csv`, so it runs as soon as real data exists.
+
+### Bouncers, a real continuous impulse
+
+The four `AutoCaptureBall` Rigidbodies in WalkArena already carry the probe in Collisions mode (menu **Sarge, Add Impulse Probe To Bouncers** adds it to any scene). Each probe writes one row per `OnCollisionEnter` to `sarge_impulse_probe_<object>.csv` with the object, time, `Collision.impulse` magnitude, relative speed, and the other collider.
+
+1. Open `Assets/WalkArena.unity` and press Play. A panel at the bottom right lists each ball's hits and impulse range.
+2. Click into the Game view and press **K** about ten times over a minute. Each press kicks every ball upward at a random speed, so the hits spread out.
+3. Stop Play and run `python D:\Python\SARGE\scripts\analyze_impulse.py`. It reads `Application.persistentDataPath` by default and ends with a VERDICT block on whether impulse varies enough to drive soft, normal and hard.
+
+All four balls weigh 1 kg, so impulse tracks speed almost exactly. Giving them different masses is the test of whether impulse adds anything beyond the speed bins `SargeAutoCapture` already uses.
