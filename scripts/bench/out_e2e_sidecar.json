@@ -2,56 +2,56 @@
  "first": [
   {
    "key": "footstep|wood",
-   "ms": 77.42430000507738,
+   "ms": 75.91800000227522,
    "served": "realtime",
    "n": 26460,
    "rms": 0.06355240941047668
   },
   {
    "key": "footstep|stone",
-   "ms": 74.23240000207443,
+   "ms": 73.65789999312256,
    "served": "realtime",
    "n": 26460,
    "rms": 0.045153338462114334
   },
   {
    "key": "impact|glass",
-   "ms": 73.48979999369476,
+   "ms": 73.6184000124922,
    "served": "realtime",
    "n": 26460,
    "rms": 0.06938537210226059
   },
   {
    "key": "impact|metal",
-   "ms": 73.48399999318644,
+   "ms": 74.24149999860674,
    "served": "realtime",
    "n": 26460,
    "rms": 0.054676603525877
   },
   {
    "key": "footstep|grass",
-   "ms": 73.39229999342933,
+   "ms": 73.67329999397043,
    "served": "realtime",
    "n": 26460,
    "rms": 0.10000000149011612
   },
   {
    "key": "land|stone",
-   "ms": 73.47059999301564,
+   "ms": 74.58309999492485,
    "served": "realtime",
    "n": 26460,
    "rms": 0.05626679211854935
   },
   {
    "key": "footstep|gravel",
-   "ms": 73.66280000132974,
+   "ms": 74.91000001027714,
    "served": "realtime",
    "n": 26460,
    "rms": 0.05123637244105339
   },
   {
    "key": "jump|wood",
-   "ms": 74.001800006954,
+   "ms": 74.95679998828564,
    "served": "realtime",
    "n": 26460,
    "rms": 0.07643640786409378
@@ -60,42 +60,42 @@
  "repeat": [
   {
    "key": "footstep|wood",
-   "ms": 0.185500000952743,
+   "ms": 0.21320000814739615,
    "served": "cached"
   },
   {
    "key": "footstep|stone",
-   "ms": 0.16260000120382756,
+   "ms": 0.16570001025684178,
    "served": "cached"
   },
   {
    "key": "impact|glass",
-   "ms": 0.21500000730156898,
+   "ms": 0.22200000239536166,
    "served": "cached"
   },
   {
    "key": "impact|metal",
-   "ms": 0.18370000179857016,
+   "ms": 0.20900000527035445,
    "served": "cached"
   },
   {
    "key": "footstep|grass",
-   "ms": 0.13109999417793006,
+   "ms": 0.14309999824035913,
    "served": "cached"
   },
   {
    "key": "land|stone",
-   "ms": 0.15219999477267265,
+   "ms": 0.1382000045850873,
    "served": "cached"
   },
   {
    "key": "footstep|gravel",
-   "ms": 0.14220000593923032,
+   "ms": 0.13299999409355223,
    "served": "cached"
   },
   {
    "key": "jump|wood",
-   "ms": 0.12749999586958438,
+   "ms": 0.1317000132985413,
    "served": "cached"
   }
  ],
@@ -106,21 +106,21 @@
    "lead_gated": 0,
    "cached_keys": 8
   },
-  "ms": 0.2697000018088147,
+  "ms": 0.30699999479111284,
   "served": "cached"
  },
  "stats": {
   "type": "stats_reply",
   "stats": {
    "spec_gen": 0,
-   "demand_gen": 2,
+   "demand_gen": 1,
    "realtime": 8,
    "hits": 9,
    "fallback": 0,
    "silence": 0,
    "evicted": 0,
-   "gpu_ms": 1300.0,
-   "peak_bytes": 1058400
+   "gpu_ms": 540.0,
+   "peak_bytes": 952560
   },
   "wasted": 0,
   "cached_keys": 9

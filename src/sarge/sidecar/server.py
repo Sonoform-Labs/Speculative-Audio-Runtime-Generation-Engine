@@ -361,7 +361,7 @@ def _deepen_loop(server):
 def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
           pcm: str = "f32le", recv_timeout: float = 30.0, warmup: bool = True,
           cache_dir: str | None = None, deepen: bool = False, gen_kwargs: dict | None = None,
-          learn: bool = False, realtime: bool = False, deepen_batch: int = 2,
+          learn: bool = False, realtime: bool = False, deepen_batch: int = 1,
           **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))

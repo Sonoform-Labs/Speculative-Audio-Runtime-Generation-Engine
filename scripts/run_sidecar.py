@@ -11,7 +11,7 @@ TIERS = {
     "default": {"sampler_type": "euler", "steps": 3},
     "fast":    {"sampler_type": "euler", "steps": 2, "mid_noise": 0.68},
 }
-TIER_COST_MS = {"quality": 130.0, "default": 130.0, "fast": 90.0}
+TIER_COST_MS = {"quality": 60.0, "default": 60.0, "fast": 45.0}
 
 
 def main(argv=None) -> int:
@@ -35,8 +35,9 @@ def main(argv=None) -> int:
     ap.add_argument("--cache-dir", default=os.path.join(".cache", "sfx_bake"))
     ap.add_argument("--no-cache", action="store_true")
     ap.add_argument("--no-deepen", action="store_true")
-    ap.add_argument("--deepen-batch", type=int, default=2,
-                    help="clips per background generation; 2 nearly doubles throughput for +17 ms of GPU hold")
+    ap.add_argument("--deepen-batch", type=int, default=1,
+                    help="clips per background generation; with the cuda graph a pair costs the same per clip as one "
+                         "and holds the gpu twice as long, so 1 is the default")
     ap.add_argument("--learn", action="store_true",
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--realtime", action="store_true",
