@@ -1,0 +1,445 @@
+{
+ "facts": {
+  "torch": "2.6.0+cu124",
+  "cuda": "12.4",
+  "device": "NVIDIA GeForce RTX 3060",
+  "ENABLE_TORCH_COMPILE": "0",
+  "t5_dtype": "torch.bfloat16",
+  "t5_attn": "sdpa",
+  "dit_class": "DiffusionTransformer",
+  "dit_dtype": "torch.float16",
+  "dit_depth": 20,
+  "latent_len": 76,
+  "decode_chunked_flag": true,
+  "lora_present": false,
+  "steps_default": 3,
+  "cfg_scale": 2.0,
+  "sampler": "euler",
+  "negative_prompt": null,
+  "flash_sdp_enabled": true,
+  "mem_efficient_sdp_enabled": true,
+  "flash_attention_available": false
+ },
+ "args": {
+  "steps": "3,8",
+  "batch": "1",
+  "reps": 8,
+  "tol": 0.0001,
+  "wav_root": "data\\_gate",
+  "out": "scripts\\bench\\out_bench_graph.json",
+  "skip_probes": false,
+  "no_wav": false
+ },
+ "runs": {
+  "b1": {
+   "baseline": {
+    "mode": {
+     "notqdm": false,
+     "trim": false,
+     "cond": false,
+     "graph": false
+    },
+    "applied": [],
+    "errors": [],
+    "ms": {
+     "3": {
+      "median": 167.48609999922337,
+      "per_clip": 167.48609999922337,
+      "n": 24
+     },
+     "8": {
+      "median": 391.0131500015268,
+      "per_clip": 391.0131500015268,
+      "n": 24
+     }
+    },
+    "cmp": {
+     "footstep_wood_b1_s3": {
+      "d_prev": null,
+      "exact_prev": null,
+      "d_ref": null,
+      "exact_ref": null
+     },
+     "impact_glass_b1_s3": {
+      "d_prev": null,
+      "exact_prev": null,
+      "d_ref": null,
+      "exact_ref": null
+     },
+     "footstep_metal_b1_s3": {
+      "d_prev": null,
+      "exact_prev": null,
+      "d_ref": null,
+      "exact_ref": null
+     },
+     "footstep_wood_b1_s8": {
+      "d_prev": null,
+      "exact_prev": null,
+      "d_ref": null,
+      "exact_ref": null
+     },
+     "impact_glass_b1_s8": {
+      "d_prev": null,
+      "exact_prev": null,
+      "d_ref": null,
+      "exact_ref": null
+     },
+     "footstep_metal_b1_s8": {
+      "d_prev": null,
+      "exact_prev": null,
+      "d_ref": null,
+      "exact_ref": null
+     }
+    },
+    "pass": true
+   },
+   "notqdm": {
+    "mode": {
+     "notqdm": true,
+     "trim": false,
+     "cond": false,
+     "graph": false
+    },
+    "applied": [
+     "disable_tqdm"
+    ],
+    "errors": [],
+    "ms": {
+     "3": {
+      "median": 166.50735000075656,
+      "per_clip": 166.50735000075656,
+      "n": 24
+     },
+     "8": {
+      "median": 391.63424999424024,
+      "per_clip": 391.63424999424024,
+      "n": 24
+     }
+    },
+    "cmp": {
+     "footstep_wood_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_wood_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     }
+    },
+    "pass": true
+   },
+   "trim": {
+    "mode": {
+     "notqdm": true,
+     "trim": true,
+     "cond": false,
+     "graph": false
+    },
+    "applied": [
+     "disable_tqdm",
+     "use_checkpointing=False",
+     "has_lora_patch"
+    ],
+    "errors": [],
+    "ms": {
+     "3": {
+      "median": 153.79555000254186,
+      "per_clip": 153.79555000254186,
+      "n": 24
+     },
+     "8": {
+      "median": 359.5688500026881,
+      "per_clip": 359.5688500026881,
+      "n": 24
+     }
+    },
+    "cmp": {
+     "footstep_wood_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_wood_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     }
+    },
+    "pass": true
+   },
+   "cond": {
+    "mode": {
+     "notqdm": true,
+     "trim": true,
+     "cond": true,
+     "graph": false
+    },
+    "applied": [
+     "disable_tqdm",
+     "use_checkpointing=False",
+     "has_lora_patch",
+     "cond_cache(hits=51, prompts=3)"
+    ],
+    "errors": [],
+    "ms": {
+     "3": {
+      "median": 139.436850000493,
+      "per_clip": 139.436850000493,
+      "n": 24
+     },
+     "8": {
+      "median": 343.2205999997677,
+      "per_clip": 343.2205999997677,
+      "n": 24
+     }
+    },
+    "cmp": {
+     "footstep_wood_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_wood_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     }
+    },
+    "pass": true
+   },
+   "graph": {
+    "mode": {
+     "notqdm": true,
+     "trim": true,
+     "cond": true,
+     "graph": true
+    },
+    "applied": [
+     "disable_tqdm",
+     "use_checkpointing=False",
+     "has_lora_patch",
+     "cond_cache(hits=54, prompts=3)",
+     "cuda_graph_dit_forward(captured=1, replays=297, eager=0)"
+    ],
+    "errors": [],
+    "ms": {
+     "3": {
+      "median": 98.25454999736394,
+      "per_clip": 98.25454999736394,
+      "n": 24
+     },
+     "8": {
+      "median": 232.42525000023306,
+      "per_clip": 232.42525000023306,
+      "n": 24
+     }
+    },
+    "cmp": {
+     "footstep_wood_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_wood_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     }
+    },
+    "pass": true,
+    "forward_probe": {
+     "rows2": {
+      "eager_ckpt_ms": 43.53285000252072,
+      "eager_nockpt_ms": 40.188899998611305,
+      "graph_wall_ms": 26.517949998378754,
+      "graph_gpu_ms": 26.553728103637695,
+      "cross_kv_gpu_ms_per_step": 2.949631929397583,
+      "cond_embed_gpu_ms_per_step": 0.13964800536632538,
+      "local_embed_gpu_ms_per_step": 2.0929040908813477
+     }
+    },
+    "max_mem_gb": 2.284434432
+   },
+   "drift": {
+    "mode": {
+     "notqdm": true,
+     "trim": false,
+     "cond": false,
+     "graph": false
+    },
+    "applied": [
+     "disable_tqdm"
+    ],
+    "errors": [],
+    "ms": {
+     "3": {
+      "median": 165.6694500015874,
+      "per_clip": 165.6694500015874,
+      "n": 24
+     },
+     "8": {
+      "median": 389.33465000081924,
+      "per_clip": 389.33465000081924,
+      "n": 24
+     }
+    },
+    "cmp": {
+     "footstep_wood_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s3": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_wood_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "impact_glass_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     },
+     "footstep_metal_b1_s8": {
+      "d_prev": 0.0,
+      "exact_prev": true,
+      "d_ref": 0.0,
+      "exact_ref": true
+     }
+    },
+    "pass": true
+   }
+  }
+ },
+ "probes": {
+  "conditioner_ms": 14.35795000361395,
+  "has_lora_walk_ms": 1.2337500011199154,
+  "decode": {
+   "latent_len": 76,
+   "prefix_len": 14,
+   "decode_full_ms": 16.245899998466484,
+   "decode_prefix_ms": 8.138249999319669,
+   "prefix_max_abs_diff_first_1s": 0.001708984375
+  }
+ }
+}

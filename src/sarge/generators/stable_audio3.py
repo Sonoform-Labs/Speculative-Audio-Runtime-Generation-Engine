@@ -19,7 +19,7 @@ class StableAudio3Generator(Generator):
                  duration_s: float = 0.6, sample_rate: int = 44_100,
                  prompt_template: str | None = None, negative_prompt: str | None = None,
                  model_half: bool = True, sampler_type: str = "euler",
-                 detail_steps: int = 8, detail_keys=None, **_):
+                 detail_steps: int = 8, detail_keys=None, fast: bool = True, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -34,7 +34,9 @@ class StableAudio3Generator(Generator):
         self.negative_prompt = negative_prompt
         self.model_half = model_half
         self.prompts: dict = {}
+        self.fast = bool(fast)
         self._model = None
+        self._fast = None
         self._lock = threading.Lock()
 
     def _ensure_loaded(self):
@@ -52,6 +54,12 @@ class StableAudio3Generator(Generator):
             sr = cfg.get("sample_rate")
         if sr:
             self.sample_rate = int(sr)
+        if self.fast:
+            try:
+                from .sa3_fast import Accelerator
+                self._fast = Accelerator(self._model)
+            except Exception:
+                self._fast = None
 
     def ensure_ready(self):
         self._ensure_loaded()
@@ -64,6 +72,19 @@ class StableAudio3Generator(Generator):
             return self.prompt_template.format(intensity=key.intensity, material=key.material, event=key.event_type)
         return build_prompt(key.event_type, key.material, key.intensity)
 
+    def _inputs(self, prompts: list) -> dict:
+        if self._fast is not None:
+            kw = self._fast.kwargs(prompts, self.gen_duration_s, self.negative_prompt)
+        else:
+            kw = {"prompt": prompts[0] if len(prompts) == 1 else prompts}
+            if self.negative_prompt:
+                kw["negative_prompt"] = self.negative_prompt
+        kw["sampler_type"] = self.sampler_type
+        return kw
+
+    def fast_stats(self) -> dict:
+        return self._fast.stats() if self._fast is not None else {}
+
     def _steps_for(self, key: CacheKey) -> int:
         if key.event_type in self.detail_keys or key.material in self.detail_keys:
             return self.detail_steps
@@ -72,18 +93,13 @@ class StableAudio3Generator(Generator):
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         self._ensure_loaded()
         import torch
-        kw = {}
-        if self.negative_prompt:
-            kw["negative_prompt"] = self.negative_prompt
-        kw["sampler_type"] = self.sampler_type
         with self._lock, torch.no_grad():
             audio = self._model.generate(
-                prompt=self._prompt(key),
                 duration=self.gen_duration_s,
                 steps=self._steps_for(key),
                 cfg_scale=self.cfg_scale,
                 seed=_seed(key, variant),
-                **kw,
+                **self._inputs([self._prompt(key)]),
             )
         a = audio.detach().to(torch.float32).cpu().numpy() if hasattr(audio, "detach") else np.asarray(audio, dtype=np.float32)
         while a.ndim > 2:
@@ -98,10 +114,6 @@ class StableAudio3Generator(Generator):
             return []
         self._ensure_loaded()
         import torch
-        kw = {}
-        if self.negative_prompt:
-            kw["negative_prompt"] = self.negative_prompt
-        kw["sampler_type"] = self.sampler_type
         groups = {}
         for i, (key, _v) in enumerate(items):
             groups.setdefault(self._steps_for(key), []).append(i)
@@ -110,10 +122,9 @@ class StableAudio3Generator(Generator):
             sub = [items[i] for i in idx]
             with self._lock, torch.no_grad():
                 audio = self._model.generate(
-                    prompt=[self._prompt(key) for key, _v in sub],
                     duration=self.gen_duration_s, steps=steps,
                     cfg_scale=self.cfg_scale, seed=_seed(sub[0][0], sub[0][1]),
-                    batch_size=len(sub), **kw)
+                    batch_size=len(sub), **self._inputs([self._prompt(key) for key, _v in sub]))
             a = audio.detach().to(torch.float32).cpu().numpy() if hasattr(audio, "detach") else np.asarray(audio, dtype=np.float32)
             for j, (key, variant) in enumerate(sub):
                 clip = a[j]
