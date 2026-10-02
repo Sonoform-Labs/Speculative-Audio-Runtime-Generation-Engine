@@ -7,11 +7,11 @@ import threading
 from sarge.sidecar import serve
 
 TIERS = {
-    "quality": {"sampler_type": "euler", "steps": 8},
+    "quality": {"sampler_type": "euler", "steps": 3},
     "default": {"sampler_type": "euler", "steps": 3},
     "fast":    {"sampler_type": "euler", "steps": 2, "mid_noise": 0.68},
 }
-TIER_COST_MS = {"quality": 310.0, "default": 130.0, "fast": 90.0}
+TIER_COST_MS = {"quality": 130.0, "default": 130.0, "fast": 90.0}
 
 
 def main(argv=None) -> int:
@@ -26,7 +26,8 @@ def main(argv=None) -> int:
     ap.add_argument("--variants", type=int, default=2)
     ap.add_argument("--target-variants", type=int, default=6)
     ap.add_argument("--tier", default=None, choices=["quality", "default", "fast"],
-                    help="quality=euler@8 (reference), default=euler@3 (safe), fast=euler@2 renoised at 0.68 (experimental). "
+                    help="default=euler@3, quality=euler@3 (4 to 8 steps measured worse on the clap gate with the current prompt), "
+                         "fast=euler@2 renoised at 0.68 (experimental). "
                          "Falls back to SARGE_GEN_TIER env var then 'default'. --steps/--sampler override it.")
     ap.add_argument("--steps", type=int, default=None, help="override the tier's step count")
     ap.add_argument("--sampler", default=None, help="override the tier's sampler (euler; rk4 DISABLED)")
