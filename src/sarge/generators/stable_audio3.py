@@ -12,14 +12,15 @@ from .stable_audio import _extract, _seed, build_prompt
 
 class StableAudio3Generator(Generator):
     name = "stableaudio3"
-    latency_ms = 190.0
+    latency_ms = 68.0
 
     def __init__(self, model_name: str = "small-sfx", device: str | None = None,
                  steps: int = 3, cfg_scale: float = 2.0, gen_duration_s: float = 1.0,
                  duration_s: float = 0.6, sample_rate: int = 44_100,
                  prompt_template: str | None = None, negative_prompt: str | None = None,
                  model_half: bool = True, sampler_type: str = "euler",
-                 detail_steps: int = 8, detail_keys=None, fast: bool = True, **_):
+                 detail_steps: int = 8, detail_keys=None, fast: bool = True,
+                 duration_padding_s: float = 1.0, mid_noise: float | None = None, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -35,6 +36,8 @@ class StableAudio3Generator(Generator):
         self.model_half = model_half
         self.prompts: dict = {}
         self.fast = bool(fast)
+        self.duration_padding_s = float(duration_padding_s)
+        self.mid_noise = None if mid_noise is None else float(mid_noise)
         self._model = None
         self._fast = None
         self._lock = threading.Lock()
@@ -80,6 +83,11 @@ class StableAudio3Generator(Generator):
             if self.negative_prompt:
                 kw["negative_prompt"] = self.negative_prompt
         kw["sampler_type"] = self.sampler_type
+        kw["duration_padding_sec"] = self.duration_padding_s
+        if self.mid_noise is not None:
+            from stable_audio_3.inference.distribution_shift import FluxDistributionShift
+            a = self.mid_noise / (1.0 - self.mid_noise)
+            kw["dist_shift"] = FluxDistributionShift(alpha_min=a, alpha_max=a)
         return kw
 
     def fast_stats(self) -> dict:

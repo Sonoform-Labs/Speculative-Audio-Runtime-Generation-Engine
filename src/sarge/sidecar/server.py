@@ -16,6 +16,7 @@ from ..predictor import EventSequencePredictor
 from ..types import CacheKey
 
 engine_lock = threading.Lock()
+INFLIGHT_WAIT_S = 0.5
 
 MAX_PREBAKE_CONTEXTS = 256
 INTENT_IGNORE = {"footstep", "jump", "land"}
@@ -153,6 +154,16 @@ class _Handler(socketserver.BaseRequestHandler):
             "cached_keys": cached,
         })
 
+    def _await_inflight(self, key):
+        eng = self.server.engine
+        deadline = time.monotonic() + INFLIGHT_WAIT_S
+        while True:
+            with engine_lock:
+                busy = key not in eng.cache and any(k == key for k, _v in getattr(eng, "inflight", ()))
+            if not busy or time.monotonic() >= deadline:
+                return
+            time.sleep(0.002)
+
     def _on_event(self, body):
         try:
             event_type = str(body["event_type"])
@@ -160,6 +171,7 @@ class _Handler(socketserver.BaseRequestHandler):
         except (KeyError, TypeError):
             raise FrameError("bad_fields", "event needs event_type and material", fatal=False)
         key = CacheKey(event_type, material, str(body.get("intensity", "normal")), str(body.get("context", "default")))
+        self._await_inflight(key)
         with engine_lock:
             served = self.server.engine.on_event(key)
             clip = self.server.engine.last_served
@@ -353,6 +365,8 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
                 ready()
             inner = getattr(engine.gen, "inner", engine.gen)
             inner.generate(CacheKey("warmup", "grass", "normal"), variant=0)
+            if deepen and int(deepen_batch) > 1:
+                inner.generate_batch([(CacheKey("warmup", "grass", "normal"), v) for v in range(int(deepen_batch))])
         except Exception:
             pass
     server = SfxServer((host, port), engine, default_pcm=pcm, recv_timeout=recv_timeout)

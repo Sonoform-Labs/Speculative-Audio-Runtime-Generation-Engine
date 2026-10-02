@@ -1,0 +1,2439 @@
+{
+ "summary": {
+  "pad6_s3": {
+   "ms": 115.49620000005234,
+   "id": 0.325,
+   "gain": 0,
+   "loss": 0,
+   "p": 1.0,
+   "crest": 20.77405321598053,
+   "attack": 10.215419501133786,
+   "PQ": 6.9496785521507265,
+   "d_PQ": 0.0
+  },
+  "pad1_s3": {
+   "ms": 78.6623999956646,
+   "id": 0.3,
+   "gain": 4,
+   "loss": 6,
+   "p": 0.75390625,
+   "crest": 21.062701761722565,
+   "attack": 6.904761904761905,
+   "PQ": 7.063342881202698,
+   "d_PQ": 0.11366432905197144
+  },
+  "pad1_s2_m68": {
+   "ms": 56.58699999912642,
+   "id": 0.3125,
+   "gain": 4,
+   "loss": 5,
+   "p": 1.0,
+   "crest": 20.851745414733887,
+   "attack": 7.324263038548753,
+   "PQ": 7.010059863328934,
+   "d_PQ": 0.0603813111782074
+  }
+ },
+ "rows": [
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 0,
+   "crest": 19.429182052612305,
+   "attack": 28.412698412698415,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_00.wav",
+   "hit": 0,
+   "PQ": 7.174520969390869
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 1,
+   "crest": 19.8671875,
+   "attack": 12.335600907029479,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_01.wav",
+   "hit": 1,
+   "PQ": 7.632856845855713
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 2,
+   "crest": 22.422237396240234,
+   "attack": 26.89342403628118,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_02.wav",
+   "hit": 0,
+   "PQ": 7.449314594268799
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 3,
+   "crest": 20.607526779174805,
+   "attack": 28.00453514739229,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_03.wav",
+   "hit": 0,
+   "PQ": 7.30668306350708
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 4,
+   "crest": 20.50123405456543,
+   "attack": 20.36281179138322,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_04.wav",
+   "hit": 0,
+   "PQ": 7.156107425689697
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 5,
+   "crest": 20.269657135009766,
+   "attack": 12.834467120181404,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_05.wav",
+   "hit": 0,
+   "PQ": 7.307305812835693
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 6,
+   "crest": 20.150968551635742,
+   "attack": 12.267573696145124,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_06.wav",
+   "hit": 0,
+   "PQ": 6.993640422821045
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 7,
+   "crest": 19.03425407409668,
+   "attack": 11.995464852607709,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_07.wav",
+   "hit": 1,
+   "PQ": 7.034542083740234
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 8,
+   "crest": 20.134754180908203,
+   "attack": 12.834467120181404,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_08.wav",
+   "hit": 1,
+   "PQ": 6.7659807205200195
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on glass",
+   "v": 9,
+   "crest": 19.0847110748291,
+   "attack": 12.789115646258503,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-glass_09.wav",
+   "hit": 0,
+   "PQ": 7.2581467628479
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 0,
+   "crest": 23.127212524414062,
+   "attack": 4.149659863945578,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_00.wav",
+   "hit": 1,
+   "PQ": 6.676582336425781
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 1,
+   "crest": 21.7457218170166,
+   "attack": 4.920634920634921,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_01.wav",
+   "hit": 1,
+   "PQ": 6.908642768859863
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 2,
+   "crest": 21.905088424682617,
+   "attack": 4.489795918367347,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_02.wav",
+   "hit": 1,
+   "PQ": 6.972912311553955
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 3,
+   "crest": 21.656463623046875,
+   "attack": 4.671201814058957,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_03.wav",
+   "hit": 1,
+   "PQ": 6.482817649841309
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 4,
+   "crest": 21.244104385375977,
+   "attack": 4.6938775510204085,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_04.wav",
+   "hit": 1,
+   "PQ": 6.469510078430176
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 5,
+   "crest": 21.959300994873047,
+   "attack": 3.4693877551020407,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_05.wav",
+   "hit": 1,
+   "PQ": 7.019655227661133
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 6,
+   "crest": 23.40510368347168,
+   "attack": 3.378684807256236,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_06.wav",
+   "hit": 1,
+   "PQ": 6.7204437255859375
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 7,
+   "crest": 22.084850311279297,
+   "attack": 4.671201814058957,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_07.wav",
+   "hit": 1,
+   "PQ": 6.914124011993408
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 8,
+   "crest": 21.84230613708496,
+   "attack": 5.26077097505669,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_08.wav",
+   "hit": 1,
+   "PQ": 6.254208087921143
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on metal",
+   "v": 9,
+   "crest": 21.230390548706055,
+   "attack": 6.258503401360544,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-metal_09.wav",
+   "hit": 1,
+   "PQ": 6.523165702819824
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 0,
+   "crest": 23.496501922607422,
+   "attack": 1.2471655328798186,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_00.wav",
+   "hit": 0,
+   "PQ": 7.601202487945557
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 1,
+   "crest": 24.291030883789062,
+   "attack": 1.2244897959183674,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_01.wav",
+   "hit": 0,
+   "PQ": 7.48315954208374
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 2,
+   "crest": 25.654460906982422,
+   "attack": 1.2698412698412698,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_02.wav",
+   "hit": 0,
+   "PQ": 7.559227466583252
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 3,
+   "crest": 24.531047821044922,
+   "attack": 0.9070294784580499,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_03.wav",
+   "hit": 1,
+   "PQ": 7.686637878417969
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 4,
+   "crest": 20.72960090637207,
+   "attack": 12.108843537414966,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_04.wav",
+   "hit": 0,
+   "PQ": 7.212710857391357
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 5,
+   "crest": 26.44776153564453,
+   "attack": 0.7482993197278912,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_05.wav",
+   "hit": 0,
+   "PQ": 7.618383407592773
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 6,
+   "crest": 26.239927291870117,
+   "attack": 1.2471655328798186,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_06.wav",
+   "hit": 0,
+   "PQ": 7.632217884063721
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 7,
+   "crest": 24.599830627441406,
+   "attack": 1.2925170068027212,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_07.wav",
+   "hit": 0,
+   "PQ": 7.49840784072876
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 8,
+   "crest": 22.925838470458984,
+   "attack": 1.8140589569160999,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_08.wav",
+   "hit": 0,
+   "PQ": 7.468827247619629
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on wood",
+   "v": 9,
+   "crest": 25.68842887878418,
+   "attack": 0.8843537414965986,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-wood_09.wav",
+   "hit": 1,
+   "PQ": 7.6430864334106445
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 0,
+   "crest": 19.255435943603516,
+   "attack": 12.92517006802721,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_00.wav",
+   "hit": 1,
+   "PQ": 7.043137073516846
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 1,
+   "crest": 18.493824005126953,
+   "attack": 9.931972789115648,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_01.wav",
+   "hit": 0,
+   "PQ": 6.846105098724365
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 2,
+   "crest": 19.06629180908203,
+   "attack": 13.061224489795919,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_02.wav",
+   "hit": 0,
+   "PQ": 7.088119029998779
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 3,
+   "crest": 19.58051872253418,
+   "attack": 13.10657596371882,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_03.wav",
+   "hit": 0,
+   "PQ": 7.063383102416992
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 4,
+   "crest": 19.280302047729492,
+   "attack": 16.077097505668934,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_04.wav",
+   "hit": 0,
+   "PQ": 6.082723617553711
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 5,
+   "crest": 19.6452579498291,
+   "attack": 12.970521541950113,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_05.wav",
+   "hit": 0,
+   "PQ": 6.835644245147705
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 6,
+   "crest": 18.5477237701416,
+   "attack": 12.811791383219955,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_06.wav",
+   "hit": 0,
+   "PQ": 6.903409481048584
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 7,
+   "crest": 19.86249351501465,
+   "attack": 12.947845804988662,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_07.wav",
+   "hit": 0,
+   "PQ": 7.268985748291016
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 8,
+   "crest": 20.034748077392578,
+   "attack": 9.43310657596372,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_08.wav",
+   "hit": 0,
+   "PQ": 7.088289737701416
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "impact on stone",
+   "v": 9,
+   "crest": 19.573532104492188,
+   "attack": 9.863945578231291,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\impact-stone_09.wav",
+   "hit": 0,
+   "PQ": 7.061809062957764
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 0,
+   "crest": 17.296310424804688,
+   "attack": 25.80498866213152,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_00.wav",
+   "hit": 0,
+   "PQ": 6.242488384246826
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 1,
+   "crest": 21.837169647216797,
+   "attack": 26.485260770975056,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_01.wav",
+   "hit": 0,
+   "PQ": 4.975014686584473
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 2,
+   "crest": 21.99579620361328,
+   "attack": 26.349206349206348,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_02.wav",
+   "hit": 0,
+   "PQ": 6.687466621398926
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 3,
+   "crest": 19.055883407592773,
+   "attack": 10.045351473922901,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_03.wav",
+   "hit": 0,
+   "PQ": 5.486100673675537
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 4,
+   "crest": 18.099016189575195,
+   "attack": 25.600907029478456,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_04.wav",
+   "hit": 0,
+   "PQ": 6.527116775512695
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 5,
+   "crest": 23.660566329956055,
+   "attack": 27.732426303854876,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_05.wav",
+   "hit": 0,
+   "PQ": 6.365161418914795
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 6,
+   "crest": 20.596139907836914,
+   "attack": 25.691609977324262,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_06.wav",
+   "hit": 0,
+   "PQ": 6.037845611572266
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 7,
+   "crest": 15.933894157409668,
+   "attack": 24.353741496598637,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_07.wav",
+   "hit": 0,
+   "PQ": 4.476885795593262
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 8,
+   "crest": 17.082555770874023,
+   "attack": 10.38548752834467,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_08.wav",
+   "hit": 0,
+   "PQ": 7.575697898864746
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "splash on water",
+   "v": 9,
+   "crest": 19.28035545349121,
+   "attack": 21.58730158730159,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\splash-water_09.wav",
+   "hit": 0,
+   "PQ": 6.995025634765625
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 0,
+   "crest": 20.09576416015625,
+   "attack": 25.124716553287982,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_00.wav",
+   "hit": 0,
+   "PQ": 6.478118419647217
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 1,
+   "crest": 19.823057174682617,
+   "attack": 28.049886621315192,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_01.wav",
+   "hit": 0,
+   "PQ": 6.7536301612854
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 2,
+   "crest": 21.099231719970703,
+   "attack": 23.333333333333336,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_02.wav",
+   "hit": 0,
+   "PQ": 6.676111221313477
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 3,
+   "crest": 20.921640396118164,
+   "attack": 19.750566893424036,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_03.wav",
+   "hit": 0,
+   "PQ": 6.7522125244140625
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 4,
+   "crest": 21.88759994506836,
+   "attack": 20.975056689342406,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_04.wav",
+   "hit": 0,
+   "PQ": 6.992519378662109
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 5,
+   "crest": 20.494997024536133,
+   "attack": 25.782312925170068,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_05.wav",
+   "hit": 0,
+   "PQ": 7.074471950531006
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 6,
+   "crest": 18.201406478881836,
+   "attack": 17.596371882086167,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_06.wav",
+   "hit": 0,
+   "PQ": 6.9256768226623535
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 7,
+   "crest": 20.01694107055664,
+   "attack": 25.26077097505669,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_07.wav",
+   "hit": 0,
+   "PQ": 6.82471227645874
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 8,
+   "crest": 20.684974670410156,
+   "attack": 19.886621315192745,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_08.wav",
+   "hit": 0,
+   "PQ": 6.692553997039795
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "land on grass",
+   "v": 9,
+   "crest": 14.489594459533691,
+   "attack": 27.868480725623584,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\land-grass_09.wav",
+   "hit": 0,
+   "PQ": 6.207696914672852
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 0,
+   "crest": 21.58829116821289,
+   "attack": 13.741496598639456,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_00.wav",
+   "hit": 1,
+   "PQ": 6.287163734436035
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 1,
+   "crest": 18.927289962768555,
+   "attack": 1.6099773242630386,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_01.wav",
+   "hit": 1,
+   "PQ": 7.052112579345703
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 2,
+   "crest": 20.615581512451172,
+   "attack": 7.414965986394558,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_02.wav",
+   "hit": 1,
+   "PQ": 7.429591655731201
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 3,
+   "crest": 17.933612823486328,
+   "attack": 11.83673469387755,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_03.wav",
+   "hit": 1,
+   "PQ": 6.801573276519775
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 4,
+   "crest": 21.341434478759766,
+   "attack": 9.45578231292517,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_04.wav",
+   "hit": 1,
+   "PQ": 7.5125861167907715
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 5,
+   "crest": 16.703323364257812,
+   "attack": 7.573696145124717,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_05.wav",
+   "hit": 1,
+   "PQ": 7.203499794006348
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 6,
+   "crest": 14.332780838012695,
+   "attack": 9.546485260770975,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_06.wav",
+   "hit": 1,
+   "PQ": 6.451855182647705
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 7,
+   "crest": 20.664199829101562,
+   "attack": 4.172335600907029,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_07.wav",
+   "hit": 1,
+   "PQ": 7.631412506103516
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 8,
+   "crest": 17.852468490600586,
+   "attack": 4.263038548752834,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_08.wav",
+   "hit": 1,
+   "PQ": 7.447664737701416
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "jump on stone",
+   "v": 9,
+   "crest": 21.0493106842041,
+   "attack": 6.780045351473923,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\jump-stone_09.wav",
+   "hit": 1,
+   "PQ": 7.793398857116699
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 0,
+   "crest": 22.53778076171875,
+   "attack": 4.058956916099773,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_00.wav",
+   "hit": 0,
+   "PQ": 7.378767490386963
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 1,
+   "crest": 22.307315826416016,
+   "attack": 2.993197278911565,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_01.wav",
+   "hit": 0,
+   "PQ": 7.306812763214111
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 2,
+   "crest": 22.404996871948242,
+   "attack": 2.0861678004535147,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_02.wav",
+   "hit": 0,
+   "PQ": 6.824428081512451
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 3,
+   "crest": 19.59467315673828,
+   "attack": 4.6938775510204085,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_03.wav",
+   "hit": 0,
+   "PQ": 6.845915794372559
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 4,
+   "crest": 21.400985717773438,
+   "attack": 4.807256235827664,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_04.wav",
+   "hit": 0,
+   "PQ": 7.236347198486328
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 5,
+   "crest": 21.476945877075195,
+   "attack": 16.643990929705218,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_05.wav",
+   "hit": 0,
+   "PQ": 7.7276740074157715
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 6,
+   "crest": 20.645954132080078,
+   "attack": 3.4467120181405897,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_06.wav",
+   "hit": 0,
+   "PQ": 7.108509540557861
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 7,
+   "crest": 24.02642250061035,
+   "attack": 5.941043083900227,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_07.wav",
+   "hit": 0,
+   "PQ": 7.049948692321777
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 8,
+   "crest": 22.651607513427734,
+   "attack": 3.9229024943310655,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_08.wav",
+   "hit": 0,
+   "PQ": 7.422286510467529
+  },
+  {
+   "cfg": "pad6_s3",
+   "key": "footstep on gravel",
+   "v": 9,
+   "crest": 21.669574737548828,
+   "attack": 4.149659863945578,
+   "path": "data\\_gate\\padcheck\\pad6_s3\\footstep-gravel_09.wav",
+   "hit": 0,
+   "PQ": 7.009600639343262
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 0,
+   "crest": 20.011058807373047,
+   "attack": 13.492063492063492,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_00.wav",
+   "hit": 0,
+   "PQ": 7.505649089813232
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 1,
+   "crest": 21.81036949157715,
+   "attack": 27.732426303854876,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_01.wav",
+   "hit": 0,
+   "PQ": 7.421603202819824
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 2,
+   "crest": 20.993000030517578,
+   "attack": 12.517006802721088,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_02.wav",
+   "hit": 0,
+   "PQ": 7.511207580566406
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 3,
+   "crest": 21.81805419921875,
+   "attack": 5.374149659863946,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_03.wav",
+   "hit": 0,
+   "PQ": 7.024050235748291
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 4,
+   "crest": 20.9608097076416,
+   "attack": 10.498866213151928,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_04.wav",
+   "hit": 0,
+   "PQ": 7.24381160736084
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 5,
+   "crest": 22.269363403320312,
+   "attack": 28.253968253968253,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_05.wav",
+   "hit": 0,
+   "PQ": 7.5052809715271
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 6,
+   "crest": 21.40690040588379,
+   "attack": 13.038548752834467,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_06.wav",
+   "hit": 1,
+   "PQ": 7.561519145965576
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 7,
+   "crest": 21.124813079833984,
+   "attack": 28.616780045351472,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_07.wav",
+   "hit": 0,
+   "PQ": 7.423503398895264
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 8,
+   "crest": 20.966915130615234,
+   "attack": 6.6439909297052155,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_08.wav",
+   "hit": 1,
+   "PQ": 7.17054557800293
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on glass",
+   "v": 9,
+   "crest": 20.716045379638672,
+   "attack": 28.412698412698415,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-glass_09.wav",
+   "hit": 0,
+   "PQ": 7.455562591552734
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 0,
+   "crest": 21.982051849365234,
+   "attack": 3.968253968253968,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_00.wav",
+   "hit": 1,
+   "PQ": 7.058639049530029
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 1,
+   "crest": 22.264755249023438,
+   "attack": 3.8095238095238093,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_01.wav",
+   "hit": 1,
+   "PQ": 6.375349998474121
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 2,
+   "crest": 21.6071720123291,
+   "attack": 3.9455782312925174,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_02.wav",
+   "hit": 1,
+   "PQ": 6.540371894836426
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 3,
+   "crest": 21.83551025390625,
+   "attack": 4.671201814058957,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_03.wav",
+   "hit": 1,
+   "PQ": 6.714638710021973
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 4,
+   "crest": 22.804452896118164,
+   "attack": 3.7868480725623583,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_04.wav",
+   "hit": 1,
+   "PQ": 6.906395435333252
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 5,
+   "crest": 22.3410701751709,
+   "attack": 3.4467120181405897,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_05.wav",
+   "hit": 1,
+   "PQ": 7.077281951904297
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 6,
+   "crest": 21.471328735351562,
+   "attack": 4.263038548752834,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_06.wav",
+   "hit": 1,
+   "PQ": 6.643205165863037
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 7,
+   "crest": 22.7878360748291,
+   "attack": 3.0158730158730163,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_07.wav",
+   "hit": 1,
+   "PQ": 6.845554351806641
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 8,
+   "crest": 21.736066818237305,
+   "attack": 4.71655328798186,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_08.wav",
+   "hit": 1,
+   "PQ": 7.29268741607666
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on metal",
+   "v": 9,
+   "crest": 22.7268009185791,
+   "attack": 2.993197278911565,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-metal_09.wav",
+   "hit": 1,
+   "PQ": 6.391102313995361
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 0,
+   "crest": 25.582576751708984,
+   "attack": 0.8390022675736961,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_00.wav",
+   "hit": 0,
+   "PQ": 7.447924613952637
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 1,
+   "crest": 24.1267032623291,
+   "attack": 1.0430839002267573,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_01.wav",
+   "hit": 0,
+   "PQ": 7.623528480529785
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 2,
+   "crest": 26.450759887695312,
+   "attack": 0.8163265306122449,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_02.wav",
+   "hit": 1,
+   "PQ": 7.657786846160889
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 3,
+   "crest": 24.31039810180664,
+   "attack": 0.9070294784580499,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_03.wav",
+   "hit": 0,
+   "PQ": 7.548218727111816
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 4,
+   "crest": 24.60935401916504,
+   "attack": 1.2925170068027212,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_04.wav",
+   "hit": 0,
+   "PQ": 7.722266674041748
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 5,
+   "crest": 21.512840270996094,
+   "attack": 6.4399092970521545,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_05.wav",
+   "hit": 0,
+   "PQ": 7.577354907989502
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 6,
+   "crest": 24.180585861206055,
+   "attack": 0.7936507936507936,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_06.wav",
+   "hit": 0,
+   "PQ": 7.5336761474609375
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 7,
+   "crest": 25.47022819519043,
+   "attack": 0.8163265306122449,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_07.wav",
+   "hit": 0,
+   "PQ": 7.538591384887695
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 8,
+   "crest": 18.718944549560547,
+   "attack": 6.145124716553288,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_08.wav",
+   "hit": 0,
+   "PQ": 7.78512716293335
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on wood",
+   "v": 9,
+   "crest": 24.028106689453125,
+   "attack": 1.0430839002267573,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-wood_09.wav",
+   "hit": 0,
+   "PQ": 7.767601490020752
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 0,
+   "crest": 18.65652084350586,
+   "attack": 13.219954648526077,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_00.wav",
+   "hit": 0,
+   "PQ": 7.073307037353516
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 1,
+   "crest": 19.22740936279297,
+   "attack": 13.378684807256235,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_01.wav",
+   "hit": 0,
+   "PQ": 6.858192443847656
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 2,
+   "crest": 19.09181785583496,
+   "attack": 12.90249433106576,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_02.wav",
+   "hit": 0,
+   "PQ": 7.04676628112793
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 3,
+   "crest": 20.0191593170166,
+   "attack": 4.104308390022676,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_03.wav",
+   "hit": 0,
+   "PQ": 7.319053649902344
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 4,
+   "crest": 18.75029182434082,
+   "attack": 12.92517006802721,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_04.wav",
+   "hit": 0,
+   "PQ": 6.942190170288086
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 5,
+   "crest": 20.559410095214844,
+   "attack": 4.761904761904763,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_05.wav",
+   "hit": 0,
+   "PQ": 6.99417781829834
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 6,
+   "crest": 19.247575759887695,
+   "attack": 15.873015873015872,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_06.wav",
+   "hit": 1,
+   "PQ": 6.815194129943848
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 7,
+   "crest": 19.37752342224121,
+   "attack": 12.970521541950113,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_07.wav",
+   "hit": 0,
+   "PQ": 6.843785762786865
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 8,
+   "crest": 19.533782958984375,
+   "attack": 13.038548752834467,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_08.wav",
+   "hit": 0,
+   "PQ": 6.9755659103393555
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "impact on stone",
+   "v": 9,
+   "crest": 19.892026901245117,
+   "attack": 4.489795918367347,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\impact-stone_09.wav",
+   "hit": 1,
+   "PQ": 6.71526575088501
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 0,
+   "crest": 17.462705612182617,
+   "attack": 25.14739229024943,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_00.wav",
+   "hit": 0,
+   "PQ": 6.604154109954834
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 1,
+   "crest": 22.778579711914062,
+   "attack": 27.61904761904762,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_01.wav",
+   "hit": 0,
+   "PQ": 6.222142219543457
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 2,
+   "crest": 20.22534942626953,
+   "attack": 15.510204081632654,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_02.wav",
+   "hit": 0,
+   "PQ": 7.143551349639893
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 3,
+   "crest": 19.503559112548828,
+   "attack": 22.403628117913833,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_03.wav",
+   "hit": 0,
+   "PQ": 7.742794036865234
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 4,
+   "crest": 22.87619400024414,
+   "attack": 27.777777777777775,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_04.wav",
+   "hit": 0,
+   "PQ": 5.8636345863342285
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 5,
+   "crest": 19.26213836669922,
+   "attack": 27.142857142857142,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_05.wav",
+   "hit": 0,
+   "PQ": 6.235480308532715
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 6,
+   "crest": 22.610179901123047,
+   "attack": 7.27891156462585,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_06.wav",
+   "hit": 0,
+   "PQ": 6.990260601043701
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 7,
+   "crest": 22.588808059692383,
+   "attack": 26.235827664399096,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_07.wav",
+   "hit": 0,
+   "PQ": 5.40645694732666
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 8,
+   "crest": 18.477365493774414,
+   "attack": 28.95691609977324,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_08.wav",
+   "hit": 0,
+   "PQ": 7.301585674285889
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "splash on water",
+   "v": 9,
+   "crest": 19.285869598388672,
+   "attack": 24.489795918367346,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\splash-water_09.wav",
+   "hit": 0,
+   "PQ": 5.685365200042725
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 0,
+   "crest": 21.065494537353516,
+   "attack": 22.879818594104307,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_00.wav",
+   "hit": 0,
+   "PQ": 6.530610084533691
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 1,
+   "crest": 19.806671142578125,
+   "attack": 12.244897959183673,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_01.wav",
+   "hit": 0,
+   "PQ": 6.773674011230469
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 2,
+   "crest": 21.76206398010254,
+   "attack": 24.285714285714285,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_02.wav",
+   "hit": 0,
+   "PQ": 6.335843563079834
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 3,
+   "crest": 20.50482749938965,
+   "attack": 15.10204081632653,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_03.wav",
+   "hit": 0,
+   "PQ": 6.467617511749268
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 4,
+   "crest": 17.908443450927734,
+   "attack": 19.09297052154195,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_04.wav",
+   "hit": 0,
+   "PQ": 6.754899024963379
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 5,
+   "crest": 23.911117553710938,
+   "attack": 24.421768707482993,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_05.wav",
+   "hit": 0,
+   "PQ": 6.710873126983643
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 6,
+   "crest": 20.88327407836914,
+   "attack": 27.709750566893423,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_06.wav",
+   "hit": 0,
+   "PQ": 6.880324363708496
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 7,
+   "crest": 19.364608764648438,
+   "attack": 24.14965986394558,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_07.wav",
+   "hit": 0,
+   "PQ": 6.302441596984863
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 8,
+   "crest": 18.462255477905273,
+   "attack": 13.877551020408163,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_08.wav",
+   "hit": 0,
+   "PQ": 6.231969356536865
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "land on grass",
+   "v": 9,
+   "crest": 11.858481407165527,
+   "attack": 24.03628117913832,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\land-grass_09.wav",
+   "hit": 0,
+   "PQ": 6.038720607757568
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 0,
+   "crest": 19.163814544677734,
+   "attack": 10.38548752834467,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_00.wav",
+   "hit": 1,
+   "PQ": 7.322877883911133
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 1,
+   "crest": 17.29790496826172,
+   "attack": 5.351473922902494,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_01.wav",
+   "hit": 1,
+   "PQ": 7.316138744354248
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 2,
+   "crest": 20.205825805664062,
+   "attack": 5.1020408163265305,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_02.wav",
+   "hit": 1,
+   "PQ": 7.8362860679626465
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 3,
+   "crest": 20.0816707611084,
+   "attack": 5.827664399092971,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_03.wav",
+   "hit": 1,
+   "PQ": 7.5569376945495605
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 4,
+   "crest": 20.753150939941406,
+   "attack": 4.8979591836734695,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_04.wav",
+   "hit": 1,
+   "PQ": 7.546096324920654
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 5,
+   "crest": 19.625816345214844,
+   "attack": 17.482993197278912,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_05.wav",
+   "hit": 1,
+   "PQ": 7.383547306060791
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 6,
+   "crest": 19.691787719726562,
+   "attack": 5.850340136054422,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_06.wav",
+   "hit": 1,
+   "PQ": 7.699257850646973
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 7,
+   "crest": 17.1033935546875,
+   "attack": 15.351473922902494,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_07.wav",
+   "hit": 1,
+   "PQ": 7.012071132659912
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 8,
+   "crest": 21.190784454345703,
+   "attack": 5.873015873015873,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_08.wav",
+   "hit": 1,
+   "PQ": 7.88642692565918
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "jump on stone",
+   "v": 9,
+   "crest": 25.212623596191406,
+   "attack": 28.707482993197278,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\jump-stone_09.wav",
+   "hit": 0,
+   "PQ": 6.919399738311768
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 0,
+   "crest": 22.565048217773438,
+   "attack": 5.895691609977325,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_00.wav",
+   "hit": 0,
+   "PQ": 7.201791286468506
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 1,
+   "crest": 20.068267822265625,
+   "attack": 3.2199546485260773,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_01.wav",
+   "hit": 0,
+   "PQ": 7.137750625610352
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 2,
+   "crest": 23.49592399597168,
+   "attack": 3.1065759637188206,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_02.wav",
+   "hit": 0,
+   "PQ": 7.251593112945557
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 3,
+   "crest": 21.834197998046875,
+   "attack": 5.98639455782313,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_03.wav",
+   "hit": 0,
+   "PQ": 7.443662166595459
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 4,
+   "crest": 19.640914916992188,
+   "attack": 2.925170068027211,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_04.wav",
+   "hit": 0,
+   "PQ": 7.219663143157959
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 5,
+   "crest": 23.343660354614258,
+   "attack": 3.310657596371882,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_05.wav",
+   "hit": 0,
+   "PQ": 7.199948787689209
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 6,
+   "crest": 21.88655662536621,
+   "attack": 3.4240362811791383,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_06.wav",
+   "hit": 0,
+   "PQ": 7.343151569366455
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 7,
+   "crest": 23.19686508178711,
+   "attack": 4.648526077097506,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_07.wav",
+   "hit": 0,
+   "PQ": 7.4574737548828125
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 8,
+   "crest": 19.710840225219727,
+   "attack": 2.857142857142857,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_08.wav",
+   "hit": 0,
+   "PQ": 7.296653747558594
+  },
+  {
+   "cfg": "pad1_s3",
+   "key": "footstep on gravel",
+   "v": 9,
+   "crest": 21.368715286254883,
+   "attack": 7.165532879818595,
+   "path": "data\\_gate\\padcheck\\pad1_s3\\footstep-gravel_09.wav",
+   "hit": 0,
+   "PQ": 7.360769271850586
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 0,
+   "crest": 19.974929809570312,
+   "attack": 11.927437641723357,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_00.wav",
+   "hit": 0,
+   "PQ": 7.555099964141846
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 1,
+   "crest": 21.133840560913086,
+   "attack": 28.54875283446712,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_01.wav",
+   "hit": 0,
+   "PQ": 7.374633312225342
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 2,
+   "crest": 20.616432189941406,
+   "attack": 12.312925170068027,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_02.wav",
+   "hit": 0,
+   "PQ": 7.592199802398682
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 3,
+   "crest": 20.279138565063477,
+   "attack": 27.05215419501134,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_03.wav",
+   "hit": 0,
+   "PQ": 6.655763149261475
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 4,
+   "crest": 21.094928741455078,
+   "attack": 12.53968253968254,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_04.wav",
+   "hit": 0,
+   "PQ": 7.4188055992126465
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 5,
+   "crest": 22.195430755615234,
+   "attack": 28.321995464852606,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_05.wav",
+   "hit": 0,
+   "PQ": 7.52954626083374
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 6,
+   "crest": 22.062313079833984,
+   "attack": 12.267573696145124,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_06.wav",
+   "hit": 1,
+   "PQ": 7.568632125854492
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 7,
+   "crest": 21.153228759765625,
+   "attack": 28.75283446712018,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_07.wav",
+   "hit": 0,
+   "PQ": 7.545047283172607
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 8,
+   "crest": 21.53721046447754,
+   "attack": 8.208616780045352,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_08.wav",
+   "hit": 1,
+   "PQ": 7.283989906311035
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on glass",
+   "v": 9,
+   "crest": 20.692251205444336,
+   "attack": 28.458049886621314,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-glass_09.wav",
+   "hit": 0,
+   "PQ": 7.478039264678955
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 0,
+   "crest": 22.31804084777832,
+   "attack": 4.036281179138323,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_00.wav",
+   "hit": 1,
+   "PQ": 6.9586873054504395
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 1,
+   "crest": 22.383342742919922,
+   "attack": 3.4240362811791383,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_01.wav",
+   "hit": 1,
+   "PQ": 6.58204460144043
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 2,
+   "crest": 21.549474716186523,
+   "attack": 3.5147392290249435,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_02.wav",
+   "hit": 1,
+   "PQ": 6.632643222808838
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 3,
+   "crest": 21.82891082763672,
+   "attack": 4.73922902494331,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_03.wav",
+   "hit": 1,
+   "PQ": 6.744970321655273
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 4,
+   "crest": 22.890111923217773,
+   "attack": 3.6281179138321997,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_04.wav",
+   "hit": 1,
+   "PQ": 6.7104268074035645
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 5,
+   "crest": 22.424339294433594,
+   "attack": 3.4467120181405897,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_05.wav",
+   "hit": 1,
+   "PQ": 6.99748420715332
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 6,
+   "crest": 21.572263717651367,
+   "attack": 4.263038548752834,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_06.wav",
+   "hit": 1,
+   "PQ": 6.453145503997803
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 7,
+   "crest": 22.945636749267578,
+   "attack": 3.1746031746031744,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_07.wav",
+   "hit": 1,
+   "PQ": 6.588593006134033
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 8,
+   "crest": 21.88106346130371,
+   "attack": 4.6938775510204085,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_08.wav",
+   "hit": 1,
+   "PQ": 7.238156318664551
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on metal",
+   "v": 9,
+   "crest": 22.93341827392578,
+   "attack": 2.993197278911565,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-metal_09.wav",
+   "hit": 1,
+   "PQ": 6.397742748260498
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 0,
+   "crest": 25.478591918945312,
+   "attack": 0.8616780045351474,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_00.wav",
+   "hit": 0,
+   "PQ": 7.4704670906066895
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 1,
+   "crest": 23.989770889282227,
+   "attack": 1.0430839002267573,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_01.wav",
+   "hit": 0,
+   "PQ": 7.618181228637695
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 2,
+   "crest": 26.42125701904297,
+   "attack": 1.4285714285714286,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_02.wav",
+   "hit": 1,
+   "PQ": 7.624227523803711
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 3,
+   "crest": 23.89786148071289,
+   "attack": 0.9523809523809523,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_03.wav",
+   "hit": 0,
+   "PQ": 7.500473976135254
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 4,
+   "crest": 24.489133834838867,
+   "attack": 1.3151927437641724,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_04.wav",
+   "hit": 0,
+   "PQ": 7.706629276275635
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 5,
+   "crest": 22.192012786865234,
+   "attack": 6.4399092970521545,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_05.wav",
+   "hit": 0,
+   "PQ": 7.662957191467285
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 6,
+   "crest": 23.69823455810547,
+   "attack": 0.8843537414965986,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_06.wav",
+   "hit": 0,
+   "PQ": 7.426225662231445
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 7,
+   "crest": 25.33145523071289,
+   "attack": 0.7936507936507936,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_07.wav",
+   "hit": 0,
+   "PQ": 7.517563343048096
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 8,
+   "crest": 25.214059829711914,
+   "attack": 1.0884353741496597,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_08.wav",
+   "hit": 0,
+   "PQ": 7.603879451751709
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on wood",
+   "v": 9,
+   "crest": 24.044530868530273,
+   "attack": 0.9523809523809523,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-wood_09.wav",
+   "hit": 0,
+   "PQ": 7.7840166091918945
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 0,
+   "crest": 18.67772102355957,
+   "attack": 13.197278911564625,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_00.wav",
+   "hit": 0,
+   "PQ": 7.122115612030029
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 1,
+   "crest": 19.40557098388672,
+   "attack": 4.263038548752834,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_01.wav",
+   "hit": 0,
+   "PQ": 6.828697681427002
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 2,
+   "crest": 18.870338439941406,
+   "attack": 9.750566893424036,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_02.wav",
+   "hit": 0,
+   "PQ": 6.935331344604492
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 3,
+   "crest": 20.16421127319336,
+   "attack": 4.058956916099773,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_03.wav",
+   "hit": 0,
+   "PQ": 7.141493320465088
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 4,
+   "crest": 19.18981170654297,
+   "attack": 12.90249433106576,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_04.wav",
+   "hit": 0,
+   "PQ": 6.951033592224121
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 5,
+   "crest": 20.383644104003906,
+   "attack": 4.784580498866213,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_05.wav",
+   "hit": 1,
+   "PQ": 7.061546325683594
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 6,
+   "crest": 19.203384399414062,
+   "attack": 15.850340136054422,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_06.wav",
+   "hit": 1,
+   "PQ": 6.829758167266846
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 7,
+   "crest": 19.539602279663086,
+   "attack": 12.947845804988662,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_07.wav",
+   "hit": 0,
+   "PQ": 7.001115322113037
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 8,
+   "crest": 19.51749610900879,
+   "attack": 12.993197278911566,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_08.wav",
+   "hit": 0,
+   "PQ": 6.901954174041748
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "impact on stone",
+   "v": 9,
+   "crest": 19.73224639892578,
+   "attack": 4.489795918367347,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\impact-stone_09.wav",
+   "hit": 0,
+   "PQ": 6.905954360961914
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 0,
+   "crest": 17.571584701538086,
+   "attack": 25.374149659863946,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_00.wav",
+   "hit": 0,
+   "PQ": 6.4409098625183105
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 1,
+   "crest": 22.207185745239258,
+   "attack": 27.664399092970523,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_01.wav",
+   "hit": 0,
+   "PQ": 6.195105075836182
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 2,
+   "crest": 20.089317321777344,
+   "attack": 16.19047619047619,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_02.wav",
+   "hit": 0,
+   "PQ": 7.2260847091674805
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 3,
+   "crest": 19.395462036132812,
+   "attack": 21.60997732426304,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_03.wav",
+   "hit": 0,
+   "PQ": 7.655263900756836
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 4,
+   "crest": 19.85999298095703,
+   "attack": 117.75510204081633,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_04.wav",
+   "hit": 0,
+   "PQ": 5.915935039520264
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 5,
+   "crest": 18.861238479614258,
+   "attack": 27.210884353741495,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_05.wav",
+   "hit": 0,
+   "PQ": 6.156501770019531
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 6,
+   "crest": 22.619792938232422,
+   "attack": 7.2562358276643995,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_06.wav",
+   "hit": 0,
+   "PQ": 7.14175271987915
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 7,
+   "crest": 22.70158576965332,
+   "attack": 26.349206349206348,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_07.wav",
+   "hit": 0,
+   "PQ": 5.861310005187988
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 8,
+   "crest": 18.945556640625,
+   "attack": 28.480725623582767,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_08.wav",
+   "hit": 0,
+   "PQ": 7.30702543258667
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "splash on water",
+   "v": 9,
+   "crest": 19.36893081665039,
+   "attack": 24.489795918367346,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\splash-water_09.wav",
+   "hit": 0,
+   "PQ": 5.7218780517578125
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 0,
+   "crest": 20.86455535888672,
+   "attack": 23.219954648526077,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_00.wav",
+   "hit": 0,
+   "PQ": 6.487397193908691
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 1,
+   "crest": 19.559186935424805,
+   "attack": 19.546485260770975,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_01.wav",
+   "hit": 0,
+   "PQ": 6.887562274932861
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 2,
+   "crest": 21.73149299621582,
+   "attack": 24.263038548752835,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_02.wav",
+   "hit": 0,
+   "PQ": 6.37317419052124
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 3,
+   "crest": 19.391477584838867,
+   "attack": 18.299319727891156,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_03.wav",
+   "hit": 0,
+   "PQ": 6.373201370239258
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 4,
+   "crest": 16.587017059326172,
+   "attack": 26.825396825396826,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_04.wav",
+   "hit": 0,
+   "PQ": 6.51369571685791
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 5,
+   "crest": 23.345672607421875,
+   "attack": 24.467120181405896,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_05.wav",
+   "hit": 0,
+   "PQ": 6.6565752029418945
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 6,
+   "crest": 20.91623306274414,
+   "attack": 26.96145124716553,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_06.wav",
+   "hit": 0,
+   "PQ": 6.867886066436768
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 7,
+   "crest": 18.849349975585938,
+   "attack": 24.6031746031746,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_07.wav",
+   "hit": 0,
+   "PQ": 6.269632339477539
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 8,
+   "crest": 18.053590774536133,
+   "attack": 13.718820861678005,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_08.wav",
+   "hit": 0,
+   "PQ": 6.18908166885376
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "land on grass",
+   "v": 9,
+   "crest": 11.718524932861328,
+   "attack": 24.05895691609977,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\land-grass_09.wav",
+   "hit": 0,
+   "PQ": 5.876378536224365
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 0,
+   "crest": 19.44412612915039,
+   "attack": 10.38548752834467,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_00.wav",
+   "hit": 1,
+   "PQ": 7.254774570465088
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 1,
+   "crest": 17.746122360229492,
+   "attack": 5.396825396825397,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_01.wav",
+   "hit": 1,
+   "PQ": 7.331367015838623
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 2,
+   "crest": 20.136621475219727,
+   "attack": 7.165532879818595,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_02.wav",
+   "hit": 1,
+   "PQ": 7.763499736785889
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 3,
+   "crest": 21.061073303222656,
+   "attack": 5.691609977324264,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_03.wav",
+   "hit": 1,
+   "PQ": 7.562735080718994
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 4,
+   "crest": 21.357452392578125,
+   "attack": 4.920634920634921,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_04.wav",
+   "hit": 1,
+   "PQ": 7.2034525871276855
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 5,
+   "crest": 20.00672149658203,
+   "attack": 7.392290249433106,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_05.wav",
+   "hit": 1,
+   "PQ": 7.375202655792236
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 6,
+   "crest": 16.58867645263672,
+   "attack": 19.115646258503403,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_06.wav",
+   "hit": 1,
+   "PQ": 7.138035774230957
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 7,
+   "crest": 17.857755661010742,
+   "attack": 22.35827664399093,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_07.wav",
+   "hit": 1,
+   "PQ": 7.119114875793457
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 8,
+   "crest": 20.85283660888672,
+   "attack": 5.600907029478458,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_08.wav",
+   "hit": 1,
+   "PQ": 7.852077484130859
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "jump on stone",
+   "v": 9,
+   "crest": 15.554576873779297,
+   "attack": 15.374149659863946,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\jump-stone_09.wav",
+   "hit": 1,
+   "PQ": 5.2975263595581055
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 0,
+   "crest": 22.25879669189453,
+   "attack": 5.782312925170068,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_00.wav",
+   "hit": 0,
+   "PQ": 7.204806804656982
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 1,
+   "crest": 20.685077667236328,
+   "attack": 2.9705215419501134,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_01.wav",
+   "hit": 0,
+   "PQ": 7.111766338348389
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 2,
+   "crest": 23.428565979003906,
+   "attack": 3.0839002267573696,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_02.wav",
+   "hit": 0,
+   "PQ": 7.307899475097656
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 3,
+   "crest": 21.42066192626953,
+   "attack": 5.918367346938775,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_03.wav",
+   "hit": 0,
+   "PQ": 7.336150169372559
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 4,
+   "crest": 19.823997497558594,
+   "attack": 2.9478458049886624,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_04.wav",
+   "hit": 0,
+   "PQ": 7.2706298828125
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 5,
+   "crest": 21.85146713256836,
+   "attack": 3.287981859410431,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_05.wav",
+   "hit": 0,
+   "PQ": 6.804819107055664
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 6,
+   "crest": 20.763259887695312,
+   "attack": 4.761904761904763,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_06.wav",
+   "hit": 0,
+   "PQ": 7.191051483154297
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 7,
+   "crest": 22.441415786743164,
+   "attack": 4.399092970521542,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_07.wav",
+   "hit": 0,
+   "PQ": 7.230198860168457
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 8,
+   "crest": 19.630502700805664,
+   "attack": 3.5374149659863945,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_08.wav",
+   "hit": 0,
+   "PQ": 7.1967010498046875
+  },
+  {
+   "cfg": "pad1_s2_m68",
+   "key": "footstep on gravel",
+   "v": 9,
+   "crest": 19.684934616088867,
+   "attack": 7.233560090702948,
+   "path": "data\\_gate\\padcheck\\pad1_s2_m68\\footstep-gravel_09.wav",
+   "hit": 0,
+   "PQ": 7.237356662750244
+  }
+ ]
+}

@@ -53,6 +53,7 @@ class CachedGenerator(Generator):
             getattr(g, "cfg_scale", ""),
             getattr(g, "gen_duration_s", ""), getattr(g, "duration_s", ""),
             getattr(g, "sample_rate", ""),
+            getattr(g, "duration_padding_s", ""), getattr(g, "mid_noise", ""),
             variant,
         ))
         h = hashlib.md5(sig.encode()).hexdigest()[:16]

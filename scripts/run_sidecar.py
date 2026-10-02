@@ -7,11 +7,11 @@ import threading
 from sarge.sidecar import serve
 
 TIERS = {
-    "quality": ("euler", 8),
-    "default": ("euler", 3),
-    "fast":    ("euler", 2),
+    "quality": {"sampler_type": "euler", "steps": 8},
+    "default": {"sampler_type": "euler", "steps": 3},
+    "fast":    {"sampler_type": "euler", "steps": 2, "mid_noise": 0.68},
 }
-TIER_COST_MS = {"quality": 440.0, "default": 200.0, "fast": 150.0}
+TIER_COST_MS = {"quality": 310.0, "default": 130.0, "fast": 90.0}
 
 
 def main(argv=None) -> int:
@@ -26,7 +26,7 @@ def main(argv=None) -> int:
     ap.add_argument("--variants", type=int, default=2)
     ap.add_argument("--target-variants", type=int, default=6)
     ap.add_argument("--tier", default=None, choices=["quality", "default", "fast"],
-                    help="quality=euler@8 (reference), default=euler@3 (safe), fast=euler@2 (experimental). "
+                    help="quality=euler@8 (reference), default=euler@3 (safe), fast=euler@2 renoised at 0.68 (experimental). "
                          "Falls back to SARGE_GEN_TIER env var then 'default'. --steps/--sampler override it.")
     ap.add_argument("--steps", type=int, default=None, help="override the tier's step count")
     ap.add_argument("--sampler", default=None, help="override the tier's sampler (euler; rk4 DISABLED)")
@@ -43,11 +43,13 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
 
     tier = (args.tier or os.environ.get("SARGE_GEN_TIER") or "default").lower()
-    sampler, steps = TIERS.get(tier, TIERS["default"])
+    gen_kwargs = dict(TIERS.get(tier, TIERS["default"]))
     if args.sampler is not None:
-        sampler = args.sampler
+        gen_kwargs["sampler_type"] = args.sampler
     if args.steps is not None:
-        steps = args.steps
+        gen_kwargs["steps"] = args.steps
+        gen_kwargs.pop("mid_noise", None)
+    sampler, steps = gen_kwargs["sampler_type"], gen_kwargs["steps"]
     gen_cost = args.gen_cost_ms if args.gen_cost_ms is not None else TIER_COST_MS.get(tier, 200.0)
 
     kwargs = dict(vram_budget_kb=args.vram_kb, gpu_ms_budget=args.gpu_ms_budget,
@@ -65,7 +67,7 @@ def main(argv=None) -> int:
         print(f"loading + warming {args.generator} model (first time can take ~30s)...")
     server = serve(generator=args.generator, host=args.host, port=args.port, pcm=args.pcm,
                    cache_dir=cache_dir, deepen=not args.no_deepen,
-                   gen_kwargs={"steps": steps, "sampler_type": sampler},
+                   gen_kwargs=gen_kwargs,
                    learn=args.learn, realtime=args.realtime, deepen_batch=args.deepen_batch, **kwargs)
     host, port = server.server_address
     mode = "realtime-on-demand" if args.realtime else "predict+prewarm"

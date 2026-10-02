@@ -1,29 +1,29 @@
 {
  "single": {
   "footstep|wood|normal|default": {
-   "ref_ms": 167.43250000217813,
-   "fast_ms": 98.64920000109123,
+   "ref_ms": 162.35909999522846,
+   "fast_ms": 67.75520000155666,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
   },
   "footstep|metal|heavy|default": {
-   "ref_ms": 166.25469999780762,
-   "fast_ms": 98.55514999799198,
+   "ref_ms": 161.086449999857,
+   "fast_ms": 67.53369999933057,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
   },
   "impact|glass|normal|default": {
-   "ref_ms": 166.84544999952777,
-   "fast_ms": 98.66934999809018,
+   "ref_ms": 160.82135000033304,
+   "fast_ms": 67.51919999805978,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
   },
   "footstep|water|normal|default": {
-   "ref_ms": 388.2019000011496,
-   "fast_ms": 231.88194999966072,
+   "ref_ms": 417.22624999965774,
+   "fast_ms": 166.89135000342503,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
@@ -35,8 +35,8 @@
     "footstep|stone|normal|default",
     "footstep|grass|normal|default"
    ],
-   "ref_ms": 212.90544999646954,
-   "fast_ms": 195.39064999844413,
+   "ref_ms": 165.26764999798615,
+   "fast_ms": 125.98539999817149,
    "max_abs_diff": [
     0.0,
     0.0
@@ -48,8 +48,8 @@
     "impact|metal|normal|default",
     "footstep|wood|light|default"
    ],
-   "ref_ms": 212.78470000106608,
-   "fast_ms": 196.0949000022083,
+   "ref_ms": 165.18654999890714,
+   "fast_ms": 125.67475000105333,
    "max_abs_diff": [
     0.0,
     0.0

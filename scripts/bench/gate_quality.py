@@ -72,12 +72,17 @@ def main():
     ap.add_argument("--out", default=os.path.join("scripts", "bench", "out_gate.json"))
     ap.add_argument("--tag", default="")
     ap.add_argument("--batch", type=int, default=1)
+    ap.add_argument("--mid-noise", type=float, default=None)
+    ap.add_argument("--padding", type=float, default=None)
     args = ap.parse_args()
 
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     steps_list = [int(s) for s in args.steps.split(",")]
 
     gen = get_generator("sa3")
+    gen.mid_noise = args.mid_noise
+    if args.padding is not None:
+        gen.duration_padding_s = args.padding
     gen.ensure_ready()
     sr = int(gen.sample_rate)
     for k in (CacheKey("footstep", "wood", "normal"), CacheKey("impact", "glass", "normal")):

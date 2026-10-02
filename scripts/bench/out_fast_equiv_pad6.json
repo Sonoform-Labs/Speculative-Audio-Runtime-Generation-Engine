@@ -1,0 +1,68 @@
+{
+ "single": {
+  "footstep|wood|normal|default": {
+   "ref_ms": 167.43250000217813,
+   "fast_ms": 98.64920000109123,
+   "max_abs_diff": 0.0,
+   "exact": true,
+   "repeatable": true
+  },
+  "footstep|metal|heavy|default": {
+   "ref_ms": 166.25469999780762,
+   "fast_ms": 98.55514999799198,
+   "max_abs_diff": 0.0,
+   "exact": true,
+   "repeatable": true
+  },
+  "impact|glass|normal|default": {
+   "ref_ms": 166.84544999952777,
+   "fast_ms": 98.66934999809018,
+   "max_abs_diff": 0.0,
+   "exact": true,
+   "repeatable": true
+  },
+  "footstep|water|normal|default": {
+   "ref_ms": 388.2019000011496,
+   "fast_ms": 231.88194999966072,
+   "max_abs_diff": 0.0,
+   "exact": true,
+   "repeatable": true
+  }
+ },
+ "batch": [
+  {
+   "pair": [
+    "footstep|stone|normal|default",
+    "footstep|grass|normal|default"
+   ],
+   "ref_ms": 212.90544999646954,
+   "fast_ms": 195.39064999844413,
+   "max_abs_diff": [
+    0.0,
+    0.0
+   ],
+   "exact": true
+  },
+  {
+   "pair": [
+    "impact|metal|normal|default",
+    "footstep|wood|light|default"
+   ],
+   "ref_ms": 212.78470000106608,
+   "fast_ms": 196.0949000022083,
+   "max_abs_diff": [
+    0.0,
+    0.0
+   ],
+   "exact": true
+  }
+ ],
+ "stats": {
+  "cond_hits": 32,
+  "cond_misses": 4,
+  "graphs": 2,
+  "replays": 207,
+  "eager": 0,
+  "capture_failures": 0
+ }
+}

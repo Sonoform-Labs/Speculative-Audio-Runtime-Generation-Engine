@@ -89,3 +89,19 @@ def test_roundtrip_generate_and_hit(tmp_path):
     assert os.path.exists(c._path(k, 0))
     b = c.generate(k, variant=0)
     assert b.samples.size == a.samples.size
+
+
+def test_padding_and_renoise_are_in_the_key(tmp_path):
+    g = FakeGen()
+    g.duration_padding_s = 1.0
+    g.mid_noise = None
+    c = CachedGenerator(g, str(tmp_path))
+    k = CacheKey("footstep", "wood", "normal")
+    base = c._path(k, 0)
+    g.duration_padding_s = 6.0
+    assert c._path(k, 0) != base
+    g.duration_padding_s = 1.0
+    g.mid_noise = 0.68
+    assert c._path(k, 0) != base
+    g.mid_noise = None
+    assert c._path(k, 0) == base

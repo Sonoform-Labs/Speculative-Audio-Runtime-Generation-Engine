@@ -1,0 +1,4495 @@
+{
+ "ref": "s3_euler_cfg2",
+ "configs": [
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "n": 40,
+   "mat": 0.5,
+   "foot": 0.675,
+   "crest": 21.154398918151855,
+   "attack": 4.569160997732427,
+   "hit_gain": 0,
+   "hit_loss": 11,
+   "hit_p": 0.0009765625,
+   "foot_gain": 2,
+   "foot_loss": 9,
+   "foot_p": 0.0654296875
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "n": 40,
+   "mat": 0.475,
+   "foot": 0.45,
+   "crest": 17.723359978199007,
+   "attack": 5.90702947845805,
+   "hit_gain": 3,
+   "hit_loss": 15,
+   "hit_p": 0.007537841796875,
+   "foot_gain": 0,
+   "foot_loss": 16,
+   "foot_p": 3.0517578125e-05
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "n": 40,
+   "mat": 0.475,
+   "foot": 0.75,
+   "crest": 20.203625988960265,
+   "attack": 4.807256235827665,
+   "hit_gain": 1,
+   "hit_loss": 13,
+   "hit_p": 0.0018310546875,
+   "foot_gain": 3,
+   "foot_loss": 7,
+   "foot_p": 0.34375
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "n": 40,
+   "mat": 0.65,
+   "foot": 0.825,
+   "crest": 19.919100594520568,
+   "attack": 4.614512471655329,
+   "hit_gain": 1,
+   "hit_loss": 6,
+   "hit_p": 0.125,
+   "foot_gain": 2,
+   "foot_loss": 3,
+   "foot_p": 1.0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "n": 40,
+   "mat": 0.7,
+   "foot": 0.775,
+   "crest": 19.79878866672516,
+   "attack": 4.841269841269841,
+   "hit_gain": 2,
+   "hit_loss": 5,
+   "hit_p": 0.453125,
+   "foot_gain": 1,
+   "foot_loss": 4,
+   "foot_p": 0.375
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "n": 40,
+   "mat": 0.725,
+   "foot": 0.725,
+   "crest": 20.02874116897583,
+   "attack": 5.226757369614512,
+   "hit_gain": 3,
+   "hit_loss": 5,
+   "hit_p": 0.7265625,
+   "foot_gain": 2,
+   "foot_loss": 7,
+   "foot_p": 0.1796875
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "n": 40,
+   "mat": 0.475,
+   "foot": 0.75,
+   "crest": 20.90288565158844,
+   "attack": 5.941043083900227,
+   "hit_gain": 1,
+   "hit_loss": 13,
+   "hit_p": 0.0018310546875,
+   "foot_gain": 2,
+   "foot_loss": 6,
+   "foot_p": 0.2890625
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "n": 40,
+   "mat": 0.55,
+   "foot": 0.7,
+   "crest": 21.28736546039581,
+   "attack": 4.387755102040816,
+   "hit_gain": 2,
+   "hit_loss": 11,
+   "hit_p": 0.0224609375,
+   "foot_gain": 2,
+   "foot_loss": 8,
+   "foot_p": 0.109375
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "n": 40,
+   "mat": 0.625,
+   "foot": 0.7,
+   "crest": 19.14367561340332,
+   "attack": 4.535147392290249,
+   "hit_gain": 4,
+   "hit_loss": 10,
+   "hit_p": 0.1795654296875,
+   "foot_gain": 2,
+   "foot_loss": 8,
+   "foot_p": 0.109375
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "n": 40,
+   "mat": 0.525,
+   "foot": 0.725,
+   "crest": 21.18083612918854,
+   "attack": 4.591836734693878,
+   "hit_gain": 1,
+   "hit_loss": 11,
+   "hit_p": 0.00634765625,
+   "foot_gain": 2,
+   "foot_loss": 7,
+   "foot_p": 0.1796875
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "n": 40,
+   "mat": 0.775,
+   "foot": 0.85,
+   "crest": 19.891142272949217,
+   "attack": 4.81859410430839,
+   "hit_gain": 0,
+   "hit_loss": 0,
+   "hit_p": 1.0,
+   "foot_gain": 0,
+   "foot_loss": 0,
+   "foot_p": 1.0
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "n": 40,
+   "mat": 0.8,
+   "foot": 0.875,
+   "crest": 20.023893570899965,
+   "attack": 4.4104308390022675,
+   "hit_gain": 7,
+   "hit_loss": 6,
+   "hit_p": 1.0,
+   "foot_gain": 5,
+   "foot_loss": 4,
+   "foot_p": 1.0
+  }
+ ],
+ "rows": [
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 0,
+   "crest": 16.664609909057617,
+   "attack": 26.30385487528345,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 1,
+   "crest": 19.029220581054688,
+   "attack": 13.718820861678005,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 2,
+   "crest": 14.3070650100708,
+   "attack": 15.192743764172336,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 3,
+   "crest": 13.42506217956543,
+   "attack": 23.151927437641724,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 4,
+   "crest": 19.68439292907715,
+   "attack": 27.52834467120181,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 5,
+   "crest": 15.727684020996094,
+   "attack": 26.258503401360546,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 6,
+   "crest": 18.48438835144043,
+   "attack": 26.145124716553287,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 7,
+   "crest": 15.810029983520508,
+   "attack": 28.231292517006803,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 8,
+   "crest": 15.101516723632812,
+   "attack": 25.28344671201814,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "grass",
+   "v": 9,
+   "crest": 12.939396858215332,
+   "attack": 9.705215419501133,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 0,
+   "crest": 23.203676223754883,
+   "attack": 2.6077097505668934,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.43031120300293,
+   "attack": 1.9727891156462587,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 2,
+   "crest": 24.364734649658203,
+   "attack": 2.1088435374149657,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 3,
+   "crest": 22.0445556640625,
+   "attack": 4.603174603174603,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 4,
+   "crest": 23.09891128540039,
+   "attack": 2.0181405895691613,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 5,
+   "crest": 24.771324157714844,
+   "attack": 2.1541950113378685,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 6,
+   "crest": 23.87354278564453,
+   "attack": 1.6780045351473922,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 7,
+   "crest": 23.65729331970215,
+   "attack": 2.0634920634920637,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 8,
+   "crest": 24.79131507873535,
+   "attack": 2.5396825396825395,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "metal",
+   "v": 9,
+   "crest": 22.842853546142578,
+   "attack": 4.240362811791384,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 0,
+   "crest": 24.16945457458496,
+   "attack": 4.512471655328798,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 1,
+   "crest": 23.24707794189453,
+   "attack": 4.625850340136054,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 2,
+   "crest": 23.47447967529297,
+   "attack": 2.6984126984126986,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 3,
+   "crest": 23.229887008666992,
+   "attack": 4.058956916099773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 4,
+   "crest": 24.7484188079834,
+   "attack": 6.213151927437641,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.79461669921875,
+   "attack": 3.287981859410431,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 6,
+   "crest": 23.29989242553711,
+   "attack": 4.081632653061225,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 7,
+   "crest": 24.076433181762695,
+   "attack": 4.535147392290249,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 8,
+   "crest": 22.42009735107422,
+   "attack": 5.464852607709751,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "stone",
+   "v": 9,
+   "crest": 23.44074058532715,
+   "attack": 3.378684807256236,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 0,
+   "crest": 22.220905303955078,
+   "attack": 3.9002267573696145,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 1,
+   "crest": 22.275997161865234,
+   "attack": 4.376417233560091,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 2,
+   "crest": 20.187185287475586,
+   "attack": 3.650793650793651,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 3,
+   "crest": 19.871267318725586,
+   "attack": 3.8095238095238093,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 4,
+   "crest": 21.06322479248047,
+   "attack": 4.965986394557824,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 5,
+   "crest": 20.878276824951172,
+   "attack": 6.575963718820862,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 6,
+   "crest": 22.365093231201172,
+   "attack": 6.870748299319728,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 7,
+   "crest": 20.73476791381836,
+   "attack": 5.827664399092971,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.166292190551758,
+   "attack": 5.079365079365079,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg1_m68",
+   "mat": "wood",
+   "v": 9,
+   "crest": 21.259963989257812,
+   "attack": 5.26077097505669,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 0,
+   "crest": 12.049009323120117,
+   "attack": 25.124716553287982,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 1,
+   "crest": 18.57056999206543,
+   "attack": 25.62358276643991,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 2,
+   "crest": 11.275434494018555,
+   "attack": 10.793650793650794,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 3,
+   "crest": 11.36053466796875,
+   "attack": 26.439909297052154,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 4,
+   "crest": 23.402130126953125,
+   "attack": 16.575963718820862,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 5,
+   "crest": 19.941207885742188,
+   "attack": 40.15873015873016,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 6,
+   "crest": 13.840799331665039,
+   "attack": 27.959183673469386,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 7,
+   "crest": 8.469711303710938,
+   "attack": 3.854875283446712,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 8,
+   "crest": 5.791714668273926,
+   "attack": 4.965986394557824,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "grass",
+   "v": 9,
+   "crest": 10.486743927001953,
+   "attack": 9.682539682539684,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 0,
+   "crest": 18.224809646606445,
+   "attack": 14.33106575963719,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 1,
+   "crest": 14.628595352172852,
+   "attack": 16.71201814058957,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 2,
+   "crest": 25.0487060546875,
+   "attack": 3.1065759637188206,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 3,
+   "crest": 21.98789405822754,
+   "attack": 4.625850340136054,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 4,
+   "crest": 12.524823188781738,
+   "attack": 25.192743764172338,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 5,
+   "crest": 21.878719329833984,
+   "attack": 3.2199546485260773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 6,
+   "crest": 25.100019454956055,
+   "attack": 16.71201814058957,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 7,
+   "crest": 22.094146728515625,
+   "attack": 2.3809523809523814,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 8,
+   "crest": 20.00920867919922,
+   "attack": 5.941043083900227,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "metal",
+   "v": 9,
+   "crest": 10.681108474731445,
+   "attack": 27.006802721088434,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 0,
+   "crest": 23.244226455688477,
+   "attack": 4.580498866213152,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 1,
+   "crest": 9.378022193908691,
+   "attack": 6.417233560090702,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 2,
+   "crest": 19.805347442626953,
+   "attack": 3.3560090702947845,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 3,
+   "crest": 24.952295303344727,
+   "attack": 3.5147392290249435,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 4,
+   "crest": 26.147424697875977,
+   "attack": 5.170068027210885,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 5,
+   "crest": 22.880746841430664,
+   "attack": 4.058956916099773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 6,
+   "crest": 8.851490020751953,
+   "attack": 26.848072562358276,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 7,
+   "crest": 24.78956413269043,
+   "attack": 4.512471655328798,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 8,
+   "crest": 21.118690490722656,
+   "attack": 15.46485260770975,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "stone",
+   "v": 9,
+   "crest": 4.995572566986084,
+   "attack": 5.374149659863946,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 0,
+   "crest": 21.786556243896484,
+   "attack": 5.464852607709751,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 1,
+   "crest": 23.751907348632812,
+   "attack": 2.675736961451247,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 2,
+   "crest": 21.170080184936523,
+   "attack": 3.6734693877551017,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 3,
+   "crest": 21.94974708557129,
+   "attack": 5.464852607709751,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 4,
+   "crest": 20.241586685180664,
+   "attack": 6.0317460317460325,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 5,
+   "crest": 9.669271469116211,
+   "attack": 24.240362811791382,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 6,
+   "crest": 13.634971618652344,
+   "attack": 1.4512471655328798,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 7,
+   "crest": 20.734989166259766,
+   "attack": 5.804988662131519,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 8,
+   "crest": 21.657058715820312,
+   "attack": 7.120181405895692,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2",
+   "mat": "wood",
+   "v": 9,
+   "crest": 20.808963775634766,
+   "attack": 5.873015873015873,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 0,
+   "crest": 15.539756774902344,
+   "attack": 4.852607709750567,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 1,
+   "crest": 15.206192016601562,
+   "attack": 24.829931972789115,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 2,
+   "crest": 14.07463264465332,
+   "attack": 24.421768707482993,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 3,
+   "crest": 12.165411949157715,
+   "attack": 24.17233560090703,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 4,
+   "crest": 15.290159225463867,
+   "attack": 21.519274376417233,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 5,
+   "crest": 13.958932876586914,
+   "attack": 24.421768707482993,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 6,
+   "crest": 14.095527648925781,
+   "attack": 25.736961451247165,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 7,
+   "crest": 16.239789962768555,
+   "attack": 27.05215419501134,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 8,
+   "crest": 12.445152282714844,
+   "attack": 25.10204081632653,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "grass",
+   "v": 9,
+   "crest": 13.174188613891602,
+   "attack": 6.4852607709750565,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 0,
+   "crest": 22.905244827270508,
+   "attack": 4.784580498866213,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.372329711914062,
+   "attack": 1.7687074829931972,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 2,
+   "crest": 22.965587615966797,
+   "attack": 2.0181405895691613,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 3,
+   "crest": 20.27315902709961,
+   "attack": 2.4489795918367347,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 4,
+   "crest": 23.863000869750977,
+   "attack": 2.2675736961451247,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 5,
+   "crest": 23.696792602539062,
+   "attack": 2.2675736961451247,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 6,
+   "crest": 22.45030403137207,
+   "attack": 1.9727891156462587,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 7,
+   "crest": 23.513029098510742,
+   "attack": 1.9727891156462587,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 8,
+   "crest": 23.75149917602539,
+   "attack": 2.0861678004535147,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "metal",
+   "v": 9,
+   "crest": 23.668113708496094,
+   "attack": 1.7233560090702948,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 0,
+   "crest": 21.608617782592773,
+   "attack": 14.988662131519275,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 1,
+   "crest": 22.741371154785156,
+   "attack": 2.494331065759637,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 2,
+   "crest": 21.611785888671875,
+   "attack": 22.857142857142858,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 3,
+   "crest": 23.86676025390625,
+   "attack": 6.3718820861678,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 4,
+   "crest": 24.574676513671875,
+   "attack": 5.1020408163265305,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 5,
+   "crest": 24.99893569946289,
+   "attack": 3.2199546485260773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 6,
+   "crest": 25.29005241394043,
+   "attack": 3.4693877551020407,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 7,
+   "crest": 22.890945434570312,
+   "attack": 14.17233560090703,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 8,
+   "crest": 23.345117568969727,
+   "attack": 14.217687074829932,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "stone",
+   "v": 9,
+   "crest": 20.452800750732422,
+   "attack": 26.235827664399096,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 0,
+   "crest": 20.974246978759766,
+   "attack": 3.696145124716553,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 1,
+   "crest": 20.794334411621094,
+   "attack": 3.287981859410431,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 2,
+   "crest": 21.726133346557617,
+   "attack": 3.8095238095238093,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 3,
+   "crest": 20.992332458496094,
+   "attack": 4.353741496598639,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 4,
+   "crest": 19.39447021484375,
+   "attack": 4.6938775510204085,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 5,
+   "crest": 19.528051376342773,
+   "attack": 4.353741496598639,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 6,
+   "crest": 19.765151977539062,
+   "attack": 5.782312925170068,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 7,
+   "crest": 20.834196090698242,
+   "attack": 5.827664399092971,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 8,
+   "crest": 19.935222625732422,
+   "attack": 4.5578231292517,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m50",
+   "mat": "wood",
+   "v": 9,
+   "crest": 20.171031951904297,
+   "attack": 4.829931972789116,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 0,
+   "crest": 12.882333755493164,
+   "attack": 26.349206349206348,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 1,
+   "crest": 14.872058868408203,
+   "attack": 25.14739229024943,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 2,
+   "crest": 12.28242301940918,
+   "attack": 23.401360544217688,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 3,
+   "crest": 12.726412773132324,
+   "attack": 24.807256235827662,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 4,
+   "crest": 11.342419624328613,
+   "attack": 23.015873015873016,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 5,
+   "crest": 14.846883773803711,
+   "attack": 25.192743764172338,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 6,
+   "crest": 12.803836822509766,
+   "attack": 25.555555555555557,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 7,
+   "crest": 14.977227210998535,
+   "attack": 24.081632653061224,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 8,
+   "crest": 13.15269947052002,
+   "attack": 24.489795918367346,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "grass",
+   "v": 9,
+   "crest": 12.646565437316895,
+   "attack": 6.077097505668934,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 0,
+   "crest": 21.049842834472656,
+   "attack": 4.988662131519274,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.47842788696289,
+   "attack": 1.746031746031746,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 2,
+   "crest": 22.65336036682129,
+   "attack": 2.0634920634920637,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 3,
+   "crest": 19.779998779296875,
+   "attack": 4.512471655328798,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 4,
+   "crest": 23.54470443725586,
+   "attack": 2.3809523809523814,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 5,
+   "crest": 22.129798889160156,
+   "attack": 2.290249433106576,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 6,
+   "crest": 21.080781936645508,
+   "attack": 2.1768707482993195,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 7,
+   "crest": 23.17508888244629,
+   "attack": 2.1541950113378685,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 8,
+   "crest": 22.566036224365234,
+   "attack": 2.0408163265306123,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "metal",
+   "v": 9,
+   "crest": 23.28068733215332,
+   "attack": 1.9047619047619047,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 0,
+   "crest": 22.37112808227539,
+   "attack": 16.16780045351474,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 1,
+   "crest": 22.196025848388672,
+   "attack": 6.394557823129252,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 2,
+   "crest": 22.8622989654541,
+   "attack": 21.768707482993197,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 3,
+   "crest": 23.46653938293457,
+   "attack": 4.149659863945578,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 4,
+   "crest": 25.47553062438965,
+   "attack": 3.8095238095238093,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.308059692382812,
+   "attack": 3.401360544217687,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 6,
+   "crest": 25.911272048950195,
+   "attack": 3.310657596371882,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 7,
+   "crest": 23.44102668762207,
+   "attack": 4.988662131519274,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 8,
+   "crest": 24.349964141845703,
+   "attack": 3.038548752834467,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "stone",
+   "v": 9,
+   "crest": 22.376468658447266,
+   "attack": 8.208616780045352,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 0,
+   "crest": 20.206968307495117,
+   "attack": 4.5578231292517,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 1,
+   "crest": 20.828819274902344,
+   "attack": 3.8775510204081636,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 2,
+   "crest": 21.495067596435547,
+   "attack": 4.195011337868481,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 3,
+   "crest": 20.329952239990234,
+   "attack": 4.648526077097506,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 4,
+   "crest": 19.699466705322266,
+   "attack": 5.646258503401361,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 5,
+   "crest": 19.659664154052734,
+   "attack": 4.535147392290249,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 6,
+   "crest": 19.28476333618164,
+   "attack": 5.600907029478458,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 7,
+   "crest": 21.459304809570312,
+   "attack": 5.714285714285714,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.766584396362305,
+   "attack": 4.081632653061225,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m60",
+   "mat": "wood",
+   "v": 9,
+   "crest": 20.003530502319336,
+   "attack": 4.580498866213152,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 0,
+   "crest": 13.115350723266602,
+   "attack": 26.349206349206348,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 1,
+   "crest": 13.261735916137695,
+   "attack": 25.28344671201814,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 2,
+   "crest": 13.10132122039795,
+   "attack": 23.333333333333336,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 3,
+   "crest": 12.963508605957031,
+   "attack": 25.28344671201814,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 4,
+   "crest": 12.654924392700195,
+   "attack": 25.351473922902493,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 5,
+   "crest": 13.66583251953125,
+   "attack": 23.650793650793652,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 6,
+   "crest": 13.017461776733398,
+   "attack": 25.555555555555557,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 7,
+   "crest": 13.919027328491211,
+   "attack": 3.9455782312925174,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 8,
+   "crest": 13.403640747070312,
+   "attack": 24.557823129251698,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "grass",
+   "v": 9,
+   "crest": 11.599340438842773,
+   "attack": 5.895691609977325,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 0,
+   "crest": 20.121917724609375,
+   "attack": 4.965986394557824,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.398229598999023,
+   "attack": 1.8140589569160999,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 2,
+   "crest": 22.098453521728516,
+   "attack": 2.0861678004535147,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 3,
+   "crest": 20.160560607910156,
+   "attack": 4.580498866213152,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 4,
+   "crest": 22.8090877532959,
+   "attack": 2.5170068027210886,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 5,
+   "crest": 20.96646499633789,
+   "attack": 4.104308390022676,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 6,
+   "crest": 20.643497467041016,
+   "attack": 1.9047619047619047,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 7,
+   "crest": 22.30014419555664,
+   "attack": 2.131519274376417,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 8,
+   "crest": 21.744857788085938,
+   "attack": 2.9478458049886624,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "metal",
+   "v": 9,
+   "crest": 22.53106117248535,
+   "attack": 2.3809523809523814,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 0,
+   "crest": 23.602027893066406,
+   "attack": 5.782312925170068,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 1,
+   "crest": 23.654224395751953,
+   "attack": 2.7437641723356005,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 2,
+   "crest": 23.45989990234375,
+   "attack": 19.04761904761905,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 3,
+   "crest": 23.550214767456055,
+   "attack": 4.126984126984127,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 4,
+   "crest": 25.476476669311523,
+   "attack": 4.807256235827664,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.690414428710938,
+   "attack": 2.2222222222222223,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 6,
+   "crest": 22.25360679626465,
+   "attack": 79.97732426303855,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 7,
+   "crest": 23.72897720336914,
+   "attack": 4.467120181405895,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 8,
+   "crest": 23.347742080688477,
+   "attack": 3.5147392290249435,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "stone",
+   "v": 9,
+   "crest": 23.662555694580078,
+   "attack": 4.875283446712018,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 0,
+   "crest": 20.203014373779297,
+   "attack": 4.444444444444445,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 1,
+   "crest": 21.758100509643555,
+   "attack": 2.9478458049886624,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 2,
+   "crest": 20.786968231201172,
+   "attack": 4.5578231292517,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 3,
+   "crest": 21.01844596862793,
+   "attack": 5.759637188208617,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 4,
+   "crest": 20.648042678833008,
+   "attack": 5.623582766439909,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 5,
+   "crest": 19.94513702392578,
+   "attack": 5.850340136054422,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 6,
+   "crest": 19.71177864074707,
+   "attack": 5.487528344671201,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 7,
+   "crest": 21.653823852539062,
+   "attack": 5.442176870748299,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.63493537902832,
+   "attack": 3.8775510204081636,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m68",
+   "mat": "wood",
+   "v": 9,
+   "crest": 19.68874168395996,
+   "attack": 5.963718820861678,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 0,
+   "crest": 13.668434143066406,
+   "attack": 26.4172335600907,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 1,
+   "crest": 15.714049339294434,
+   "attack": 24.58049886621315,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 2,
+   "crest": 13.810251235961914,
+   "attack": 24.376417233560094,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 3,
+   "crest": 12.571549415588379,
+   "attack": 24.376417233560094,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 4,
+   "crest": 14.149419784545898,
+   "attack": 23.650793650793652,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 5,
+   "crest": 14.80459976196289,
+   "attack": 23.26530612244898,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 6,
+   "crest": 13.122223854064941,
+   "attack": 25.26077097505669,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 7,
+   "crest": 13.440450668334961,
+   "attack": 19.183673469387756,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 8,
+   "crest": 10.98980712890625,
+   "attack": 21.79138321995465,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "grass",
+   "v": 9,
+   "crest": 12.846108436584473,
+   "attack": 22.53968253968254,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 0,
+   "crest": 20.152782440185547,
+   "attack": 5.034013605442177,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 1,
+   "crest": 22.823598861694336,
+   "attack": 2.9478458049886624,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 2,
+   "crest": 21.57175064086914,
+   "attack": 3.8321995464852607,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 3,
+   "crest": 21.32199478149414,
+   "attack": 4.71655328798186,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 4,
+   "crest": 19.886457443237305,
+   "attack": 4.761904761904763,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 5,
+   "crest": 20.222742080688477,
+   "attack": 5.238095238095238,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 6,
+   "crest": 20.075077056884766,
+   "attack": 2.35827664399093,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 7,
+   "crest": 22.24138641357422,
+   "attack": 1.8140589569160999,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 8,
+   "crest": 20.052337646484375,
+   "attack": 5.26077097505669,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "metal",
+   "v": 9,
+   "crest": 21.997901916503906,
+   "attack": 2.5170068027210886,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 0,
+   "crest": 23.535871505737305,
+   "attack": 4.603174603174603,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 1,
+   "crest": 25.716224670410156,
+   "attack": 3.4467120181405897,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 2,
+   "crest": 23.733333587646484,
+   "attack": 19.138321995464853,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 3,
+   "crest": 23.45983123779297,
+   "attack": 4.036281179138323,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 4,
+   "crest": 26.013134002685547,
+   "attack": 5.215419501133787,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.829124450683594,
+   "attack": 2.2222222222222223,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 6,
+   "crest": 25.61191749572754,
+   "attack": 2.7210884353741496,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 7,
+   "crest": 23.736587524414062,
+   "attack": 4.603174603174603,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 8,
+   "crest": 21.27791976928711,
+   "attack": 16.462585034013607,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "stone",
+   "v": 9,
+   "crest": 24.279102325439453,
+   "attack": 20.725623582766442,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 0,
+   "crest": 21.044710159301758,
+   "attack": 5.079365079365079,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 1,
+   "crest": 22.496423721313477,
+   "attack": 3.1519274376417235,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 2,
+   "crest": 21.954076766967773,
+   "attack": 3.560090702947846,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 3,
+   "crest": 21.601839065551758,
+   "attack": 5.668934240362812,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 4,
+   "crest": 21.873626708984375,
+   "attack": 6.099773242630386,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 5,
+   "crest": 19.524248123168945,
+   "attack": 6.213151927437641,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 6,
+   "crest": 20.477617263793945,
+   "attack": 4.285714285714286,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 7,
+   "crest": 21.520139694213867,
+   "attack": 5.623582766439909,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 8,
+   "crest": 21.08187484741211,
+   "attack": 4.172335600907029,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_euler_cfg2_m80",
+   "mat": "wood",
+   "v": 9,
+   "crest": 20.91912078857422,
+   "attack": 5.804988662131519,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 0,
+   "crest": 15.993490219116211,
+   "attack": 9.682539682539684,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 1,
+   "crest": 17.46642303466797,
+   "attack": 25.28344671201814,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 2,
+   "crest": 13.652877807617188,
+   "attack": 23.60544217687075,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 3,
+   "crest": 15.449923515319824,
+   "attack": 26.4172335600907,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 4,
+   "crest": 14.887038230895996,
+   "attack": 26.575963718820862,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 5,
+   "crest": 16.93025779724121,
+   "attack": 26.575963718820862,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 6,
+   "crest": 13.762884140014648,
+   "attack": 24.965986394557824,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 7,
+   "crest": 15.520395278930664,
+   "attack": 25.578231292517007,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 8,
+   "crest": 13.781061172485352,
+   "attack": 23.28798185941043,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "grass",
+   "v": 9,
+   "crest": 14.090790748596191,
+   "attack": 28.117913832199548,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 0,
+   "crest": 24.670888900756836,
+   "attack": 1.9047619047619047,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 1,
+   "crest": 22.93468475341797,
+   "attack": 3.378684807256236,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 2,
+   "crest": 22.993928909301758,
+   "attack": 3.061224489795918,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 3,
+   "crest": 23.63369369506836,
+   "attack": 2.199546485260771,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 4,
+   "crest": 22.16548728942871,
+   "attack": 3.0158730158730163,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 5,
+   "crest": 24.144596099853516,
+   "attack": 3.4693877551020407,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 6,
+   "crest": 23.82802963256836,
+   "attack": 2.766439909297052,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 7,
+   "crest": 23.872339248657227,
+   "attack": 2.5850340136054424,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 8,
+   "crest": 22.101318359375,
+   "attack": 4.285714285714286,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "metal",
+   "v": 9,
+   "crest": 24.011985778808594,
+   "attack": 3.401360544217687,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 0,
+   "crest": 22.00708770751953,
+   "attack": 9.773242630385488,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 1,
+   "crest": 24.43059539794922,
+   "attack": 3.492063492063492,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 2,
+   "crest": 24.353412628173828,
+   "attack": 3.9229024943310655,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 3,
+   "crest": 24.501609802246094,
+   "attack": 7.369614512471656,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 4,
+   "crest": 23.983652114868164,
+   "attack": 3.287981859410431,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 5,
+   "crest": 24.330549240112305,
+   "attack": 4.71655328798186,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 6,
+   "crest": 24.198274612426758,
+   "attack": 5.034013605442177,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 7,
+   "crest": 23.209720611572266,
+   "attack": 8.730158730158731,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 8,
+   "crest": 21.496315002441406,
+   "attack": 10.226757369614512,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "stone",
+   "v": 9,
+   "crest": 23.132829666137695,
+   "attack": 8.16326530612245,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 0,
+   "crest": 21.705856323242188,
+   "attack": 6.598639455782313,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 1,
+   "crest": 20.75319480895996,
+   "attack": 7.2562358276643995,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 2,
+   "crest": 22.328718185424805,
+   "attack": 6.712018140589569,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 3,
+   "crest": 21.73526954650879,
+   "attack": 6.780045351473923,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 4,
+   "crest": 20.27035140991211,
+   "attack": 3.1746031746031744,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 5,
+   "crest": 20.76081085205078,
+   "attack": 5.918367346938775,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 6,
+   "crest": 22.437963485717773,
+   "attack": 4.399092970521542,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 7,
+   "crest": 22.190263748168945,
+   "attack": 4.5578231292517,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.83070945739746,
+   "attack": 3.8321995464852607,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1",
+   "mat": "wood",
+   "v": 9,
+   "crest": 21.566146850585938,
+   "attack": 5.963718820861678,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 0,
+   "crest": 16.686073303222656,
+   "attack": 10.045351473922901,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 1,
+   "crest": 21.846731185913086,
+   "attack": 26.4172335600907,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 2,
+   "crest": 14.099072456359863,
+   "attack": 24.399092970521544,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 3,
+   "crest": 16.115524291992188,
+   "attack": 26.848072562358276,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 4,
+   "crest": 16.423812866210938,
+   "attack": 28.02721088435374,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 5,
+   "crest": 19.11018943786621,
+   "attack": 26.258503401360546,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 6,
+   "crest": 13.0303955078125,
+   "attack": 25.555555555555557,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 7,
+   "crest": 16.94042205810547,
+   "attack": 26.39455782312925,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 8,
+   "crest": 16.151639938354492,
+   "attack": 24.467120181405896,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "grass",
+   "v": 9,
+   "crest": 14.582405090332031,
+   "attack": 25.759637188208618,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 0,
+   "crest": 24.69235610961914,
+   "attack": 2.1541950113378685,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.4115047454834,
+   "attack": 1.8820861678004535,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 2,
+   "crest": 24.248685836791992,
+   "attack": 2.3809523809523814,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 3,
+   "crest": 23.578914642333984,
+   "attack": 2.1541950113378685,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 4,
+   "crest": 22.172983169555664,
+   "attack": 4.625850340136054,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 5,
+   "crest": 24.425338745117188,
+   "attack": 2.290249433106576,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 6,
+   "crest": 24.103975296020508,
+   "attack": 1.5419501133786848,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 7,
+   "crest": 24.494895935058594,
+   "attack": 1.8594104308390023,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 8,
+   "crest": 22.667016983032227,
+   "attack": 2.290249433106576,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "metal",
+   "v": 9,
+   "crest": 24.04456329345703,
+   "attack": 2.2448979591836733,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 0,
+   "crest": 22.978378295898438,
+   "attack": 7.6643990929705215,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 1,
+   "crest": 23.227567672729492,
+   "attack": 3.7188208616780045,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 2,
+   "crest": 22.72879409790039,
+   "attack": 3.968253968253968,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 3,
+   "crest": 24.690210342407227,
+   "attack": 4.512471655328798,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 4,
+   "crest": 21.648235321044922,
+   "attack": 80.95238095238096,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.40235710144043,
+   "attack": 3.378684807256236,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 6,
+   "crest": 26.639408111572266,
+   "attack": 3.197278911564626,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 7,
+   "crest": 23.138818740844727,
+   "attack": 5.555555555555555,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 8,
+   "crest": 23.82562828063965,
+   "attack": 3.4467120181405897,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "stone",
+   "v": 9,
+   "crest": 20.094852447509766,
+   "attack": 6.394557823129252,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 0,
+   "crest": 21.67432975769043,
+   "attack": 4.512471655328798,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 1,
+   "crest": 20.96583366394043,
+   "attack": 6.326530612244898,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 2,
+   "crest": 22.006322860717773,
+   "attack": 3.5147392290249435,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 3,
+   "crest": 21.72719955444336,
+   "attack": 5.170068027210885,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 4,
+   "crest": 20.416519165039062,
+   "attack": 3.7414965986394555,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 5,
+   "crest": 20.427261352539062,
+   "attack": 5.623582766439909,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 6,
+   "crest": 21.908187866210938,
+   "attack": 4.104308390022676,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 7,
+   "crest": 22.541397094726562,
+   "attack": 3.9002267573696145,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.964736938476562,
+   "attack": 3.7188208616780045,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg1_m68",
+   "mat": "wood",
+   "v": 9,
+   "crest": 21.662078857421875,
+   "attack": 4.263038548752834,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 0,
+   "crest": 15.415067672729492,
+   "attack": 11.496598639455781,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 1,
+   "crest": 16.08669090270996,
+   "attack": 25.895691609977323,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 2,
+   "crest": 12.535482406616211,
+   "attack": 23.786848072562357,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 3,
+   "crest": 14.3157377243042,
+   "attack": 26.984126984126984,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 4,
+   "crest": 13.052289962768555,
+   "attack": 19.569160997732425,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 5,
+   "crest": 12.228470802307129,
+   "attack": 25.396825396825395,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 6,
+   "crest": 4.211410999298096,
+   "attack": 115.32879818594104,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 7,
+   "crest": 15.904525756835938,
+   "attack": 26.689342403628117,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 8,
+   "crest": 7.826640605926514,
+   "attack": 80.7936507936508,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "grass",
+   "v": 9,
+   "crest": 12.80744457244873,
+   "attack": 9.614512471655328,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 0,
+   "crest": 22.47605323791504,
+   "attack": 1.9047619047619047,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.749984741210938,
+   "attack": 2.0634920634920637,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 2,
+   "crest": 20.974454879760742,
+   "attack": 2.8798185941043086,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 3,
+   "crest": 21.344627380371094,
+   "attack": 2.5850340136054424,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 4,
+   "crest": 23.530765533447266,
+   "attack": 2.1768707482993195,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 5,
+   "crest": 18.53103256225586,
+   "attack": 5.124716553287982,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 6,
+   "crest": 20.607959747314453,
+   "attack": 3.197278911564626,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 7,
+   "crest": 22.317874908447266,
+   "attack": 2.131519274376417,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 8,
+   "crest": 12.214316368103027,
+   "attack": 7.8684807256235825,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "metal",
+   "v": 9,
+   "crest": 24.000186920166016,
+   "attack": 1.6780045351473922,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 0,
+   "crest": 23.671876907348633,
+   "attack": 3.99092970521542,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 1,
+   "crest": 23.969051361083984,
+   "attack": 22.15419501133787,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 2,
+   "crest": 24.774904251098633,
+   "attack": 2.766439909297052,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 3,
+   "crest": 22.48345947265625,
+   "attack": 3.2199546485260773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 4,
+   "crest": 25.796892166137695,
+   "attack": 5.0566893424036286,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.290294647216797,
+   "attack": 3.2653061224489797,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 6,
+   "crest": 22.712684631347656,
+   "attack": 2.7891156462585034,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 7,
+   "crest": 26.126628875732422,
+   "attack": 3.3333333333333335,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 8,
+   "crest": 8.939338684082031,
+   "attack": 4.671201814058957,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "stone",
+   "v": 9,
+   "crest": 21.2794189453125,
+   "attack": 2.5850340136054424,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 0,
+   "crest": 20.869028091430664,
+   "attack": 5.941043083900227,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 1,
+   "crest": 20.397258758544922,
+   "attack": 5.736961451247165,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 2,
+   "crest": 20.920482635498047,
+   "attack": 4.399092970521542,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 3,
+   "crest": 20.1509952545166,
+   "attack": 5.895691609977325,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 4,
+   "crest": 18.82010269165039,
+   "attack": 3.5827664399092973,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 5,
+   "crest": 19.90995216369629,
+   "attack": 4.308390022675737,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 6,
+   "crest": 20.706958770751953,
+   "attack": 3.5374149659863945,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 7,
+   "crest": 21.07969093322754,
+   "attack": 4.399092970521542,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 8,
+   "crest": 21.328777313232422,
+   "attack": 5.691609977324264,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s2_pingpong_cfg2_m68",
+   "mat": "wood",
+   "v": 9,
+   "crest": 22.38821029663086,
+   "attack": 4.8979591836734695,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 0,
+   "crest": 16.720550537109375,
+   "attack": 26.575963718820862,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 1,
+   "crest": 19.0535945892334,
+   "attack": 13.718820861678005,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 2,
+   "crest": 14.325103759765625,
+   "attack": 15.056689342403628,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 3,
+   "crest": 13.410764694213867,
+   "attack": 23.12925170068027,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 4,
+   "crest": 19.644866943359375,
+   "attack": 27.41496598639456,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 5,
+   "crest": 15.936044692993164,
+   "attack": 26.167800453514737,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 6,
+   "crest": 18.666351318359375,
+   "attack": 26.167800453514737,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 7,
+   "crest": 15.861863136291504,
+   "attack": 28.253968253968253,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 8,
+   "crest": 15.208538055419922,
+   "attack": 25.28344671201814,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "grass",
+   "v": 9,
+   "crest": 13.089038848876953,
+   "attack": 9.342403628117914,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 0,
+   "crest": 23.184907913208008,
+   "attack": 2.5850340136054424,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.432615280151367,
+   "attack": 1.9727891156462587,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 2,
+   "crest": 24.384849548339844,
+   "attack": 2.131519274376417,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 3,
+   "crest": 21.884899139404297,
+   "attack": 4.603174603174603,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 4,
+   "crest": 23.052734375,
+   "attack": 2.0861678004535147,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 5,
+   "crest": 24.779130935668945,
+   "attack": 2.1541950113378685,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 6,
+   "crest": 23.820205688476562,
+   "attack": 1.7006802721088434,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 7,
+   "crest": 23.607080459594727,
+   "attack": 2.0634920634920637,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 8,
+   "crest": 24.789045333862305,
+   "attack": 2.562358276643991,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "metal",
+   "v": 9,
+   "crest": 22.77984619140625,
+   "attack": 4.625850340136054,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 0,
+   "crest": 24.173240661621094,
+   "attack": 4.512471655328798,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 1,
+   "crest": 23.39404296875,
+   "attack": 4.625850340136054,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 2,
+   "crest": 23.579511642456055,
+   "attack": 2.675736961451247,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 3,
+   "crest": 23.27113151550293,
+   "attack": 4.058956916099773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 4,
+   "crest": 24.443939208984375,
+   "attack": 6.145124716553288,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.8421688079834,
+   "attack": 3.2653061224489797,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 6,
+   "crest": 23.26845359802246,
+   "attack": 4.081632653061225,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 7,
+   "crest": 24.031700134277344,
+   "attack": 4.5578231292517,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 8,
+   "crest": 22.665077209472656,
+   "attack": 4.580498866213152,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "stone",
+   "v": 9,
+   "crest": 24.436237335205078,
+   "attack": 3.401360544217687,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 0,
+   "crest": 22.197498321533203,
+   "attack": 3.9002267573696145,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 1,
+   "crest": 22.23552703857422,
+   "attack": 4.353741496598639,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 2,
+   "crest": 20.11183738708496,
+   "attack": 3.7188208616780045,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 3,
+   "crest": 19.93990135192871,
+   "attack": 3.854875283446712,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 4,
+   "crest": 21.082048416137695,
+   "attack": 4.965986394557824,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 5,
+   "crest": 20.715696334838867,
+   "attack": 6.575963718820862,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 6,
+   "crest": 22.279430389404297,
+   "attack": 6.870748299319728,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 7,
+   "crest": 20.770259857177734,
+   "attack": 5.827664399092971,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.08925437927246,
+   "attack": 5.079365079365079,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg1",
+   "mat": "wood",
+   "v": 9,
+   "crest": 21.0744571685791,
+   "attack": 5.306122448979592,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 0,
+   "crest": 12.728961944580078,
+   "attack": 26.167800453514737,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 1,
+   "crest": 12.825106620788574,
+   "attack": 24.331065759637188,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 2,
+   "crest": 13.031326293945312,
+   "attack": 23.12925170068027,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 3,
+   "crest": 12.738683700561523,
+   "attack": 24.71655328798186,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 4,
+   "crest": 13.325854301452637,
+   "attack": 22.94784580498866,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 5,
+   "crest": 14.22217845916748,
+   "attack": 25.14739229024943,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 6,
+   "crest": 12.663137435913086,
+   "attack": 25.05668934240363,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 7,
+   "crest": 14.859378814697266,
+   "attack": 24.217687074829932,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 8,
+   "crest": 15.310623168945312,
+   "attack": 24.104308390022677,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "grass",
+   "v": 9,
+   "crest": 11.827559471130371,
+   "attack": 24.14965986394558,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 0,
+   "crest": 20.42961311340332,
+   "attack": 4.761904761904763,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 1,
+   "crest": 23.460742950439453,
+   "attack": 1.746031746031746,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 2,
+   "crest": 22.21529769897461,
+   "attack": 2.0408163265306123,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 3,
+   "crest": 19.96954345703125,
+   "attack": 4.73922902494331,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 4,
+   "crest": 22.86577606201172,
+   "attack": 2.35827664399093,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 5,
+   "crest": 19.9112491607666,
+   "attack": 3.2199546485260773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 6,
+   "crest": 21.373394012451172,
+   "attack": 1.8140589569160999,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 7,
+   "crest": 22.416419982910156,
+   "attack": 2.131519274376417,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 8,
+   "crest": 22.02554702758789,
+   "attack": 2.4716553287981857,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "metal",
+   "v": 9,
+   "crest": 23.051626205444336,
+   "attack": 2.2448979591836733,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 0,
+   "crest": 24.150278091430664,
+   "attack": 5.895691609977325,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 1,
+   "crest": 24.668292999267578,
+   "attack": 2.2448979591836733,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 2,
+   "crest": 23.897550582885742,
+   "attack": 19.319727891156464,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 3,
+   "crest": 23.60235595703125,
+   "attack": 4.149659863945578,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 4,
+   "crest": 25.404464721679688,
+   "attack": 4.875283446712018,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 5,
+   "crest": 25.479026794433594,
+   "attack": 3.2199546485260773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 6,
+   "crest": 21.7021484375,
+   "attack": 2.993197278911565,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 7,
+   "crest": 23.564088821411133,
+   "attack": 5.442176870748299,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 8,
+   "crest": 21.472640991210938,
+   "attack": 12.176870748299319,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "stone",
+   "v": 9,
+   "crest": 23.404504776000977,
+   "attack": 3.5374149659863945,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 0,
+   "crest": 20.25058937072754,
+   "attack": 4.489795918367347,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 1,
+   "crest": 21.727581024169922,
+   "attack": 3.0158730158730163,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 2,
+   "crest": 21.139432907104492,
+   "attack": 4.5578231292517,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 3,
+   "crest": 20.913896560668945,
+   "attack": 5.827664399092971,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 4,
+   "crest": 20.337158203125,
+   "attack": 5.714285714285714,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 5,
+   "crest": 19.824289321899414,
+   "attack": 5.941043083900227,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 6,
+   "crest": 19.795108795166016,
+   "attack": 5.374149659863946,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 7,
+   "crest": 21.90502166748047,
+   "attack": 3.401360544217687,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.989408493041992,
+   "attack": 3.696145124716553,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2",
+   "mat": "wood",
+   "v": 9,
+   "crest": 20.16583251953125,
+   "attack": 5.963718820861678,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 0,
+   "crest": 13.192789077758789,
+   "attack": 24.195011337868483,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 1,
+   "crest": 14.110865592956543,
+   "attack": 25.986394557823132,
+   "hit": 0,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 2,
+   "crest": 12.055768966674805,
+   "attack": 24.625850340136054,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 3,
+   "crest": 12.561004638671875,
+   "attack": 23.333333333333336,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 4,
+   "crest": 12.677632331848145,
+   "attack": 26.802721088435376,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 5,
+   "crest": 13.548887252807617,
+   "attack": 24.852607709750565,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 6,
+   "crest": 13.301592826843262,
+   "attack": 23.94557823129252,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 7,
+   "crest": 14.863218307495117,
+   "attack": 23.401360544217688,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 8,
+   "crest": 13.156837463378906,
+   "attack": 26.054421768707485,
+   "hit": 1,
+   "foot": 0
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "grass",
+   "v": 9,
+   "crest": 12.428060531616211,
+   "attack": 24.308390022675734,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 0,
+   "crest": 21.909515380859375,
+   "attack": 3.9455782312925174,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 1,
+   "crest": 22.03186798095703,
+   "attack": 1.8594104308390023,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 2,
+   "crest": 22.982120513916016,
+   "attack": 2.1768707482993195,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 3,
+   "crest": 21.256622314453125,
+   "attack": 2.494331065759637,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 4,
+   "crest": 22.914405822753906,
+   "attack": 2.4489795918367347,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 5,
+   "crest": 22.356224060058594,
+   "attack": 2.0634920634920637,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 6,
+   "crest": 21.977649688720703,
+   "attack": 1.4965986394557824,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 7,
+   "crest": 22.519800186157227,
+   "attack": 1.746031746031746,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 8,
+   "crest": 21.507671356201172,
+   "attack": 2.1768707482993195,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "metal",
+   "v": 9,
+   "crest": 22.924108505249023,
+   "attack": 2.2675736961451247,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 0,
+   "crest": 23.652782440185547,
+   "attack": 1.6326530612244898,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 1,
+   "crest": 23.86582374572754,
+   "attack": 4.285714285714286,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 2,
+   "crest": 24.512676239013672,
+   "attack": 3.4240362811791383,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 3,
+   "crest": 24.658308029174805,
+   "attack": 3.560090702947846,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 4,
+   "crest": 23.941471099853516,
+   "attack": 5.215419501133787,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 5,
+   "crest": 24.054859161376953,
+   "attack": 2.993197278911565,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 6,
+   "crest": 22.326051712036133,
+   "attack": 4.761904761904763,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 7,
+   "crest": 25.89510726928711,
+   "attack": 4.036281179138323,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 8,
+   "crest": 21.510089874267578,
+   "attack": 1.383219954648526,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "stone",
+   "v": 9,
+   "crest": 24.41606903076172,
+   "attack": 4.489795918367347,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 0,
+   "crest": 20.671689987182617,
+   "attack": 5.646258503401361,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 1,
+   "crest": 21.40489959716797,
+   "attack": 3.492063492063492,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 2,
+   "crest": 21.306760787963867,
+   "attack": 4.671201814058957,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 3,
+   "crest": 20.371530532836914,
+   "attack": 5.873015873015873,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 4,
+   "crest": 20.268943786621094,
+   "attack": 4.058956916099773,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 5,
+   "crest": 20.158002853393555,
+   "attack": 5.351473922902494,
+   "hit": 0,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 6,
+   "crest": 22.409379959106445,
+   "attack": 4.331065759637188,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 7,
+   "crest": 21.30569839477539,
+   "attack": 7.414965986394558,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 8,
+   "crest": 20.4421443939209,
+   "attack": 4.71655328798186,
+   "hit": 1,
+   "foot": 1
+  },
+  {
+   "cfg": "s3_euler_cfg2_pad1",
+   "mat": "wood",
+   "v": 9,
+   "crest": 19.506811141967773,
+   "attack": 5.736961451247165,
+   "hit": 0,
+   "foot": 1
+  }
+ ]
+}
