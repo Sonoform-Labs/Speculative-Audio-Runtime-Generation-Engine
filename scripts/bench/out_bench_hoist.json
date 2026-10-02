@@ -1,0 +1,764 @@
+{
+ "facts": {
+  "torch": "2.6.0+cu124",
+  "device": "NVIDIA GeForce RTX 3060",
+  "steps": 3,
+  "detail_steps": 8,
+  "cfg": 2.0,
+  "sampler": "euler",
+  "padding_s": 1.0,
+  "latent_len": 22,
+  "reps": 6,
+  "graph_fill": true,
+  "hoist_module": "F:\\AI\\tmp\\claude\\C--Users-alanc\\b021ee1b-d40c-4228-9bca-37267b4cff97\\scratchpad\\wf2\\hoist\\hoist.py",
+  "prefix_module": "F:\\AI\\tmp\\claude\\C--Users-alanc\\b021ee1b-d40c-4228-9bca-37267b4cff97\\scratchpad\\wf2\\hoist\\decode_prefix.py"
+ },
+ "ref_ms": {
+  "footstep|wood|normal|default": 67.60909999866271,
+  "footstep|metal|heavy|default": 67.61800000094809,
+  "impact|glass|normal|default": 67.75220000417903,
+  "footstep|water|normal|default": 165.8540999997058,
+  "batch2 stone+grass": 125.71064999792725,
+  "batch2 metal+wood": 125.69380000059027
+ },
+ "configs": {
+  "default": {
+   "installed": true,
+   "rows": {
+    "footstep|wood|normal|default": {
+     "a_ms": 68.27804999920772,
+     "b_ms": 57.997150004666764,
+     "saved_ms": 10.28089999454096,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|metal|heavy|default": {
+     "a_ms": 68.06180000421591,
+     "b_ms": 58.122699992964044,
+     "saved_ms": 9.939100011251867,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "impact|glass|normal|default": {
+     "a_ms": 68.36394999845652,
+     "b_ms": 58.05304999375949,
+     "saved_ms": 10.310900004697032,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|water|normal|default": {
+     "a_ms": 167.1076499915216,
+     "b_ms": 131.56275000073947,
+     "saved_ms": 35.54489999078214,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 stone+grass": {
+     "a_ms": 126.30425000679679,
+     "b_ms": 108.85940000298433,
+     "saved_ms": 17.444850003812462,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 metal+wood": {
+     "a_ms": 126.93514999409672,
+     "b_ms": 109.51929999282584,
+     "saved_ms": 17.415850001270883,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    }
+   },
+   "exact": true,
+   "alternation_matches": true,
+   "violations": 0,
+   "cache_mismatch": 0,
+   "verify_matches": true,
+   "stats": {
+    "installed": true,
+    "enabled": true,
+    "reason": null,
+    "parts": [
+     "cond",
+     "kv",
+     "local"
+    ],
+    "hoisted": 299,
+    "plain": 161,
+    "fills": 78,
+    "fill_graphs": 2,
+    "eager_fills": 0,
+    "cache_hits": 0,
+    "cache_mismatch": 0,
+    "violations": 0,
+    "slots": 2,
+    "cached": 0,
+    "slot_failures": [],
+    "hoist_graphs": 2,
+    "hoist_replays": 299,
+    "hoist_eager": 0,
+    "hoist_capture_failures": [],
+    "errors": []
+   },
+   "peak_mem_gb": 2.046272512,
+   "pass": true
+  },
+  "cond": {
+   "installed": true,
+   "rows": {
+    "footstep|wood|normal|default": {
+     "a_ms": 68.50139999733074,
+     "b_ms": 68.19014999928186,
+     "saved_ms": 0.3112499980488792,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|metal|heavy|default": {
+     "a_ms": 67.89539999590488,
+     "b_ms": 67.7629500059993,
+     "saved_ms": 0.13244998990558088,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "impact|glass|normal|default": {
+     "a_ms": 67.92420000419952,
+     "b_ms": 67.62180000805529,
+     "saved_ms": 0.3023999961442314,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|water|normal|default": {
+     "a_ms": 166.8195000020205,
+     "b_ms": 165.68125000048894,
+     "saved_ms": 1.13825000153156,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 stone+grass": {
+     "a_ms": 126.64395000319928,
+     "b_ms": 125.56190000032075,
+     "saved_ms": 1.0820500028785318,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 metal+wood": {
+     "a_ms": 126.28569999651518,
+     "b_ms": 126.24260001030052,
+     "saved_ms": 0.04309998621465638,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    }
+   },
+   "exact": true,
+   "alternation_matches": true,
+   "violations": 0,
+   "cache_mismatch": 0,
+   "verify_matches": true,
+   "stats": {
+    "installed": true,
+    "enabled": true,
+    "reason": null,
+    "parts": [
+     "cond"
+    ],
+    "hoisted": 299,
+    "plain": 161,
+    "fills": 78,
+    "fill_graphs": 2,
+    "eager_fills": 0,
+    "cache_hits": 0,
+    "cache_mismatch": 0,
+    "violations": 0,
+    "slots": 2,
+    "cached": 0,
+    "slot_failures": [],
+    "hoist_graphs": 2,
+    "hoist_replays": 299,
+    "hoist_eager": 0,
+    "hoist_capture_failures": [],
+    "errors": []
+   },
+   "peak_mem_gb": 1.867793408,
+   "pass": true
+  },
+  "cond+kv": {
+   "installed": true,
+   "rows": {
+    "footstep|wood|normal|default": {
+     "a_ms": 68.12324999918928,
+     "b_ms": 59.23915000312263,
+     "saved_ms": 8.884099996066652,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|metal|heavy|default": {
+     "a_ms": 68.45159999647876,
+     "b_ms": 59.53254999622004,
+     "saved_ms": 8.919050000258721,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "impact|glass|normal|default": {
+     "a_ms": 68.4745499966084,
+     "b_ms": 59.45400000200607,
+     "saved_ms": 9.020549994602334,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|water|normal|default": {
+     "a_ms": 167.30689999531023,
+     "b_ms": 136.5475500060711,
+     "saved_ms": 30.759349989239126,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 stone+grass": {
+     "a_ms": 126.87015000119573,
+     "b_ms": 111.18405000161147,
+     "saved_ms": 15.686099999584258,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 metal+wood": {
+     "a_ms": 126.45679999695858,
+     "b_ms": 111.14755000016885,
+     "saved_ms": 15.309249996789731,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    }
+   },
+   "exact": true,
+   "alternation_matches": true,
+   "violations": 0,
+   "cache_mismatch": 0,
+   "verify_matches": true,
+   "stats": {
+    "installed": true,
+    "enabled": true,
+    "reason": null,
+    "parts": [
+     "cond",
+     "kv"
+    ],
+    "hoisted": 299,
+    "plain": 161,
+    "fills": 78,
+    "fill_graphs": 2,
+    "eager_fills": 0,
+    "cache_hits": 0,
+    "cache_mismatch": 0,
+    "violations": 0,
+    "slots": 2,
+    "cached": 0,
+    "slot_failures": [],
+    "hoist_graphs": 2,
+    "hoist_replays": 299,
+    "hoist_eager": 0,
+    "hoist_capture_failures": [],
+    "errors": []
+   },
+   "peak_mem_gb": 2.093294592,
+   "pass": true
+  },
+  "local": {
+   "installed": true,
+   "rows": {
+    "footstep|wood|normal|default": {
+     "a_ms": 68.20115000300575,
+     "b_ms": 67.10219999513356,
+     "saved_ms": 1.0989500078721903,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|metal|heavy|default": {
+     "a_ms": 68.28390000009676,
+     "b_ms": 66.9631999990088,
+     "saved_ms": 1.320700001087971,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "impact|glass|normal|default": {
+     "a_ms": 68.27270000212593,
+     "b_ms": 67.01464999787277,
+     "saved_ms": 1.258050004253164,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|water|normal|default": {
+     "a_ms": 167.18789999868022,
+     "b_ms": 162.905100005446,
+     "saved_ms": 4.282799993234221,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 stone+grass": {
+     "a_ms": 126.98130000353558,
+     "b_ms": 124.0447000018321,
+     "saved_ms": 2.936600001703482,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 metal+wood": {
+     "a_ms": 126.66270000045188,
+     "b_ms": 124.63984999340028,
+     "saved_ms": 2.022850007051602,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    }
+   },
+   "exact": true,
+   "alternation_matches": true,
+   "violations": 0,
+   "cache_mismatch": 0,
+   "verify_matches": true,
+   "stats": {
+    "installed": true,
+    "enabled": true,
+    "reason": null,
+    "parts": [
+     "local"
+    ],
+    "hoisted": 299,
+    "plain": 161,
+    "fills": 78,
+    "fill_graphs": 2,
+    "eager_fills": 0,
+    "cache_hits": 0,
+    "cache_mismatch": 0,
+    "violations": 0,
+    "slots": 2,
+    "cached": 0,
+    "slot_failures": [],
+    "hoist_graphs": 2,
+    "hoist_replays": 299,
+    "hoist_eager": 0,
+    "hoist_capture_failures": [],
+    "errors": []
+   },
+   "peak_mem_gb": 1.953928192,
+   "pass": true
+  },
+  "rope": {
+   "installed": true,
+   "rows": {
+    "footstep|wood|normal|default": {
+     "a_ms": 68.16344999242574,
+     "b_ms": 67.77085000794614,
+     "saved_ms": 0.3925999844796024,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|metal|heavy|default": {
+     "a_ms": 68.37815000471892,
+     "b_ms": 68.0743499979144,
+     "saved_ms": 0.3038000068045221,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "impact|glass|normal|default": {
+     "a_ms": 68.55240000004414,
+     "b_ms": 68.07909999770345,
+     "saved_ms": 0.473300002340693,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|water|normal|default": {
+     "a_ms": 168.6582999973325,
+     "b_ms": 166.96135000529466,
+     "saved_ms": 1.696949992037844,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 stone+grass": {
+     "a_ms": 126.37564999749884,
+     "b_ms": 126.12014999467647,
+     "saved_ms": 0.25550000282237306,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 metal+wood": {
+     "a_ms": 126.40524999733316,
+     "b_ms": 126.13039999996545,
+     "saved_ms": 0.2748499973677099,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    }
+   },
+   "exact": true,
+   "alternation_matches": true,
+   "violations": 0,
+   "cache_mismatch": 0,
+   "verify_matches": true,
+   "stats": {
+    "installed": true,
+    "enabled": true,
+    "reason": null,
+    "parts": [
+     "rope"
+    ],
+    "hoisted": 299,
+    "plain": 161,
+    "fills": 78,
+    "fill_graphs": 2,
+    "eager_fills": 0,
+    "cache_hits": 0,
+    "cache_mismatch": 0,
+    "violations": 0,
+    "slots": 2,
+    "cached": 0,
+    "slot_failures": [],
+    "hoist_graphs": 2,
+    "hoist_replays": 299,
+    "hoist_eager": 0,
+    "hoist_capture_failures": [],
+    "errors": []
+   },
+   "peak_mem_gb": 1.949944832,
+   "pass": true
+  },
+  "default+rope": {
+   "installed": true,
+   "rows": {
+    "footstep|wood|normal|default": {
+     "a_ms": 68.37989999621641,
+     "b_ms": 57.84429999766871,
+     "saved_ms": 10.535599998547696,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|metal|heavy|default": {
+     "a_ms": 68.43639999715379,
+     "b_ms": 57.87770001188619,
+     "saved_ms": 10.558699985267594,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "impact|glass|normal|default": {
+     "a_ms": 68.45844999770634,
+     "b_ms": 58.006100000056904,
+     "saved_ms": 10.452349997649435,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|water|normal|default": {
+     "a_ms": 168.00589999911608,
+     "b_ms": 131.44150000152877,
+     "saved_ms": 36.564399997587316,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 stone+grass": {
+     "a_ms": 127.05005000316305,
+     "b_ms": 109.13514999992913,
+     "saved_ms": 17.914900003233925,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 metal+wood": {
+     "a_ms": 126.99840000277618,
+     "b_ms": 109.43849999603117,
+     "saved_ms": 17.55990000674501,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    }
+   },
+   "exact": true,
+   "alternation_matches": true,
+   "violations": 0,
+   "cache_mismatch": 0,
+   "verify_matches": true,
+   "stats": {
+    "installed": true,
+    "enabled": true,
+    "reason": null,
+    "parts": [
+     "cond",
+     "kv",
+     "local",
+     "rope"
+    ],
+    "hoisted": 299,
+    "plain": 161,
+    "fills": 78,
+    "fill_graphs": 2,
+    "eager_fills": 0,
+    "cache_hits": 0,
+    "cache_mismatch": 0,
+    "violations": 0,
+    "slots": 2,
+    "cached": 0,
+    "slot_failures": [],
+    "hoist_graphs": 2,
+    "hoist_replays": 299,
+    "hoist_eager": 0,
+    "hoist_capture_failures": [],
+    "errors": []
+   },
+   "peak_mem_gb": 2.199739392,
+   "pass": true
+  },
+  "default+cache8": {
+   "installed": true,
+   "rows": {
+    "footstep|wood|normal|default": {
+     "a_ms": 68.36615000065649,
+     "b_ms": 53.750349994516,
+     "saved_ms": 14.61580000614049,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|metal|heavy|default": {
+     "a_ms": 68.71720000344794,
+     "b_ms": 54.090149998955894,
+     "saved_ms": 14.627050004492048,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "impact|glass|normal|default": {
+     "a_ms": 68.49340000189841,
+     "b_ms": 53.93355000705924,
+     "saved_ms": 14.559849994839169,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "footstep|water|normal|default": {
+     "a_ms": 168.73775000567548,
+     "b_ms": 128.58810000034282,
+     "saved_ms": 40.14965000533266,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 stone+grass": {
+     "a_ms": 126.73795000591781,
+     "b_ms": 109.62494999694172,
+     "saved_ms": 17.113000008976087,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    },
+    "batch2 metal+wood": {
+     "a_ms": 126.83215000288328,
+     "b_ms": 109.6641499971156,
+     "saved_ms": 17.16800000576768,
+     "max_abs_diff": 0.0,
+     "exact": true,
+     "repeatable": true,
+     "off_matches_ref": true
+    }
+   },
+   "exact": true,
+   "alternation_matches": true,
+   "violations": 0,
+   "cache_mismatch": 0,
+   "verify_matches": true,
+   "stats": {
+    "installed": true,
+    "enabled": true,
+    "reason": null,
+    "parts": [
+     "cond",
+     "kv",
+     "local"
+    ],
+    "hoisted": 299,
+    "plain": 161,
+    "fills": 30,
+    "fill_graphs": 2,
+    "eager_fills": 0,
+    "cache_hits": 48,
+    "cache_mismatch": 0,
+    "violations": 0,
+    "slots": 2,
+    "cached": 4,
+    "slot_failures": [],
+    "hoist_graphs": 2,
+    "hoist_replays": 299,
+    "hoist_eager": 0,
+    "hoist_capture_failures": [],
+    "errors": []
+   },
+   "peak_mem_gb": 2.486036992,
+   "pass": true
+  }
+ },
+ "default_pass": true,
+ "decode_probe": {
+  "footstep|wood|normal|default": {
+   "latent_len": 22,
+   "prefix_len": 14,
+   "decode_full_ms": 8.195600006729364,
+   "decode_prefix_ms": 8.656449994305149,
+   "max_abs_diff_first_keep": 0.00146484375
+  },
+  "footstep|metal|heavy|default": {
+   "latent_len": 22,
+   "prefix_len": 14,
+   "decode_full_ms": 11.039950004487764,
+   "decode_prefix_ms": 10.39225000567967,
+   "max_abs_diff_first_keep": 0.0019378662109375
+  },
+  "impact|glass|normal|default": {
+   "latent_len": 22,
+   "prefix_len": 14,
+   "decode_full_ms": 10.979999999108259,
+   "decode_prefix_ms": 10.432299997773953,
+   "max_abs_diff_first_keep": 0.0062255859375
+  }
+ },
+ "prefix": {
+  "rows": {
+   "footstep|wood|normal|default": {
+    "a_ms": 58.31044999649748,
+    "b_ms": 57.133050002448726,
+    "saved_ms": 1.1773999940487556,
+    "max_abs_diff": 0.006999075412750244,
+    "exact": false,
+    "repeatable": true,
+    "off_matches_ref": null
+   },
+   "footstep|metal|heavy|default": {
+    "a_ms": 58.5662500016042,
+    "b_ms": 57.35370000184048,
+    "saved_ms": 1.2125499997637235,
+    "max_abs_diff": 0.005282610654830933,
+    "exact": false,
+    "repeatable": true,
+    "off_matches_ref": null
+   },
+   "impact|glass|normal|default": {
+    "a_ms": 58.52365000464488,
+    "b_ms": 57.335699995746836,
+    "saved_ms": 1.1879500088980421,
+    "max_abs_diff": 0.01260402798652649,
+    "exact": false,
+    "repeatable": true,
+    "off_matches_ref": null
+   },
+   "footstep|water|normal|default": {
+    "a_ms": 132.48394999391166,
+    "b_ms": 131.5200500030187,
+    "saved_ms": 0.9638999908929691,
+    "max_abs_diff": 0.011370658874511719,
+    "exact": false,
+    "repeatable": true,
+    "off_matches_ref": null
+   },
+   "batch2 stone+grass": {
+    "a_ms": 109.54160000983393,
+    "b_ms": 106.80664999381406,
+    "saved_ms": 2.734950016019866,
+    "max_abs_diff": 0.0315476655960083,
+    "exact": false,
+    "repeatable": true,
+    "off_matches_ref": null
+   },
+   "batch2 metal+wood": {
+    "a_ms": 109.71894999966025,
+    "b_ms": 106.68464998889249,
+    "saved_ms": 3.0343000107677653,
+    "max_abs_diff": 0.02090129256248474,
+    "exact": false,
+    "repeatable": true,
+    "off_matches_ref": null
+   }
+  },
+  "stats": {
+   "installed": true,
+   "enabled": true,
+   "reason": null,
+   "margin": 3,
+   "align": 2,
+   "prefix": 54,
+   "full": 42,
+   "errors": []
+  }
+ },
+ "accelerator": {
+  "cond_hits": 651,
+  "cond_misses": 4,
+  "graphs": 2,
+  "replays": 1297,
+  "eager": 0,
+  "capture_failures": 0
+ }
+}

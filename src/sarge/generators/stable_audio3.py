@@ -20,7 +20,8 @@ class StableAudio3Generator(Generator):
                  prompt_template: str | None = None, negative_prompt: str | None = None,
                  model_half: bool = True, sampler_type: str = "euler",
                  detail_steps: int = 8, detail_keys=None, fast: bool = True,
-                 duration_padding_s: float = 1.0, mid_noise: float | None = None, **_):
+                 duration_padding_s: float = 1.0, mid_noise: float | None = None,
+                 hoist_prompts: int | None = 8, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -40,6 +41,8 @@ class StableAudio3Generator(Generator):
         self.mid_noise = None if mid_noise is None else float(mid_noise)
         self._model = None
         self._fast = None
+        self.hoist_prompts = hoist_prompts
+        self._hoist = None
         self._lock = threading.Lock()
 
     def _ensure_loaded(self):
@@ -63,6 +66,12 @@ class StableAudio3Generator(Generator):
                 self._fast = Accelerator(self._model)
             except Exception:
                 self._fast = None
+        if self._fast is not None and self.hoist_prompts is not None:
+            try:
+                from .sa3_hoist import install_hoist
+                self._hoist = install_hoist(self._model, self._fast, cache_prompts=int(self.hoist_prompts))
+            except Exception:
+                self._hoist = None
 
     def ensure_ready(self):
         self._ensure_loaded()
@@ -91,7 +100,10 @@ class StableAudio3Generator(Generator):
         return kw
 
     def fast_stats(self) -> dict:
-        return self._fast.stats() if self._fast is not None else {}
+        out = self._fast.stats() if self._fast is not None else {}
+        if self._hoist is not None:
+            out.update(self._hoist.stats())
+        return out
 
     def _steps_for(self, key: CacheKey) -> int:
         if key.event_type in self.detail_keys or key.material in self.detail_keys:

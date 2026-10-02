@@ -44,3 +44,23 @@ def test_event_for_a_key_being_generated_waits_for_it_and_never_regenerates():
         server.deepening = False
         server.shutdown()
         server.server_close()
+
+
+def test_prediction_wakes_an_idle_background_loop_immediately():
+    gen = SlowBatchGen()
+    eng = AffordanceEngine(gen, realtime=True, vram_budget_kb=200_000, gen_cost_ms=50.0)
+    server = serve(engine=eng, port=0, warmup=False, deepen=True, deepen_batch=2)
+    try:
+        host, port = server.server_address
+        time.sleep(0.6)
+        with SfxClient(host, port) as c:
+            c.hello()
+            t0 = time.monotonic()
+            c.predict([{"event_type": "footstep", "material": "wood", "eta_s": 1.0,
+                        "confidence": 0.9, "source": "motion"}], now=0.0)
+            assert gen.batch_started.wait(2.0)
+            assert time.monotonic() - t0 < 0.15
+    finally:
+        server.deepening = False
+        server.shutdown()
+        server.server_close()

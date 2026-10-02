@@ -1,29 +1,29 @@
 {
  "single": {
   "footstep|wood|normal|default": {
-   "ref_ms": 162.35909999522846,
-   "fast_ms": 67.75520000155666,
+   "ref_ms": 162.4467000074219,
+   "fast_ms": 53.07034999714233,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
   },
   "footstep|metal|heavy|default": {
-   "ref_ms": 161.086449999857,
-   "fast_ms": 67.53369999933057,
+   "ref_ms": 165.1812499985681,
+   "fast_ms": 53.149500003200956,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
   },
   "impact|glass|normal|default": {
-   "ref_ms": 160.82135000033304,
-   "fast_ms": 67.51919999805978,
+   "ref_ms": 165.18435000034515,
+   "fast_ms": 53.41449999832548,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
   },
   "footstep|water|normal|default": {
-   "ref_ms": 417.22624999965774,
-   "fast_ms": 166.89135000342503,
+   "ref_ms": 403.9855499941041,
+   "fast_ms": 126.4438500002143,
    "max_abs_diff": 0.0,
    "exact": true,
    "repeatable": true
@@ -35,8 +35,8 @@
     "footstep|stone|normal|default",
     "footstep|grass|normal|default"
    ],
-   "ref_ms": 165.26764999798615,
-   "fast_ms": 125.98539999817149,
+   "ref_ms": 163.5340500070015,
+   "fast_ms": 108.92129999410827,
    "max_abs_diff": [
     0.0,
     0.0
@@ -48,8 +48,8 @@
     "impact|metal|normal|default",
     "footstep|wood|light|default"
    ],
-   "ref_ms": 165.18654999890714,
-   "fast_ms": 125.67475000105333,
+   "ref_ms": 163.78729999269126,
+   "fast_ms": 108.50950000894954,
    "max_abs_diff": [
     0.0,
     0.0
@@ -60,9 +60,33 @@
  "stats": {
   "cond_hits": 32,
   "cond_misses": 4,
-  "graphs": 2,
-  "replays": 207,
+  "graphs": 0,
+  "replays": 0,
   "eager": 0,
-  "capture_failures": 0
+  "capture_failures": 0,
+  "installed": true,
+  "enabled": true,
+  "reason": null,
+  "parts": [
+   "cond",
+   "kv",
+   "local"
+  ],
+  "hoisted": 207,
+  "plain": 0,
+  "fills": 22,
+  "fill_graphs": 2,
+  "eager_fills": 0,
+  "cache_hits": 32,
+  "cache_mismatch": 0,
+  "violations": 0,
+  "slots": 2,
+  "cached": 4,
+  "slot_failures": [],
+  "hoist_graphs": 2,
+  "hoist_replays": 207,
+  "hoist_eager": 0,
+  "hoist_capture_failures": [],
+  "errors": []
  }
 }

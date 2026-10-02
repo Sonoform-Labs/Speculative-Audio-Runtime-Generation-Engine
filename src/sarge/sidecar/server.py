@@ -219,6 +219,7 @@ class _Handler(socketserver.BaseRequestHandler):
         proposals = srv.fusion.fuse(raw)
         if proposals:
             srv.engine.register_predictions(proposals)
+            _wake_deepen(srv)
             top = proposals[0]
             srv.last_intent = f"{top.key.event_type} {top.p_use:.2f}"
         srv.intent_pending = pending
@@ -290,6 +291,7 @@ class _Handler(socketserver.BaseRequestHandler):
             proposals = self.server.fusion.fuse(raw)
             result = self.server.engine.register_predictions(proposals, now=now)
             cached = len(self.server.engine.cache)
+        _wake_deepen(self.server)
         self._send(MsgType.PREDICT_ACK, {
             "type": "predict_ack",
             "queued": int(result["queued"]),
@@ -309,18 +311,35 @@ class _Handler(socketserver.BaseRequestHandler):
         self._send(MsgType.PONG, {"type": "pong", "t": t, "server_t": time.time()})
 
 
+def _wake_deepen(server):
+    ev = getattr(server, "deepen_wake", None)
+    if ev is not None:
+        ev.set()
+
+
+def _idle(server, seconds):
+    ev = getattr(server, "deepen_wake", None)
+    if ev is None:
+        time.sleep(seconds)
+        return
+    ev.wait(seconds)
+
+
 def _deepen_loop(server):
     import time
     eng = server.engine
     planner = getattr(eng, "plan_batch", None)
     while getattr(server, "deepening", False):
+        ev = getattr(server, "deepen_wake", None)
+        if ev is not None:
+            ev.clear()
         batch = []
         stat = "spec_gen"
         try:
             if planner is None:
                 with engine_lock:
                     did = eng.deepen_step()
-                time.sleep(0.05 if did else 0.5)
+                _idle(server, 0.05 if did else 0.5)
                 continue
             with engine_lock:
                 batch, stat = planner(max_items=getattr(server, "deepen_batch", 1))
@@ -336,7 +355,7 @@ def _deepen_loop(server):
                 except Exception:
                     pass
             batch = []
-        time.sleep(0.05 if batch else 0.5)
+        _idle(server, 0.05 if batch else 0.5)
 
 
 def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
@@ -387,6 +406,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.deepen_batch = max(1, int(deepen_batch))
     if deepen:
         server.deepening = True
+        server.deepen_wake = threading.Event()
         dthread = threading.Thread(target=_deepen_loop, args=(server,), name="sfx-deepener", daemon=True)
         dthread.start()
         server.deepener = dthread
