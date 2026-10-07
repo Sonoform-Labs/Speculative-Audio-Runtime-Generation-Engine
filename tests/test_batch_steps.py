@@ -11,7 +11,10 @@ class FakeModel:
     def generate(self, prompt, duration, steps, cfg_scale, seed, batch_size, **kw):
         self.calls.append((steps, batch_size, list(prompt)))
         rng = np.random.default_rng(seed)
-        return rng.standard_normal((batch_size, 2, 44100)).astype(np.float32) * 0.1
+        t = np.arange(44100) / 44100.0
+        hit = (np.sin(2 * np.pi * 180.0 * t) * np.exp(-t / 0.04)).astype(np.float32)
+        out = np.tile(hit, (batch_size, 2, 1)) * 0.5
+        return out + rng.standard_normal(out.shape).astype(np.float32) * 1e-4
 
 
 def make():

@@ -6,8 +6,11 @@ import numpy as np
 
 from .base import Generator
 from ..loudness import normalize_loudness, target_for
+from ..static_guard import is_static, retry_seed
 from ..types import AudioClip, CacheKey
 from .stable_audio import _extract, _seed, build_prompt
+
+STATIC_STATS = ("static_checks", "static_flagged", "static_retries", "static_rescued", "static_exhausted")
 
 
 class StableAudio3Generator(Generator):
@@ -21,7 +24,7 @@ class StableAudio3Generator(Generator):
                  model_half: bool = True, sampler_type: str = "euler",
                  detail_steps: int = 8, detail_keys=None, fast: bool = True,
                  duration_padding_s: float = 1.0, mid_noise: float | None = None,
-                 hoist_prompts: int | None = 8, **_):
+                 hoist_prompts: int | None = 8, static_guard: bool = True, max_static_retries: int = 2, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -44,6 +47,10 @@ class StableAudio3Generator(Generator):
         self.hoist_prompts = hoist_prompts
         self._hoist = None
         self._lock = threading.Lock()
+        self.static_guard = bool(static_guard)
+        self.max_static_retries = max(0, int(max_static_retries))
+        self.static_stats = {k: 0 for k in STATIC_STATS}
+        self._stats_lock = threading.Lock()
 
     def _ensure_loaded(self):
         if self._model is not None:
@@ -103,7 +110,59 @@ class StableAudio3Generator(Generator):
         out = self._fast.stats() if self._fast is not None else {}
         if self._hoist is not None:
             out.update(self._hoist.stats())
+        if self.static_guard:
+            with self._stats_lock:
+                out.update(self.static_stats)
         return out
+
+    def _count(self, name: str, k: int = 1):
+        with self._stats_lock:
+            self.static_stats[name] += k
+
+    def _finish(self, a, key: CacheKey) -> np.ndarray:
+        while a.ndim > 2:
+            a = a[0]
+        mono = a.mean(axis=0) if a.ndim == 2 else a
+        mono = _extract(mono, self.sample_rate, self.duration_s)
+        mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
+        return mono.astype(np.float32)
+
+    @staticmethod
+    def _numpy(audio):
+        if hasattr(audio, "detach"):
+            import torch
+            return audio.detach().to(torch.float32).cpu().numpy()
+        return np.asarray(audio, dtype=np.float32)
+
+    def _guard(self, key: CacheKey, variant: int, mono: np.ndarray) -> np.ndarray:
+        bad, m = is_static(mono, self.sample_rate)
+        self._count("static_checks")
+        if not bad:
+            return mono
+        self._count("static_flagged")
+        import torch
+        best, best_flat = mono, m["flat"]
+        base = _seed(key, variant)
+        steps = self._steps_for(key)
+        prompt = self._prompt(key)
+        for attempt in range(1, self.max_static_retries + 1):
+            self._count("static_retries")
+            with self._lock, torch.no_grad():
+                audio = self._model.generate(
+                    duration=self.gen_duration_s, steps=steps, cfg_scale=self.cfg_scale,
+                    seed=retry_seed(base, attempt), batch_size=1, **self._inputs([prompt]))
+            cand = self._finish(self._numpy(audio), key)
+            bad, m = is_static(cand, self.sample_rate)
+            self._count("static_checks")
+            if not bad:
+                self._count("static_rescued")
+                return cand
+            if m["flat"] < best_flat:
+                best, best_flat = cand, m["flat"]
+        self._count("static_exhausted")
+        if not np.isfinite(best).all():
+            best = np.nan_to_num(best, nan=0.0, posinf=0.0, neginf=0.0)
+        return best
 
     def _steps_for(self, key: CacheKey) -> int:
         if key.event_type in self.detail_keys or key.material in self.detail_keys:
@@ -121,13 +180,10 @@ class StableAudio3Generator(Generator):
                 seed=_seed(key, variant),
                 **self._inputs([self._prompt(key)]),
             )
-        a = audio.detach().to(torch.float32).cpu().numpy() if hasattr(audio, "detach") else np.asarray(audio, dtype=np.float32)
-        while a.ndim > 2:
-            a = a[0]
-        mono = a.mean(axis=0) if a.ndim == 2 else a
-        mono = _extract(mono, self.sample_rate, self.duration_s)
-        mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
-        return AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant)
+        mono = self._finish(self._numpy(audio), key)
+        if self.static_guard:
+            mono = self._guard(key, variant, mono)
+        return AudioClip(mono, self.sample_rate, variant_id=variant)
 
     def generate_batch(self, items: list) -> list:
         if not items:
@@ -145,13 +201,10 @@ class StableAudio3Generator(Generator):
                     duration=self.gen_duration_s, steps=steps,
                     cfg_scale=self.cfg_scale, seed=_seed(sub[0][0], sub[0][1]),
                     batch_size=len(sub), **self._inputs([self._prompt(key) for key, _v in sub]))
-            a = audio.detach().to(torch.float32).cpu().numpy() if hasattr(audio, "detach") else np.asarray(audio, dtype=np.float32)
+            a = self._numpy(audio)
             for j, (key, variant) in enumerate(sub):
-                clip = a[j]
-                while clip.ndim > 2:
-                    clip = clip[0]
-                mono = clip.mean(axis=0) if clip.ndim == 2 else clip
-                mono = _extract(mono, self.sample_rate, self.duration_s)
-                mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
-                out[idx[j]] = AudioClip(mono.astype(np.float32), self.sample_rate, variant_id=variant)
+                mono = self._finish(a[j], key)
+                if self.static_guard:
+                    mono = self._guard(key, variant, mono)
+                out[idx[j]] = AudioClip(mono, self.sample_rate, variant_id=variant)
         return out
