@@ -1,0 +1,13 @@
+sarge alone: 75 clips  p50 78.5 ms  p95 87.2  max 90.1
+
+game load 6 ms GPU per 60 fps frame (36% of a 16.7 ms frame)
+  game alone      frame work p50 6.6 p99 7.4 max 8.1 ms | frame interval p99 17.4 | late frames 0.1%  >33 ms 0.0%
+  game + sarge    frame work p50 6.6 p99 17.2 max 19.7 ms | frame interval p99 17.5 | late frames 0.9%  >33 ms 0.0%
+  sarge + game    75 clips  p50 95.5 ms  p95 102.4  max 105.2  (alone p50 78.5)
+
+game load 12 ms GPU per 60 fps frame (72% of a 16.7 ms frame)
+  game alone      frame work p50 12.0 p99 13.3 max 13.7 ms | frame interval p99 17.4 | late frames 0.2%  >33 ms 0.0%
+  game + sarge    frame work p50 12.9 p99 32.5 max 38.0 ms | frame interval p99 32.5 | late frames 22.0%  >33 ms 0.6%
+  sarge + game    75 clips  p50 141.1 ms  p95 160.0  max 170.7  (alone p50 78.5)
+saved -> scripts\bench\out_gpu_contention.json
+EXITCODE 0 

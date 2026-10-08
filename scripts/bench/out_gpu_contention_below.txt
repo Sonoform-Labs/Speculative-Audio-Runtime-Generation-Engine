@@ -1,0 +1,8 @@
+sarge process priority below set=True
+sarge alone: 75 clips  p50 113.3 ms  p95 123.5  max 129.9
+
+game load 12 ms GPU per 60 fps frame (72% of a 16.7 ms frame)
+  game alone      frame work p50 12.8 p99 14.0 max 27.8 ms | frame interval p99 17.3 | late frames 0.4%  >33 ms 0.0%
+  game + sarge    frame work p50 13.0 p99 30.1 max 37.8 ms | frame interval p99 30.1 | late frames 21.4%  >33 ms 0.7%
+  sarge + game    75 clips  p50 141.1 ms  p95 159.6  max 161.6  (alone p50 113.3)
+saved -> scripts\bench\out_gpu_contention.json
