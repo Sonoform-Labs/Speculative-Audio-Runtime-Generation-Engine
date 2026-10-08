@@ -1,0 +1,152 @@
+# LoRA route (encode_latents.py, lora_real.py, lora_drift.py)
+
+The vocabulary eval left three gaps that no generator setting closes. Generated gunshots rise in 7 to 16 ms where real ones rise in about 1 ms, they die after about 100 ms where real ones ring for about 300, and they sit on a -75 dB floor where the real room sits near -40 dB. Breaking glass reaches 0.06 of real. Footsteps on wood, stone, grass and metal reach 0 to 0.15 of real while gravel passes. This route adapts small-sfx with a LoRA trained on real recordings, then trains the identical recipe on clips small-sfx made, so a gain on held-out references can be credited to the real audio and to nothing else. Nothing under `src/` or `unity/` changes, because a script-level hook merges the adapter into the weights at the moment `StableAudio3Generator` loads the model. My position: the D0 drift report decides whether a LoRA earns an hour of judge time, since the plain flow loss differs from the objective that made this checkpoint good at three steps.
+
+## What trains
+
+`scripts/train/encode_latents.py` reads the held-out split that `scripts/bench/vocab_refs.py --heldout` writes to `scripts/bench/heldout_sources.json` and follows its `meta.trainable` rule to the letter. A FoleySet clip trains when its uploader sits in the train pool and FoleySet puts the clip in split train. A C3GD clip trains when its gun sits in the train pool, it was recorded on DAVE at oh_farm (7 m, unclipped) and its split is train. Split val of the same sources becomes the val pool, which only feeds the validation loss. Three generic exclusions sit on top: clips tagged ai-generated, clips of a Freesound recording that ESC-50 also holds, and every clip of an uploader that FoleySet names for the recording of an ESC-50 file under `data/esc50` or `data/real_footsteps`. ESC-50 file names carry only the Freesound recording id, so the last rule reaches the uploader only when FoleySet holds that same recording: 17 of the 349 ESC-50 recordings there, which name 13 uploaders. Those 13 are out of training for the vocab references and the production footstep gate alike, and the uploaders of the other 332 recordings stay unknown. ESC-50 and HEAR never enter. With the current sources file the pool is 5316 train clips and 633 val clips, and the three exclusions removed 67, 21 and 4 clips.
+
+The whole of FoleySet trains, since the product principle rules out per-category data. FoleySet has 73 sub-categories and 72 reach the train pool; every MetalClank uploader is held out. Of the 5316 train clips, 4984 come from 1310 FoleySet uploaders and 332 are C3GD shots from 9 guns (4 pistols, 4 rifles and a single shotgun). Footsteps come to 1358 clips (Walk 977 from 122 uploaders, SingleStep 304 from 20, Run 77), glass breaks to 57 clips from 30 uploaders, gunshots to 332. Batches are drawn with replacement in proportion to one over the square root of the sub-category size, one generic rule that gives footsteps 10.4 percent of the draws, gunshots 5.2 and glass 1.4.
+
+## Windows and latents
+
+Every clip goes through one chain. scipy reads it, `resample_poly` brings it to 44.1 kHz, a mono source is doubled to stereo, and the loudest window of the generation length is found the way `sarge.generators.stable_audio._extract` finds it: 5 ms energy, 30 ms preroll, 5 ms fade in, 50 ms fade out. A source shorter than 1.0 s keeps its length and gets the 50 ms fade. The window is scaled to 0.10 RMS of its mono mix under a 0.97 peak ceiling, zero padded to 90112 samples (the length `StableAudioModel._adapt_sample_size` gives a 1.0 s request with the production 1.0 s padding) and encoded by `pretransform.encode` in fp16. Each clip becomes 256 channels by 22 latent frames of 4096 samples, 93 ms per frame: 11 frames of content and 11 of headroom, the shape the production generator denoises. The pretransform scale is 1.0, so the cached latents are what the DiT sees.
+
+The prompts pass through the model conditioner once. The cache keeps the valid T5Gemma tokens of each unique caption, the learned padding vector and the seconds_total embedding, all in the fp16 values production feeds the DiT, so a training step needs the DiT and nothing else. The cache lands in `data/lora/real` as `latents.safetensors`, `text_natural.safetensors`, `text_sarge.safetensors`, `index.json` (every clip with its pool, cluster, source path, window, gain, captions and sampling weight) and `attribution.csv`.
+
+## Captions
+
+Both styles are built the same way for every clip from metadata. The natural style is the uploader description with markup and links removed, whole sentences until at least 8 words, cut at 40, so the gear and licence boilerplate that often follows the first sentence drops off. C3GD has no descriptions, so its natural caption comes from `metadata.csv`, `platforms.csv` and `microphone_locations.csv` through one template: "a 9x19mm pistol firing, recorded 7 m away". The SARGE style is "a <sub-category>, <top tag>, dry, isolated sound effect". It ends with the suffix every `build_prompt` output carries, so whatever the adapter learns about that suffix lands on the prompts the engine sends. C3GD takes "<form factor> gunshot" as its sub-category and the caliber as its tag, which gives "a rifle gunshot, 5.56x45mm, dry, isolated sound effect".
+
+The top tag needed a real rule. The first version picked the most common tag under half the sub-category and chose "foot", "feet" and "step" for more than a third of the footstep clips, label synonyms that hide the surface the production prompt names. The rule in the script keeps a tag only when it shares no stem of three or more letters with the sub-category or category name, appears in at most 40 percent of all sub-categories (this drops "foley" and "sound"), covers at most 20 percent of its FoleySet category (this drops the synonyms, which cover large slices of the Footstep category while each surface covers a small one), covers at most half of its sub-category, and comes from at least 3 clips by 2 uploaders. The most frequent survivor wins. Walk now reads shoes 164, wood 107, gravel 100, concrete 98, snow 76; SingleStep reads ground 150 and shoe 18, then run, gravel and grass at 8 each; GlassBreak reads shatter 28 and window 7. 3360 of the 4984 FoleySet train clips get a tag and the rest get the caption without one. The train pool holds 508 unique SARGE captions and 2067 unique natural ones.
+
+## The loss, against the package
+
+`stable_audio_3/training/diffusion.py` imports pytorch_lightning at the top and `training/utils.py` imports wandb, and this environment lacks both, so `scripts/train/lora_real.py` copies the loss of `DiffusionCondTrainingWrapper.training_step` into a plain PyTorch loop. Every setting comes from the `training` block of the small-sfx `model_config.json`, and the small helpers from `training/utils.py` (silence extension, masked loss) are copied line for line.
+
+| Piece | Package (`training_step` and the config) | `lora_real.py` |
+|---|---|---|
+| timestep | `trunc_logit_normal`, flipped: `1 - truncated_logistic_normal_rescaled(B)` | the same function and flip (`--t-sampler package`) |
+| schedule shift | `dist_shift.shift(t, L)`, the "full" shift with min 256 and max 4096, L = ceil(seconds_total x 44100 / 4096) = 11 | the same object from the loaded model and the same L |
+| noising and target | x_t = (1 - t) x + t n, target n - x (`rf_denoiser`) | the same |
+| padding | content mask from the clip length, extended by an exponential silence extension of scale 4.0 s, passed as `padding_mask` | the same (`--silence-ext 4.0`) |
+| inpainting | `random_inpaint_mask` at 0.1, 0.8, 0.1 (segments, full mask, causal) with `mask_padding`, loss only where the mask is 0 | the same function (`--inpaint 0.1,0.8,0.1`; `off` gives the full mask every step, as at inference) |
+| context loss | 0.2 x MSE over kept context, with attention masking on | the same (`--mask-loss-weight 0.2`) |
+| conditioning | prompt and seconds_total cross-attention tokens, seconds_total as the adaLN global, inpaint mask and masked input as the 257-channel local add | the same tensors, read from the cache |
+| CFG dropout | 0.1, applied inside the DiT forward by zeroing the cross-attention tokens | the same forward (`--cfg-dropout 0.1`) |
+| loss | squared error, mean over valid positions per clip, mean over the batch, no normalization | the same |
+| EMA | off whenever LoRA is on | off |
+| validation | fixed t of 0.1, 0.3, 0.5, 0.7, 0.9, no shift, full mask, no dropout | those five plus the three production timesteps, on the val pool with fixed noise |
+
+One input differs on purpose. Every cached clip carries seconds_total 1.0, the generation length production sends, so L is 11 for all of them and a source shorter than a second keeps its silence inside that second. A package dataset would send the length of each clip. The 891 padded clips (median content 0.68 s) are the ones this touches.
+
+The optimizer is AdamW on the LoRA parameters at 1e-4 with 100 warmup steps and a constant rate after that, which keeps every saved checkpoint a plain "model at step k" for the val curve to rank. The config names MuonAdamW from `stable_audio_tools.training.optims`, which is absent here and was set up for full fine-tuning at an Adam rate of 1e-6. The default precision is fp16: the base weights load with `model_half=True`, exactly the production weights, the adapters stay fp32, and a `GradScaler` guards the backward pass. `--precision bf16` casts the base to bf16, which rounds it away from the weights production runs. Gradient checkpointing is off by default because the sequence holds only 86 tokens (64 memory tokens and 22 frames); `--grad-ckpt` turns on the package per-block checkpoint. `--seed` seeds Python, NumPy and torch, a NumPy generator draws the batches, and `--deterministic` turns on deterministic kernels. A run saves a LoRA every 500 steps in the package safetensors format, with `lora_config` in the metadata, plus `state.pt` for `--resume`, and writes `config.json` and `log.jsonl` (loss, context loss, grad norm, scaler scale, seconds per step, peak memory, loss by t bucket, and validation rows).
+
+## Where the adapters go, and why rank 16
+
+Each of the 20 transformer blocks gets an adapter on seven linears: `self_attn.to_qkv` and `self_attn.to_out`, `cross_attn.to_q`, `cross_attn.to_kv` and `cross_attn.to_out`, and the feed-forward pair `ff.ff.0.proj` (the SwiGLU input, 1024 to 8192) and `ff.ff.2` (4096 to 1024). The three gaps sit in three places. A latent frame lasts 93 ms, so a 1 ms attack and the room floor live inside the 256 channels of one frame, which the feed-forward layers write. The decay from 100 ms to 300 ms spans several frames, which self-attention relates. Glass and the footstep surfaces are text-to-sound mappings, which cross-attention carries.
+
+Everything else stays frozen: the timestep, duration and global embedders, the adaLN embedder, the inpaint local embedders, `project_in`, `project_out` and the two 1x1 convolutions. They set the noise-level and duration interfaces the ARC post-training tuned for three steps, and none of the gaps asks for them. The conditioner gets no adapter either. T5Gemma sits outside the module tree, so the package wrapper, which applies the same include list to the conditioner, would match nothing there anyway, and the frozen conditioner is what makes the cached text embeddings exact. Rank 16 with alpha 16 (scale 1) costs 0.442 M parameters per block and 8.85 M in all, 1.9 percent of the 459 M DiT, counted on a full-width block in the dry run. That leaves room for three unrelated corrections over 5316 one-second windows; `--rank 8` halves it if the validation loss at the production timesteps turns upward early.
+
+## ARC and three Euler steps
+
+The checkpoint is ARC post-trained, and its config still carries the `arc` block: a relativistic contrastive discriminator built on layer 14 of the DiT, trained against the generator with the same timestep sampler. The production sampler, Euler at 3 steps, evaluates the model at t = 1.000, 0.970 and 0.676, which is what the package `build_schedule` gives with the model LogSNR sampling shift. The package training sampler after the full shift has a median of 0.661, puts a quarter of its draws between 0.60 and 0.75 and only 3.6 percent above 0.95. The default recipe therefore trains the step that makes the final denoise fairly often and the first two steps rarely. It also drops the adversarial term, so fine-tuning may pull three-step output back toward the softer multi-step regime even on data the model already makes. `--t-sampler production` draws t from the three production timesteps with a logit jitter of 0.3, and the validation rows track both groups of timesteps. D0 is the test of whether any of this matters.
+
+## The D0 control
+
+`scripts/train/lora_drift.py make` takes the real cache index (same clips, captions, pools and sampling weights) and asks small-sfx for each caption at the production settings: 3 Euler steps, cfg 2.0, fp16, 1.0 s with 1.0 s padding, one seed per batch of 16. Every result goes through the same window and level chain and the same encoder, and the cache lands in `data/lora/d0_<style>` with `audio: generated` in its metadata and a short listening file. `lora_drift.py train --like <real run>` reads the `config.json` of a real run and trains with every recipe argument identical; only the cache and the run name change, and the dry run checks that.
+
+`lora_drift.py drift` generates the 20 vocab keys at 20 seeds through the production `StableAudio3Generator` (accelerator, prompt hoist and static guard) for the base weights and for each LoRA, one model on the GPU at a time. The drift ratio of a key is the median over seeds of the log-mel L1 distance between the base clip and the LoRA clip of the same seed, divided by the median distance between two base seeds of the same key. Zero means unchanged and one means as far as a fresh seed. Seeds the static guard retried in either arm leave the pairs, and every ratio carries a 95 percent interval from 2000 seed resamples. The gate group in the report is footsteps on wood, stone, grass and metal at seeds 0 to 9, the same clips `gate_quality.py --steps 3` makes. The report also prints, per key and arm, the static share and the attack, tail and floor medians from the `vocab_eval.shape_rows` features. Each arm folder under `data/_gate/lora_drift` is a vocab_eval route, with a `route.json` that lists every training cluster (and every source file for a real-audio LoRA), so `vocab_eval.py --route` checks it against the held-out manifest and stops on a leak.
+
+The real-audio effect on a key is (real arm minus base) minus (D0 arm minus base), on the same judges, held-out references and seeds. I would read the results in this order:
+
+1. D0 passes when the pooled vocab drift ratio has its upper bound under 0.5 and no key drops below its base interval in the judge run. A D0 that fails means the recipe moves three-step output by half a seed with no new information in the data. In that case retrain both arms with `--t-sampler production`, or with `--steps 1000`, and repeat D0 before the judges hear the real arm.
+2. A gap counts as closed by real audio when the real route reaches 0.8 of real on the held-out judges while D0 stays at base level on that key. For the gunshots, the attack, tail and floor medians also have to move into the real 10 to 90 percent range.
+3. A real arm that pushes any key that passes today (shoot|pistol, reload|rifle, empty_click|pistol, slam|door, click|button, footstep|gravel) below 0.8 loses, unless a `--strength` under 1 keeps the gain without the drop.
+
+## Hooks into the engine
+
+`lora_real.install_hook(path, strength)` replaces `StableAudioModel.from_pretrained` for the running process. The replacement loads the model as usual, attaches adapters with `add_lora` and the include list stored in the file, loads the weights, sets the strength, computes each parametrized weight, removes the parametrization and copies the merged values into the original tensor. The storage of every weight stays put, and the dry run checks that. The DiT then carries no LoRA layers, so `sa3_fast.Accelerator` sees a LoRA-free model and captures its CUDA graphs over the merged weights, and the prompt hoist and the T5 cache run unchanged. `install_hook(None)` restores the original loader.
+
+The files are also readable by `StableAudioModel.load_lora`, and the dry run checks that this gives the same output. That path keeps the parametrization in every forward, so the merge hook is the one to score with. `lora_real.py check --lora FILE` loads the real model and compares parametrized and merged outputs on one random input. `lora_real.py score --lora FILE` runs the whole of `vocab_eval.py` under the hook, against `data/refs_heldout/manifest.json` unless told otherwise, with generated clips in `data/_gate/vocab_lora/<tag>`; everything after `--` goes to vocab_eval. Before it loads anything it reads the training cache named in the LoRA file and runs the vocab_eval leak check (`route_leaks`) on every training cluster and source file against the manifest it will score on. A held-out manifest that shares any of them stops the run; the full references only print the overlap. `lora_real.py gate --lora FILE` runs `gate_quality.py --steps 3` under the hook from the repo root, and `--lora none` runs it on the base weights.
+
+## Licenses and attribution
+
+FoleySet is CC BY 4.0 (Zenodo record 20735877; Wang and Lerch, "FoleySet: A Multi-Level Human-Annotated Foley Sound Dataset", arXiv:2606.25980), built from CC0 Freesound clips. C3GD v0.2.0 is CC BY 4.0 (Zenodo record 22286299; Gurny and Quinn, "Descriptor: Certus Caliber Classification Gunshot Dataset (C3GD)", arXiv:2606.18135). Both licenses ask for credit when adapted material is shared, and whether trained weights count as adapted material is unsettled. The safe course is to credit both datasets, with the citations above, wherever a LoRA from this route or audio made with it ships. `data/lora/real/attribution.csv` lists every training clip with its uploader or gun, its Freesound URL and the citation. The natural captions carry uploader text from the FoleySet metadata, which falls under the same dataset license. ESC-50 (CC BY-NC 3.0) never trains, and HEAR (CC0) goes unused. The audit flagged EA patent US12420192B2 as mapping onto an init_audio anchor bank. This route changes weights and uses no init_audio at inference, and that note is a description of the mechanism: the freedom-to-operate read still applies to every route before it ships, this one included.
+
+## GPU time on the 3060 (estimates)
+
+Nothing here has run on the GPU yet. The training figure comes from a FLOP count of one full-width block in the dry run (200.7 GFLOP for a batch of 16, forward and backward with the base frozen, so about 4.0 TFLOP per step for 20 blocks), divided by 8 to 12 TFLOPS of effective fp16 throughput, plus the adapter weight rebuild and the Python loop. The judge figure scales the per-clip costs in `vocab_eval.log` to the held-out manifest. Peak training memory should come to about 4 to 5 GB at batch 16 without `--grad-ckpt`: 0.9 GB of fp16 DiT, 0.14 GB of adapters and Adam state, about 1.8 GB of activations and about 0.8 GB of rebuilt weights held for the backward pass. A CPU count of the tensors one full-width fp16 block saves for the backward pass agrees: 179 MB at batch 16 (133 MB fp16, 46 MB fp32), 3.5 GB over 20 blocks, 4.5 GB with the base and the adapter state, before the transient weight gradients of the backward pass. The first log lines print the measured seconds per step and peak memory, and those replace these numbers.
+
+| Job | Estimate |
+|---|---|
+| `encode_latents.py` (5949 windows, both caption styles) | 5 to 10 min |
+| `lora_real.py train`, 2000 steps at batch 16, with validation every 250 | 20 to 30 min |
+| `lora_real.py check` | 1 min |
+| `lora_drift.py make` (5949 generations at 3 steps, batches of 16, plus encoding) | 5 to 10 min |
+| `lora_drift.py train` | the same as the real run |
+| `lora_drift.py drift` with two LoRAs (three loads, 1200 clips at about 55 ms) | about 5 min |
+| `vocab_eval.py` on held-out references, base plus two routes in one run | about 55 min |
+| `lora_real.py gate`, per arm | about 10 min |
+
+The first verdict on one caption style (encode, real, D0, drift, one judge run, three gate runs) comes to roughly 2.5 to 3 hours. A second caption style adds a training run, a D0 run and one more route in the judge run.
+
+## Run commands
+
+Every job runs detached through `runpinned.py`, which keeps the process off core 8, one GPU job at a time. The prerequisite is the held-out split from `vocab_refs.py --heldout` (`scripts/bench/heldout_sources.json` and `data/refs_heldout`), which exists as of this writing. The variables keep the lines short:
+
+```powershell
+$py = 'D:\Python\SAGE\.venv\Scripts\python.exe'; $pin = 'D:\Python\sarge-research\modal\runpinned.py'; $t = 'D:\Python\SAGE\scripts\train'; $b = 'D:\Python\SAGE\scripts\bench'
+```
+
+Encode the pool. It is finished when `encode_latents.log` ends with `saved -> D:\Python\SAGE\data\lora\real`.
+
+```powershell
+Start-Process -FilePath $py -ArgumentList '-u',$pin,"$t\encode_latents.py" -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\encode_latents.log" -RedirectStandardError "$t\encode_latents.err" -WindowStyle Hidden -PassThru
+```
+
+Train the real LoRA on SARGE captions, then check the merge. Training is finished when the log ends with `saved -> data/lora/runs/real_sarge/lora_final.safetensors`, and `check` prints `merge_vs_parametrized_max_abs` near 0.
+
+```powershell
+Start-Process -FilePath $py -ArgumentList '-u',$pin,"$t\lora_real.py",'train','--caption','sarge','--name','real_sarge' -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\train_real_sarge.log" -RedirectStandardError "$t\train_real_sarge.err" -WindowStyle Hidden -PassThru
+Start-Process -FilePath $py -ArgumentList '-u',$pin,"$t\lora_real.py",'check','--lora','data/lora/runs/real_sarge/lora_final.safetensors' -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\check_real_sarge.log" -RedirectStandardError "$t\check_real_sarge.err" -WindowStyle Hidden -PassThru
+```
+
+Build the D0 cache, then train D0 with the real recipe. The run lands in `data/lora/runs/d0_real_sarge`.
+
+```powershell
+Start-Process -FilePath $py -ArgumentList '-u',$pin,"$t\lora_drift.py",'make','--caption','sarge' -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\d0_make_sarge.log" -RedirectStandardError "$t\d0_make_sarge.err" -WindowStyle Hidden -PassThru
+Start-Process -FilePath $py -ArgumentList '-u',$pin,"$t\lora_drift.py",'train','--like','data/lora/runs/real_sarge' -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\d0_train_sarge.log" -RedirectStandardError "$t\d0_train_sarge.err" -WindowStyle Hidden -PassThru
+```
+
+Measure drift and write the route folders. The report lands in `scripts/train/out_lora_drift.txt` and `.json`.
+
+```powershell
+Start-Process -FilePath $py -ArgumentList '-u',$pin,"$t\lora_drift.py",'drift','--lora','d0=data/lora/runs/d0_real_sarge/lora_final.safetensors','--lora','real=data/lora/runs/real_sarge/lora_final.safetensors' -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\drift.log" -RedirectStandardError "$t\drift.err" -WindowStyle Hidden -PassThru
+```
+
+If D0 passes, score base and both routes on the held-out references in one judge run. Keeping the base setting in the run gives every route a McNemar test against it, paired on seed, and the separate `--gen-dir` leaves the clips of the earlier eval untouched. The base folder from the drift step also works as a route (`--settings none --route base=data/_gate/lora_drift/base`) at the cost of that pairing.
+
+```powershell
+Start-Process -FilePath $py -ArgumentList '-u',$pin,"$b\vocab_eval.py",'--refs','data/refs_heldout','--settings','s3_g1.0_k0.6','--gen-dir','data/_gate/vocab_routes','--route','d0=data/_gate/lora_drift/d0','--route','real=data/_gate/lora_drift/real' -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\vocab_routes.log" -RedirectStandardError "$t\vocab_routes.err" -WindowStyle Hidden -PassThru
+```
+
+Run the production footstep gate for each arm, base included.
+
+```powershell
+foreach ($a in @('none','data/lora/runs/d0_real_sarge/lora_final.safetensors','data/lora/runs/real_sarge/lora_final.safetensors')) { $n = if ($a -eq 'none') { 'base' } else { Split-Path (Split-Path $a -Parent) -Leaf }; Start-Process -FilePath $py -ArgumentList '-u',$pin,"$t\lora_real.py",'gate','--lora',$a -WorkingDirectory D:\Python\SAGE -RedirectStandardOutput "$t\gate_$n.log" -RedirectStandardError "$t\gate_$n.err" -WindowStyle Hidden -Wait }
+```
+
+For the natural captions, repeat the training, D0 and drift steps with `--caption natural` and `--name real_natural`, then add their routes to the judge run.
+
+## Dry run
+
+`lora_dry\run_dry.py` in the session scratchpad runs all three scripts end to end on the CPU with the GPU hidden. It builds a stand-in for `heldout_sources.json` from the documented rule. It then runs the captions-only pool on the real metadata and encodes 80 real clips through the real window chain with a fake SA3: a patch encoder, a hashing T5 stand-in and the real `_adapt_sample_size`. The real `DiTWrapper` class, at width 128 and depth 2, trains through the real loop on that cache. The harness then resumes the run, repeats it, merges the result, loads it through the package loader, hooks the real `StableAudio3Generator`, builds and trains a D0 cache with the copied recipe, runs drift, and hands the arm folders to `vocab_eval.load_routes` against the real held-out manifest. 50 of 50 checks pass in 82 s.
+
+The checks that carry weight: no held-out uploader, held-out gun, off-mic C3GD clip, ESC-50 recording or ai-generated clip reaches the pool; every split matches its pool; the latents come out 256 by 22 with 1 to 11 content frames from 90112 audio samples; the production schedule comes out 1.0000, 0.9697 and 0.6755; base weights stay bit-identical while the adapters move; a seeded run with gradient checkpointing repeats bit for bit; a resumed run continues to its step budget; the merged model matches the parametrized one to 0.0 on a LoRA effect of 0.07 and keeps every storage pointer; the package `load_and_apply_loras` path gives the same output; the hook merges at load, leaves no LoRA layer and restores the loader; the D0 recipe differs from the real one in nothing besides cache, name and step budget; and vocab_eval accepts both drift arms as held-out routes. The fake losses and drift numbers carry no meaning. One run with the real sources file gives the pool counts quoted above. A review pass in the same scratchpad (`review\leak.py`, `review\leakguard.py`) recomputed the pool from the CSVs: no source file, cluster, Freesound id, C3GD shot or PCM md5 of the pool appears in `data/refs_heldout`. It also ran the score guard on a clean LoRA, on one whose cache names a held-out cluster and on one whose cache names a held-out file; the first goes on to vocab_eval and the other two stop before it.
+
+## Known weaknesses
+
+Glass is the thinnest target: 57 clips from 30 uploaders and 1.4 percent of the draws, so it is the gap most likely to stay open. The gunshots come from 9 guns at one place, oh_farm at 7 m, and the adapter can learn that farm as the gunshot room. The held-out references hold the other guns on the same mic, ALICE at 2 m and the HEAR far mics, and the strata in vocab_eval will show whether the room travels. The shotgun rests on one gun and 11 clips. Half of the SingleStep clips carry one pack tag ("ground"), so the footstep surfaces lean on Walk. The ESC-50 references (glass, clicks, horns, dogs and the footsteps of the production gate) can share an uploader, and with it a microphone and a room, with training clips whenever FoleySet lacks the recording that would name that uploader; the held-out split carries the same limit.
+
+The drift ratio is a distance and says nothing about better or worse, which is why the judges and the shape columns read it. The fp16 run leans on the gradient scaler, so the `scale` column of the first log lines is worth a look; a scale that keeps halving means `--precision bf16`. The cache encodes captions in batches of 16 while production encodes one prompt at a time; in fp32 the difference sits near 1e-6, and `--text-bs 1` removes it. A generated 1.0 s clip passes the window cut whole, while a long real source gets the 30 ms preroll alignment; `lora_drift.py make --source-s 2.0` applies the full cut to D0 if onset timing turns out to matter. `vocab_eval.py` and `vocab_refs.py` were changing while this was written. The hook depends only on `StableAudioModel.from_pretrained`, the route folders only on the `route.json` format the sources file documents, and `lora_real.py score` only on the `--manifest`, `--gen-dir`, `--out` and `--listen` flags.

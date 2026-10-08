@@ -11,6 +11,7 @@ import _bootstrap
 import argparse
 import gc
 import json
+import re
 import time
 from collections import Counter, defaultdict
 
@@ -39,6 +40,8 @@ SETTINGS = {
     "s8_g2.0_k1.5": {"steps": 8, "detail_steps": 8, "gen_duration_s": 2.0, "duration_s": 1.5},
 }
 CURRENT = "s3_g1.0_k0.6"
+MANIFEST = os.path.join("data", "refs", "manifest.json")
+ROUTE_NAME = re.compile(r"[A-Za-z0-9_.+-]+")
 SURFACES = ["wood", "stone", "grass", "metal", "gravel"]
 KEYS = [
     ("shoot", "rifle", "gunshot_rifle"), ("shoot", "pistol", "gunshot_pistol"), ("reload", "rifle", "gun_mech"),
@@ -208,7 +211,7 @@ class Boot:
         return self.cache[k]
 
 
-def load_refs(args):
+def load_refs(args, cfgs):
     man = json.load(open(os.path.join(ROOT, args.manifest), encoding="utf-8"))
     missing = [t for t in man["types"] if t not in TAG_SETS or t not in PHRASES or t not in CANON]
     if missing:
@@ -216,7 +219,7 @@ def load_refs(args):
     mm = man["meta"]
     if int(mm["sr"]) != SR or mm["intensity"] != INTENSITY:
         raise SystemExit("manifest built at %s Hz, intensity %s" % (mm["sr"], mm["intensity"]))
-    for s, cfg in SETTINGS.items():
+    for s, cfg in cfgs.items():
         ln = mm["lengths"].get("%.1f" % cfg["duration_s"])
         if not ln or abs(ln["keep_s"] - cfg["duration_s"]) > 1e-9 or abs(ln["gen_s"] - cfg["gen_duration_s"]) > 1e-9:
             raise SystemExit("setting %s keeps %.1f s of %.1f s, manifest references are %s" % (
@@ -269,8 +272,90 @@ def gen_paths(args, s, et, mat):
     return [os.path.join(ROOT, args.gen_dir, s, "%s-%s_%02d.wav" % (et, mat, v)) for v in range(args.seeds)]
 
 
-def generate(args):
-    need = not args.reuse or any(not os.path.isfile(p) for s in SETTINGS for et, mat, _t in KEYS
+def norm(p):
+    return os.path.normcase(os.path.abspath(p))
+
+
+def route_leaks(info, man):
+    used_c = set(info.get("clusters", []))
+    srcs = [p if os.path.isabs(p) else os.path.join(ROOT, p) for p in info.get("sources", [])]
+    used_s = {norm(p) for p in srcs}
+    held = man["meta"].get("heldout") or {}
+    hc = {c for v in held.get("clusters", {}).values() for c in v}
+    files = {norm(c["src"]) for c in man["clips"]} | {norm(os.path.join(ROOT, *f.split("/"))) for c in man["clips"]
+                                                      for f in c.get("files", {}).values()}
+    ids = {"%s.wav" % c["id"].lower() for c in man["clips"]}
+    esc = norm(os.path.join(ROOT, "data", "esc50"))
+    return {"clusters_in_refs": sorted(used_c & {c["cluster"] for c in man["clips"]}),
+            "sources_in_refs": sorted((used_s & files) | {p for p in used_s if os.path.basename(p) in ids}),
+            "clusters_held_out": sorted(used_c & hc),
+            "esc50_used": sorted({c for c in used_c if c.startswith("esc:")} |
+                                 {p for p in used_s if p == esc or p.startswith(esc + os.sep)})}
+
+
+def load_routes(args, man):
+    cfgs, sets, meta, runs = {}, {}, {}, {}
+    lens = {int(float(w) * SR): w for w in man["meta"]["lengths"]}
+    held = bool(man["meta"].get("heldout"))
+    for spec in args.route:
+        name, _, d = spec.partition("=")
+        root = d if os.path.isabs(d) else os.path.join(ROOT, d)
+        if not os.path.isdir(root):
+            raise SystemExit("route %s: no folder %s" % (name, root))
+        jp = os.path.join(root, "route.json")
+        info = json.load(open(jp, encoding="utf-8")) if os.path.isfile(jp) else None
+        if held and (info is None or "clusters" not in info):
+            raise SystemExit("route %s: %s needs a route.json whose clusters list every source it trained on or "
+                             "anchored from (empty for a route that uses no real audio) to be scored on held-out "
+                             "references" % (name, rel(root)))
+        leak = route_leaks(info or {}, man)
+        if any(leak.values()):
+            if held:
+                raise SystemExit("route %s used held-out sources: %s" % (name, json.dumps(leak)))
+            print("route %s shares sources with %s: %d clusters, %d source files, %d ESC-50 sources" % (
+                name, args.manifest, len(leak["clusters_in_refs"]), len(leak["sources_in_refs"]),
+                len(leak["esc50_used"])), flush=True)
+        win = None
+        for et, mat, t in KEYS:
+            ps = [os.path.join(root, "%s-%s_%02d.wav" % (et, mat, v)) for v in range(args.seeds)]
+            have = sum(os.path.isfile(p) for p in ps)
+            if not have:
+                continue
+            if have < len(ps):
+                raise SystemExit("route %s has %d of %d seeds for %s" % (name, have, len(ps), key_name(et, mat)))
+            clips = [wav(p) for p in ps]
+            n = sorted({len(x) for x in clips})
+            if len(n) != 1 or n[0] not in lens or lens[n[0]] not in WINS:
+                raise SystemExit("route %s %s clips have lengths %s, expected one of %s" % (
+                    name, key_name(et, mat), n, sorted(lens)))
+            if win is not None and lens[n[0]] != win:
+                raise SystemExit("route %s mixes %s s and %s s clips" % (name, win, lens[n[0]]))
+            win = lens[n[0]]
+            g = gen_name(name, et, mat)
+            sets[g] = clips
+            meta[g] = {"kind": "gen", "setting": name, "key": key_name(et, mat), "type": t, "family": None, "win": win,
+                       "seeds": list(range(args.seeds)),
+                       "ids": ["%s#%02d" % (key_name(et, mat), v) for v in range(args.seeds)],
+                       "clusters": ["seed:%02d" % v for v in range(args.seeds)], "paths": [rel(p) for p in ps],
+                       "prompt": (info or {}).get("prompts", {}).get(key_name(et, mat)),
+                       "steps": (info or {}).get("steps"), "reused": True, "route": name}
+            runs[g] = {"ms_median": None, "ms_max": None, "static": {}}
+        if win is None:
+            raise SystemExit("route %s: no <event>-<material>_NN.wav files for any key in %s" % (name, rel(root)))
+        cfgs[name] = {"route": rel(root), "duration_s": float(win), "gen_duration_s": man["meta"]["lengths"][win]["gen_s"],
+                      "steps": (info or {}).get("steps"), "keys": sum(meta[g]["setting"] == name for g in meta),
+                      "route_json": info is not None, "leak": leak, "info": info}
+        print("route %-13s %d keys x %d seeds at %s s from %s%s" % (
+            name, cfgs[name]["keys"], args.seeds, win, rel(root), "" if info is not None else "  (no route.json)"),
+            flush=True)
+    return cfgs, sets, meta, runs
+
+
+def generate(args, cfgs):
+    if not cfgs:
+        print("generator not loaded: no base settings", flush=True)
+        return {}, {}, {}, {"loaded": False, "reason": "no base settings"}
+    need = not args.reuse or any(not os.path.isfile(p) for s in cfgs for et, mat, _t in KEYS
                                  for p in gen_paths(args, s, et, mat))
     g = make_generator() if need else None
     if g is not None:
@@ -283,7 +368,7 @@ def generate(args):
     print("generator %s" % json.dumps(info, default=str), flush=True)
     keys = [CacheKey(et, mat, INTENSITY) for et, mat, _t in KEYS]
     sets, meta, runs = {}, {}, {}
-    for s, cfg in SETTINGS.items():
+    for s, cfg in cfgs.items():
         if g is not None:
             for a, v in cfg.items():
                 setattr(g, a, v)
@@ -487,6 +572,7 @@ def evaluate(var, meta, pools, family, args, boot):
             taus[(base, w)] = tau
             hs = np.asarray(d[hz]["score"], dtype=float)
             a = {"pooled": auc(rs, pool_s), "hiss": auc(rs, hs)}
+            enough = bool(len(rc) >= args.min_ref_clips and len(set(rc)) >= args.min_ref_sources)
             top1 = Counter(x for n in pos for x in d[n]["top1"]).most_common(3)
             lead = Counter(x for n in pos for x in d[n]["lead"]).most_common(3)
             for rule in RULES:
@@ -512,9 +598,9 @@ def evaluate(var, meta, pools, family, args, boot):
                     "real_by_stratum": {s: frac(rh[np.array([x == s for x in rst])]) for s in sorted(set(rst))},
                     "real_top1": top1, "real_lead": lead,
                     "hiss_top1": Counter(d[hz]["top1"]).most_common(3),
-                    "valid": valid, "hiss_ok": hiss_ok, "usable": bool(valid and hiss_ok),
+                    "valid": valid, "hiss_ok": hiss_ok, "usable": bool(valid and hiss_ok and enough),
                     "strict": bool(rr >= args.min_real and byf and rr - max(byf.values()) >= args.min_gap),
-                    "firm": bool(valid and hiss_ok and rci[0] >= args.min_real and gci[0] >= args.min_gap)}
+                    "firm": bool(valid and hiss_ok and enough and rci[0] >= args.min_real and gci[0] >= args.min_gap)}
     return ctl, taus
 
 
@@ -673,14 +759,33 @@ def shape_refs(meta, shapes, man, t, w, surface):
     return rows, src
 
 
-def summarize(cons, mat_gen, shapes_cmp, ab, chosen, man, args):
+def shape_strata(meta, shapes, man, t, w, surface):
+    out = defaultdict(list)
+    for n in pos_sets(meta, t, w):
+        for r, s, st in zip(shapes[n], meta[n]["surface"], meta[n]["strata"]):
+            if t == "footstep" and surface in man.get("surfaces", {}) and s != surface:
+                continue
+            out["%s:%s" % (meta[n]["set"], st)].append(r)
+    return out
+
+
+def routes_of(cfgs):
+    return [s for s, c in cfgs.items() if "route" in c]
+
+
+def shown(row, cfgs):
+    return dedupe(([CURRENT] if CURRENT in cfgs else []) + ([row["best"]] if row["best"] else []) + routes_of(cfgs))
+
+
+def summarize(cons, mat_gen, shapes_cmp, ab, chosen, man, args, cfgs, have):
     out = {}
     for et, mat, t in KEYS:
         k = key_name(et, mat)
         row = {"type": t, "settings": {}, "best": None, "reaches": False, "firm_reach": False, "flags": []}
-        for s in SETTINGS:
+        for s in cfgs:
             g = gen_name(s, et, mat)
-            c = cons.get(g) or {"cons": None, "reason": "no real reference" if t is None else "not scored"}
+            c = cons.get(g) or {"cons": None, "reason": "no real reference" if t is None else
+                                "not generated by this route" if g not in have else "not scored"}
             row["settings"][s] = {"cons": c.get("cons"), "cons_ci": c.get("cons_ci"), "mean_ratio": c.get("mean_ratio"),
                                   "judges": {f: j["variant"] for f, j in c.get("judges", {}).items()},
                                   "reason": c.get("reason"), "shape_in_range": shapes_cmp.get(g, {}).get("in_range_mean"),
@@ -702,42 +807,57 @@ def summarize(cons, mat_gen, shapes_cmp, ab, chosen, man, args):
             for w in WINS:
                 if not chosen.get("%s@%s" % (t, w)):
                     row["flags"].append("no valid judge at %s s" % w)
+            rn, rk = man["types"][t].get("clips", 0), man["types"][t].get("sources", 0)
+            if rn < args.min_ref_clips or rk < args.min_ref_sources:
+                row["flags"].append("too few real references for a judge (%d clips, %d sources)" % (rn, rk))
         if et == "footstep" and mat not in man.get("surfaces", {}):
             row["flags"].append("no real %s steps for the material check" % mat)
         out[k] = row
     return out
 
 
-def paired_vs_current(gen, cons, summary):
+def mcnemar_pair(gen, cons, k, s, cfgs):
+    et, mat = k.split("|")
+    cur, bst = gen_name(CURRENT, et, mat), gen_name(s, et, mat)
+    out = {}
+    for f, j in cons.get(bst, {}).get("judges", {}).items():
+        jc = cons.get(cur, {}).get("judges", {}).get(f)
+        if not jc or jc["variant"] != j["variant"]:
+            out[f] = None
+            continue
+        a = np.array(gen[bst][j["variant"]]["hits"], dtype=bool)
+        b = np.array(gen[cur][j["variant"]]["hits"], dtype=bool)
+        gn, ls = int((a & ~b).sum()), int((~a & b).sum())
+        out[f] = {"variant": j["variant"], "gain": gn, "loss": ls, "p": mcnemar(gn, ls),
+                  "cross_window": cfgs[s]["duration_s"] != cfgs[CURRENT]["duration_s"]}
+    return out
+
+
+def paired_vs_current(gen, cons, summary, cfgs):
+    routes = routes_of(cfgs)
     for k, row in summary.items():
         row["mcnemar_vs_current"] = {}
-        if not row["best"] or row["best"] == CURRENT:
+        if routes:
+            row["routes_vs_current"] = {s: mcnemar_pair(gen, cons, k, s, cfgs) if CURRENT in cfgs else {}
+                                        for s in routes}
+        if not row["best"] or row["best"] == CURRENT or CURRENT not in cfgs:
             continue
-        et, mat = k.split("|")
-        cur, bst = gen_name(CURRENT, et, mat), gen_name(row["best"], et, mat)
-        for f, j in cons.get(bst, {}).get("judges", {}).items():
-            jc = cons.get(cur, {}).get("judges", {}).get(f)
-            if not jc or jc["variant"] != j["variant"]:
-                row["mcnemar_vs_current"][f] = None
-                continue
-            a = np.array(gen[bst][j["variant"]]["hits"], dtype=bool)
-            b = np.array(gen[cur][j["variant"]]["hits"], dtype=bool)
-            gn, ls = int((a & ~b).sum()), int((~a & b).sum())
-            row["mcnemar_vs_current"][f] = {"variant": j["variant"], "gain": gn, "loss": ls, "p": mcnemar(gn, ls),
-                                            "cross_window": SETTINGS[row["best"]]["duration_s"] !=
-                                                            SETTINGS[CURRENT]["duration_s"]}
+        row["mcnemar_vs_current"] = mcnemar_pair(gen, cons, k, row["best"], cfgs)
 
 
-def build_listen(sets, summary, args):
+def build_listen(sets, summary, args, cfgs):
     gap, kgap = np.zeros(int(0.25 * SR), np.float32), np.zeros(int(0.8 * SR), np.float32)
     seq, order = [], []
     for et, mat, _t in KEYS:
         k = key_name(et, mat)
         best = summary[k]["best"]
-        for s in [CURRENT] + ([best] if best and best != CURRENT else []):
+        played = [s for s in shown(summary[k], cfgs) if gen_name(s, et, mat) in sets]
+        for s in played:
             for x in sets[gen_name(s, et, mat)][: args.listen_seeds]:
                 seq += [x, gap]
             order.append("%s %s" % (k, s))
+        if not played:
+            continue
         if not best:
             order[-1] += " (no judged setting)"
         seq.append(kgap)
@@ -773,7 +893,7 @@ def cell(c):
 
 
 def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, ab_per, labelsets, pools, runs,
-           order, listen, args, types, family, man):
+           order, listen, args, types, family, man, cfgs):
     W = 168
     print()
     print("=" * W)
@@ -797,9 +917,12 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
             if not ch:
                 best = max(vs, key=lambda v: (ctl[v][w]["real"] - ctl[v][w]["neg"], ctl[v][w]["real"])) if vs else None
                 b = ctl[best][w] if best else None
-                print("   %-24s usable %3d/%-3d  NO VALID JUDGE%s" % (
+                few = b and (b["n_real"] < args.min_ref_clips or b["k_real"] < args.min_ref_sources)
+                print("   %-24s usable %3d/%-3d  NO VALID JUDGE%s%s" % (
                     tag, len(us), len(vs), "   closest %s real %s neg %s hiss %s" % (
-                        best, pct(b["real"]), pct(b["neg"]), pct(b["hiss"])) if b else ""))
+                        best, pct(b["real"]), pct(b["neg"]), pct(b["hiss"])) if b else "",
+                    "   (%d clips from %d sources, under --min-ref-clips %d or --min-ref-sources %d)" % (
+                        b["n_real"], b["k_real"], args.min_ref_clips, args.min_ref_sources) if few else ""))
                 continue
             first = True
             for f, v in ch.items():
@@ -840,11 +963,11 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
     print("=" * W)
     print(" KEYS   cons = min over chosen judges of min(rate / real rate, 1) [95%% interval]; judges a=ast p=panns c=clap;"
           " target %.2f of real" % args.target)
-    print(" %-19s %-15s " % ("key", "type") + " ".join("%-24s" % s for s in SETTINGS) +
+    print(" %-19s %-15s " % ("key", "type") + " ".join("%-24s" % s for s in cfgs) +
           " %-13s %-6s %-6s %s" % ("best", ">=%.1f" % args.target, "firm", "flags"))
     for k, row in summary.items():
         et, mat = k.split("|")
-        cells = [cell(cons.get(gen_name(s, et, mat))) for s in SETTINGS]
+        cells = [cell(cons.get(gen_name(s, et, mat))) for s in cfgs]
         print(" %-19s %-15s " % (k, row["type"] or "-") + " ".join(cells) + " %-13s %-6s %-6s %s" % (
             row["best"] or "-", "yes" if row["reaches"] else "no", "yes" if row["firm_reach"] else "no",
             "; ".join(row["flags"])))
@@ -852,13 +975,14 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
     print(" PER JUDGE rate (ratio to real) for the current and best settings, with McNemar best vs current paired on seed")
     for k, row in summary.items():
         et, mat = k.split("|")
-        for s in dedupe([CURRENT] + ([row["best"]] if row["best"] else [])):
+        for s in shown(row, cfgs):
             c = cons.get(gen_name(s, et, mat), {})
             if not c.get("judges"):
                 continue
             parts = []
             for f, j in c["judges"].items():
-                mc = row.get("mcnemar_vs_current", {}).get(f) if s != CURRENT else None
+                mc = None if s == CURRENT else row["mcnemar_vs_current"].get(f) if s == row["best"] else \
+                    row.get("routes_vs_current", {}).get(s, {}).get(f)
                 parts.append("%s %s (%.2f [%.2f,%.2f])%s" % (
                     f, pct(j["rate"]), j["ratio"], j["ratio_ci"][0], j["ratio_ci"][1],
                     " +%d/-%d p%.2f%s" % (mc["gain"], mc["loss"], mc["p"], "x" if mc["cross_window"] else "")
@@ -869,7 +993,7 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
     for et, mat, t in KEYS:
         if t is not None:
             continue
-        for s in SETTINGS:
+        for s in cfgs:
             g = gen_name(s, et, mat)
             top = gen.get("_identity", {}).get(g)
             print("   %-19s %-13s %s" % (key_name(et, mat), s, ", ".join("%s %d" % x for x in top) if top else "-"))
@@ -879,7 +1003,7 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
         if et != "footstep":
             continue
         cells = []
-        for s in SETTINGS:
+        for s in cfgs:
             r = mat_gen.get(gen_name(s, et, mat))
             cells.append("%s %s%s" % (s, pct(r["accuracy"]) if r else "  nan",
                                       " (%.2f of real)" % r["ratio"] if r and r["ratio"] is not None else "*"))
@@ -890,8 +1014,10 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
           " 10-90% range) and Audiobox PQ gen / real")
     for k, row in summary.items():
         et, mat = k.split("|")
-        for s in dedupe([CURRENT] + ([row["best"]] if row["best"] else [])):
+        for s in shown(row, cfgs):
             g = gen_name(s, et, mat)
+            if g not in meta:
+                continue
             sc = shapes_cmp.get(g)
             pq = ab_per.get(g, {}).get("PQ")
             rpq = row["settings"][s]["pq_real"]
@@ -903,9 +1029,18 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
                                                           100 * sc[x]["in_range"]) for x in SHAPE),
                 sc["in_range_mean"], "%.2f" % pq if pq is not None else "-", "%.2f" % rpq if rpq is not None else "-",
                 sc.get("_ref", "")))
+            for st, v in sc.get("by_stratum", {}).items():
+                print("   %-19s %-13s   %-30s %4d real  %s  in-range %.2f" % (
+                    "", "", st, v["n"], "  ".join("%s %.3g/%.3g %.0f%%" % (
+                        x, v[x]["gen_median"], v[x]["real_median"], 100 * v[x]["in_range"]) for x in SHAPE),
+                    v["in_range_mean"]))
     print("-" * W)
     print(" GENERATION  median ms per clip and static guard counts per setting")
-    for s in SETTINGS:
+    for s in cfgs:
+        if "route" in cfgs[s]:
+            print("   %-13s route %s, %d keys, steps %s, route.json %s" % (
+                s, cfgs[s]["route"], cfgs[s]["keys"], cfgs[s]["steps"], "yes" if cfgs[s]["route_json"] else "no"))
+            continue
         rs = [runs[gen_name(s, et, mat)] for et, mat, _t in KEYS]
         ms = [r["ms_median"] for r in rs if r["ms_median"] is not None]
         st = Counter()
@@ -927,28 +1062,63 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
 def parse(argv):
     ap = argparse.ArgumentParser(description="Validate judges per sound type on real references, then score SARGE's new"
                                              " vocabulary under four generic settings.")
-    ap.add_argument("--manifest", default=os.path.join("data", "refs", "manifest.json"))
+    ap.add_argument("--manifest", default=MANIFEST)
+    ap.add_argument("--refs", default=None)
     ap.add_argument("--judges", nargs="+", default=["ast", "panns", "clap", "audiobox"])
     ap.add_argument("--tag-fits", nargs="+", default=TAG_FITS, choices=TAG_FITS)
     ap.add_argument("--seeds", type=int, default=20)
     ap.add_argument("--reuse", action="store_true")
     ap.add_argument("--gen-dir", default=os.path.join("data", "_gate", "vocab"))
-    ap.add_argument("--listen", default=os.path.join("data", "_gate", "listen", "vocab_best.wav"))
+    ap.add_argument("--settings", nargs="+", default=list(SETTINGS), choices=list(SETTINGS) + ["none"])
+    ap.add_argument("--route", action="append", default=[])
+    ap.add_argument("--strata-shape", action="store_true")
+    ap.add_argument("--min-stratum", type=int, default=8)
+    ap.add_argument("--listen", default=None)
     ap.add_argument("--listen-seeds", type=int, default=3)
     ap.add_argument("--fpr", type=float, default=0.1)
     ap.add_argument("--min-real", type=float, default=0.5)
     ap.add_argument("--min-gap", type=float, default=0.3)
     ap.add_argument("--target", type=float, default=0.8)
+    ap.add_argument("--min-ref-clips", type=int, default=10)
+    ap.add_argument("--min-ref-sources", type=int, default=4)
     ap.add_argument("--neg-per-family", type=int, default=40)
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--boot-seed", type=int, default=0)
     ap.add_argument("--bs", type=int, default=8)
     ap.add_argument("--threads", type=int, default=4)
-    ap.add_argument("--out", default=os.path.join(ROOT, "scripts", "bench", "out_vocab_eval.json"))
+    ap.add_argument("--out", default=None)
     args = ap.parse_args(argv)
     bad = [j for j in args.judges if j not in JUDGES]
     if bad:
         raise SystemExit("unknown judges %s, choose from %s" % (bad, sorted(JUDGES)))
+    if args.refs:
+        if args.manifest != MANIFEST:
+            raise SystemExit("--refs and --manifest both given, pick one")
+        args.manifest = os.path.join(args.refs, "manifest.json")
+    if "none" in args.settings:
+        if len(args.settings) > 1:
+            raise SystemExit("--settings none takes no other setting")
+        args.settings = []
+    if not args.settings and not args.route:
+        raise SystemExit("nothing to score: --settings none and no --route")
+    names = []
+    for spec in args.route:
+        name, _, d = spec.partition("=")
+        if not ROUTE_NAME.fullmatch(name) or not d:
+            raise SystemExit("--route takes NAME=DIR with NAME of letters, digits and _ . + -, got %r" % spec)
+        if name in SETTINGS or name in names:
+            raise SystemExit("route name %s is already a setting or another route" % name)
+        names.append(name)
+    parts = []
+    if os.path.normcase(os.path.normpath(args.manifest)) != os.path.normcase(os.path.normpath(MANIFEST)):
+        parts.append(os.path.basename(os.path.dirname(os.path.normpath(os.path.join(ROOT, args.manifest)))))
+    if args.settings != list(SETTINGS):
+        parts.append("+".join(args.settings) or "nobase")
+    tag = "".join("_" + p for p in parts + names)
+    if args.out is None:
+        args.out = os.path.join(ROOT, "scripts", "bench", "out_vocab_eval%s.json" % tag)
+    if args.listen is None:
+        args.listen = os.path.join("data", "_gate", "listen", "vocab_best%s.wav" % tag)
     return args
 
 
@@ -956,15 +1126,21 @@ def main(argv=None):
     args = parse(argv)
     t0 = time.perf_counter()
     boot = Boot(args.boot, args.boot_seed)
-    man, sets, meta = load_refs(args)
+    base = {s: SETTINGS[s] for s in args.settings}
+    man, sets, meta = load_refs(args, base)
+    rcfgs, rsets, rmeta, rruns = load_routes(args, man)
+    cfgs = {**base, **rcfgs}
     build_hiss(sets, meta)
     types = list(man["types"])
     family = {t: man["types"][t]["family"] for t in types}
     print("references: %d sets, %d clips (%.1f s)" % (len(sets), sum(len(v) for v in sets.values()),
                                                      time.perf_counter() - t0), flush=True)
-    gsets, gmeta, runs, ginfo = generate(args)
+    gsets, gmeta, runs, ginfo = generate(args, base)
     sets.update(gsets)
     meta.update(gmeta)
+    sets.update(rsets)
+    meta.update(rmeta)
+    runs.update(rruns)
     pools = neg_pools(meta, args.neg_per_family)
     var, labelsets, mpred, ab = {}, {}, {}, {}
     for j in args.judges:
@@ -998,20 +1174,26 @@ def main(argv=None):
         rows, src = shape_refs(meta, shapes, man, m["type"], m["win"], m["key"].split("|")[1])
         if rows:
             shapes_cmp[g] = {**shape_compare(shapes[g], rows), "_ref": src}
+            if args.strata_shape:
+                by = shape_strata(meta, shapes, man, m["type"], m["win"], m["key"].split("|")[1])
+                shapes_cmp[g]["by_stratum"] = {k: {**shape_compare(shapes[g], v), "n": len(v)}
+                                               for k, v in sorted(by.items()) if len(v) >= args.min_stratum}
     ab_per, ab_gen = ab_summary(ab, meta) if ab else ({}, {})
-    summary = summarize(cons, mat_gen, shapes_cmp, ab_gen, chosen, man, args)
-    paired_vs_current(gen, cons, summary)
-    listen, order = build_listen(sets, summary, args)
+    summary = summarize(cons, mat_gen, shapes_cmp, ab_gen, chosen, man, args, cfgs,
+                        {g for g, m in meta.items() if m["kind"] == "gen"})
+    paired_vs_current(gen, cons, summary, cfgs)
+    listen, order = build_listen(sets, summary, args, cfgs)
     report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, ab_per, labelsets, pools, runs, order,
-           rel(listen), args, types, family, man)
-    out = {"meta": {"root": ROOT, "args": vars(args), "sr": SR, "intensity": INTENSITY, "settings": SETTINGS,
+           rel(listen), args, types, family, man, cfgs)
+    out = {"meta": {"root": ROOT, "args": vars(args), "sr": SR, "intensity": INTENSITY, "settings": cfgs,
                     "current": CURRENT, "production": PRODUCTION, "generator": ginfo,
                     "keys": [{"key": key_name(et, mat), "type": t} for et, mat, t in KEYS],
                     "rules": list(RULES), "tag_fits": args.tag_fits, "clap_texts": CLAP_TEXTS, "phrases": PHRASES,
                     "canon": CANON, "extra": EXTRA, "same_event": SAME_EVENT, "generic": GENERIC,
                     "material_text": MAT_TEXT,
                     "hiss": {"spectra_slope_highpass": HISS_SPECTRA, "per_spectrum": HISS_PER},
-                    "manifest": args.manifest, "seconds": time.perf_counter() - t0},
+                    "manifest": args.manifest, "heldout": man["meta"].get("heldout"),
+                    "seconds": time.perf_counter() - t0},
            "label_sets": labelsets, "types": man["types"], "families": family,
            "neg_pools": {w: {f: {"n": p["n"], "sets": p["sets"], "sources": len(set(p["clusters"]))}
                              for f, p in by.items()} for w, by in pools.items()},

@@ -10,9 +10,11 @@ import _bootstrap
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 import time
+import wave
 from collections import Counter, defaultdict
 from math import gcd
 
@@ -35,6 +37,20 @@ HEAR = os.path.join(DATA, "hear", "tasks", "gunshot_triangulation-v1.0-full")
 FOLEY = os.path.join(DATA, "foleyset", "FoleySet")
 ESC = os.path.join(ROOT, "data", "esc50")
 OUT_DIR = os.path.join("data", "refs")
+HELDOUT_DIR = os.path.join("data", "refs_heldout")
+HELDOUT_JSON = os.path.join(BENCH, "heldout_sources.json")
+TRAIN_MIC = ("oh_farm", "DAVE", "")
+POOLS = {
+    "train": "training and anchor clips: FoleySet split train from uploaders on the training side, C3GD split train "
+             "on DAVE at oh_farm from guns on the training side",
+    "val": "the same sources in FoleySet split val and C3GD split val on DAVE at oh_farm, for early stopping only",
+    "heldout": "every clip of a held-out source, any split and any mic; the held-out reference sets come only from here",
+    "unused": "training-side sources outside the two pools above: their FoleySet and C3GD split test clips and their "
+              "C3GD clips on other mics",
+}
+AUDIO_RULE = ("FoleySet holds byte-identical audio under different names, uploaders and sub-categories; a FoleySet "
+              "reference clip is dropped when its PCM md5 matches a file from an uploader on the training side "
+              "(held-out builds), a file of another sub-category, or an earlier clip of the same set")
 
 LICENSES = {
     "c3gd": {"license": "CC BY 4.0", "source": "C3GD v0.2.0, Zenodo record 22286299",
@@ -286,10 +302,19 @@ def words(r):
     return {t.strip().lower() for t in r["original-tags"].split(",") if t.strip()}
 
 
-def c3gd_clips(args, report):
+def c3gd_meta():
     rows = list(csv.DictReader(open(os.path.join(C3GD, "metadata.csv"), encoding="utf-8")))
     plat = {r["platform_id"]: r for r in csv.DictReader(open(os.path.join(C3GD, "metadata", "platforms.csv"),
                                                               encoding="utf-8"))}
+    return rows, plat
+
+
+def mic_of(r):
+    return r["event_id"], r["mic_id"], r["channel_orientation"]
+
+
+def c3gd_clips(args, report, allow=None):
+    rows, plat = c3gd_meta()
     locs = list(csv.DictReader(open(os.path.join(C3GD, "metadata", "microphone_locations.csv"), encoding="utf-8")))
     data = os.path.join(C3GD, "data")
     check, picked = {}, []
@@ -308,6 +333,8 @@ def c3gd_clips(args, report):
         check["%s|%s|%s" % (ev, mic, ch or "mono")] = {"distance_m": d[0], "files": len(rs), "forms": dict(forms)}
         for r in rs:
             ff = plat[r["platform_id"]]["form_factor"]
+            if allow is not None and r["platform_id"] not in allow:
+                continue
             if ff in FORMS:
                 picked.append((FORMS[ff], r, d[0], ff))
             else:
@@ -348,12 +375,16 @@ def hear_clips(args, report):
     return out
 
 
-def esc_clips(sname, cls, users, used, report):
+def esc_clips(sname, cls, users, used, report, block=None):
     out = []
     names = sorted(n for n in os.listdir(os.path.join(ESC, cls)) if ESC_NAME.match(n))
     for name in names:
         m = ESC_NAME.match(name)
         src = m.group(2)
+        if block is not None and users.get(src) in block:
+            report["excluded"].append({"dataset": "esc50", "set": sname, "id": name, "freesound_id": src,
+                                       "user": users[src], "reason": "Freesound uploader on the training side"})
+            continue
         if (SETS[sname]["type"], src) in used:
             report["excluded"].append({"dataset": "esc50", "set": sname, "id": name, "freesound_id": src,
                                        "reason": "same Freesound recording as a FoleySet clip of this type"})
@@ -392,7 +423,7 @@ def foley_rows():
     return rows
 
 
-def foley_set(sname, spec, rows, args, report):
+def foley_eligible(sname, spec, rows, report):
     sub = [r for r in rows if r["sub-category"] == spec["sub"]]
     keep = []
     for r in sub:
@@ -409,6 +440,54 @@ def foley_set(sname, spec, rows, args, report):
             raise SystemExit("FoleySet audio missing: %s" % r["path"])
         else:
             keep.append(r)
+    return sub, keep
+
+
+def pcm_md5(path):
+    try:
+        with wave.open(path, "rb") as w:
+            d = w.readframes(w.getnframes())
+    except (wave.Error, EOFError):
+        d = open(path, "rb").read()
+    return hashlib.md5(d).hexdigest()
+
+
+def audio_index(rows, held):
+    md5 = {r["name"]: pcm_md5(r["path"]) for r in rows}
+    subs, sides = defaultdict(set), defaultdict(set)
+    for r in rows:
+        subs[md5[r["name"]]].add(r["sub-category"])
+        sides[md5[r["name"]]].add(held is not None and r["username"] in held)
+    train = {md5[r["name"]] for r in rows if held is not None and r["username"] not in held}
+    n = Counter(md5.values())
+    return {"md5": md5, "subs": subs, "train": train, "groups": sum(k > 1 for k in n.values()),
+            "files_in_groups": sum(k for k in n.values() if k > 1),
+            "groups_across_labels": sum(len(subs[h]) > 1 for h, k in n.items() if k > 1),
+            "groups_across_pools": sum(len(sides[h]) > 1 for h in n)}
+
+
+def audio_filter(sname, keep, audio, report):
+    seen, out = set(), []
+    for r in keep:
+        h = audio["md5"][r["name"]]
+        why = ("audio identical to a FoleySet file from an uploader on the training side" if h in audio["train"] else
+               "audio identical to a FoleySet file of another sub-category" if len(audio["subs"][h]) > 1 else
+               "audio identical to an earlier clip of this set" if h in seen else None)
+        seen.add(h)
+        if why:
+            report["excluded"].append({"dataset": "foleyset", "set": sname, "id": r["name"], "user": r["username"],
+                                       "freesound_id": r["freesound-id"], "reason": why})
+        else:
+            out.append(r)
+    return out
+
+
+def foley_set(sname, spec, rows, args, report, allow=None, audio=None):
+    if allow is not None:
+        rows = [r for r in rows if r["username"] in allow]
+    sub, keep = foley_eligible(sname, spec, rows, report)
+    if audio is not None:
+        keep = audio_filter(sname, keep, audio, report)
     one = [r for r in keep if r["Oneshot-Multi"] == "One-shot"]
     use_one = len(one) >= args.min_oneshot and len({r["username"] for r in one}) >= args.min_oneshot_sources
     pool = one if use_one else keep
@@ -436,18 +515,297 @@ def foley_set(sname, spec, rows, args, report):
     return out
 
 
-def build_list(args, report):
-    rows = foley_rows()
-    users = {r["freesound-id"]: r["username"] for r in rows}
-    clips = c3gd_clips(args, report) + hear_clips(args, report)
+def split_by(rows, key, field="split"):
+    out = defaultdict(set)
+    for r in rows:
+        out[key(r)].add(r[field])
+    return out
+
+
+def combos(by):
+    return dict(sorted(Counter("+".join(sorted(v)) for v in by.values()).items()))
+
+
+def overlap(rows, crow):
+    fu = split_by(rows, lambda r: r["username"])
+    dave = [r for r in crow if mic_of(r) == TRAIN_MIC]
+    return {
+        "foleyset": {"uploaders": len(fu), "uploaders_by_splits": combos(fu),
+                     "uploaders_in_test_and_another_split": sum("test" in v and len(v) > 1 for v in fu.values()),
+                     "recordings_by_splits": combos(split_by(rows, lambda r: r["freesound-id"]))},
+        "c3gd": {"guns_by_splits": combos(split_by(crow, lambda r: r["platform_id"])),
+                 "events_by_splits": combos(split_by(crow, lambda r: r["event_id"])),
+                 "cartridges_by_splits": combos(split_by(crow, lambda r: r["cartridge_id"])),
+                 "recording_files_by_splits": combos(split_by(crow, lambda r: (r["event_id"], r["file_id"]))),
+                 "shots_by_splits_across_mics": combos(split_by(crow, lambda r: (r["event_id"], r["file_id"],
+                                                                                 r["clip_id"]))),
+                 "train_mic_files_by_splits": combos(split_by(dave, lambda r: r["file_id"])),
+                 "guns_per_event": {e: len({r["platform_id"] for r in crow if r["event_id"] == e})
+                                    for e in sorted({r["event_id"] for r in crow})},
+                 "events_per_gun": combos(split_by(crow, lambda r: r["platform_id"], "event_id"))},
+    }
+
+
+def fs_pool(r, held):
+    if r["username"] in held:
+        return "heldout"
+    return {"train": "train", "val": "val"}.get(r["split"], "unused")
+
+
+def gun_pool(r, held):
+    if r["platform_id"] in held:
+        return "heldout"
+    if mic_of(r) != TRAIN_MIC:
+        return "unused"
+    return {"train": "train", "val": "val"}.get(r["split"], "unused")
+
+
+def gun_order(plat, p):
+    return plat[p]["form_factor"], plat[p]["caliber"], p
+
+
+def assign(args, rows):
+    crow, plat = c3gd_meta()
+    plat = {**{r["platform_id"]: {"form_factor": "unknown", "caliber": "", "missing": True} for r in crow}, **plat}
+    fsp = split_by(rows, lambda r: r["username"])
+    elig, per = {}, defaultdict(Counter)
     for sname, spec in SETS.items():
         if spec["dataset"] == "foleyset":
-            clips += foley_set(sname, spec, rows, args, report)
+            elig[sname] = foley_eligible(sname, spec, rows, {"excluded": [], "filtered": {}})[1]
+            for r in elig[sname]:
+                per[r["username"]][sname] += 1
+    big = sorted(u for u, c in per.items() if max(c.values()) > args.cap_uploader)
+    held = {u for u, s in fsp.items() if "test" in s and u not in big}
+    seen = defaultdict(list)
+    for p in sorted({r["platform_id"] for r in crow if mic_of(r) == TRAIN_MIC}, key=lambda p: gun_order(plat, p)):
+        seen[plat[p]["form_factor"]].append(p)
+    room = {p for ps in seen.values() for p in ps}
+    gh = {p for p in plat if p not in room}
+    gh |= {p for ps in seen.values() if len(ps) > 1 for i, p in enumerate(ps) if i % args.gun_holdout_every == 0}
+    close = set(CLOSE_MICS)
+    guns = {}
+    for p in sorted(plat, key=lambda p: gun_order(plat, p)):
+        rs = [r for r in crow if r["platform_id"] == p]
+        guns[p] = {"pool": "heldout" if p in gh else "train", "form_factor": plat[p]["form_factor"],
+                   "caliber": plat[p]["caliber"], "in_platforms_csv": not plat[p].get("missing"),
+                   "events": sorted({r["event_id"] for r in rs}),
+                   "on_train_mic": p in room,
+                   "room": ("training room" if p in room else "never on the training mic") if p in gh else None,
+                   "clips": dict(sorted(Counter(gun_pool(r, gh) for r in rs).items())),
+                   "close_mic_clips": sum(mic_of(r) in close for r in rs)}
+    ups = {}
+    for u in sorted(fsp):
+        ups[u] = {"pool": "heldout" if u in held else "train", "splits": sorted(fsp[u])}
+        if u in big and "test" in fsp[u]:
+            ups[u]["kept_for_training"] = "more than %d eligible clips in %s" % (
+                args.cap_uploader, ", ".join(s for s, n in sorted(per[u].items()) if n > args.cap_uploader))
+        if per.get(u):
+            ups[u]["sets"] = {s: dict(sorted(Counter(fs_pool(r, held) for r in elig[s] if r["username"] == u).items()))
+                              for s in sorted(per[u])}
+    step = SETS["fs_step"]["sub"]
+    cat = {r["category"] for r in rows if r["sub-category"] == step}
+    other = {}
+    for sub in sorted({r["sub-category"] for r in rows if r["category"] in cat} - {step}):
+        rs = [r for r in rows if r["sub-category"] == sub and "ai-generated" not in words(r)]
+        other[sub] = {s: tally((fs_pool(r, held), "fs:%s" % r["username"]) for r in rs if surface_of(r) == s)
+                      for s in SURFACES}
+    return {"fs_heldout": held, "fs_train_side": set(fsp) - held, "fs_big": big, "gun_heldout": gh, "guns": guns,
+            "uploaders": ups, "elig": elig, "crow": crow, "plat": plat, "overlap": overlap(rows, crow),
+            "steps_other": other, "audio": audio_index(rows, held)}
+
+
+def tally(items):
+    out = defaultdict(lambda: {"clips": 0, "sources": set()})
+    for pool, cluster in items:
+        out[pool]["clips"] += 1
+        out[pool]["sources"].add(cluster)
+    return {p: {"clips": v["clips"], "sources": len(v["sources"])} for p, v in sorted(out.items())}
+
+
+def pool_rows(pools):
+    by = {}
+    close = set(CLOSE_MICS) | {TRAIN_MIC}
+    for sname, rs in pools["elig"].items():
+        by[sname] = [(fs_pool(r, pools["fs_heldout"]), "fs:%s" % r["username"], r) for r in rs]
+    for ff, sname in FORMS.items():
+        by[sname] = [(gun_pool(r, pools["gun_heldout"]), "c3gd:%s" % r["platform_id"], r) for r in pools["crow"]
+                     if pools["plat"][r["platform_id"]]["form_factor"] == ff and mic_of(r) in close]
+    return by
+
+
+def thin(n, k, args):
+    why = []
+    if n < args.min_heldout_clips:
+        why.append("%d clips < %d" % (n, args.min_heldout_clips))
+    if k < args.min_heldout_sources:
+        why.append("%d sources < %d" % (k, args.min_heldout_sources))
+    return why
+
+
+def heldout_info(pools, clips, built, report, args):
+    by = pool_rows(pools)
+    types = {}
+    for t in TYPES:
+        ss = [s for s, spec in SETS.items() if spec["type"] == t]
+        cand = [(p, c) for s in ss for p, c, _r in by.get(s, [])]
+        cs = [c for c in clips if c["set"] in ss]
+        n, k = len(cs), len({c["cluster"] for c in cs})
+        why = thin(n, k, args)
+        types[t] = {"sets": ss, "pools_before_selection": tally(cand),
+                    "heldout_built": {"clips": n, "sources": k,
+                                      "by_dataset": dict(sorted(Counter(c["dataset"] for c in cs).items()))},
+                    "thin": bool(why), "thin_reason": "; ".join(why)}
+    surf = {}
+    steps = by.get("fs_step", [])
+    for s in SURFACES:
+        cs = [c for c in clips if c["set"] == "fs_step" and c["surface"] == s]
+        n, k = len(cs), len({c["cluster"] for c in cs})
+        why = thin(n, k, args)
+        surf[s] = {"pools_before_selection": tally((p, c) for p, c, r in steps if surface_of(r) == s),
+                   "heldout_built": {"clips": n, "sources": k}, "material_check_built": s in built,
+                   "thin": bool(why), "thin_reason": "; ".join(why)}
+    train = {}
+    for sname, rs in by.items():
+        train[sname] = []
+        for p, c, r in rs:
+            if p not in ("train", "val"):
+                continue
+            path = r["path"] if "path" in r else os.path.join(C3GD, "data", r["filename"])
+            e = {"path": path.replace(os.sep, "/"), "cluster": c, "pool": p}
+            if sname == "fs_step":
+                e["surface"] = surface_of(r)
+            train[sname].append(e)
+    esc = [c for c in clips if c["dataset"] == "esc50"]
+    return {
+        "meta": {"built_by": "scripts/bench/vocab_refs.py --heldout", "refs": args.out_dir.replace(os.sep, "/"),
+                 "manifest": os.path.join(args.out_dir, "manifest.json").replace(os.sep, "/"),
+                 "cluster_format": "fs:<FoleySet username>, c3gd:<C3GD platform_id>, esc:<ESC-50 Freesound source id>, "
+                                   "hear:<HEAR shot id>",
+                 "trainable": "a FoleySet clip trains or anchors only when foleyset.uploaders[username].pool is train "
+                              "and its split is train (val for early stopping); a C3GD clip only when "
+                              "c3gd.guns[platform_id].pool is train, its mic is DAVE at oh_farm and its split is train "
+                              "(val for early stopping); ESC-50 and HEAR never; train_clips lists the reference-set "
+                              "clips that pass",
+                 "route_json": "a route folder for vocab_eval.py --route NAME=DIR holds <event>-<material>_NN.wav for "
+                               "seeds 00 to 19 at 0.6 or 1.5 s and a route.json with clusters (every source it trained "
+                               "on or anchored from, in cluster_format; empty for none) and optionally sources (file "
+                               "paths), steps, prompts {event|material: prompt} and note; vocab_eval stops when a "
+                               "cluster or file is held out",
+                 "rules": {
+                     "foleyset": "an uploader is held out when FoleySet puts any of its clips in split test, unless it "
+                                 "holds more than %d eligible clips in one reference set (the per-uploader cap of the "
+                                 "eval, so the eval could take only %d of them); a held-out uploader gives every clip "
+                                 "to the held-out pool, the rest train on split train; %s" % (
+                                     args.cap_uploader, args.cap_uploader, AUDIO_RULE),
+                     "c3gd": "a gun (platform_id) is held out when it was never recorded on %s at %s, or when its "
+                             "position in its form factor's list of guns on that mic, sorted by caliber and "
+                             "platform_id, is a multiple of %d counting from 0 (a form factor with one gun keeps it for "
+                             "training); a held-out gun gives every clip on every mic to the held-out pool" % (
+                                 TRAIN_MIC[1], TRAIN_MIC[0], args.gun_holdout_every),
+                     "esc50": "CC BY-NC, never trained on; an ESC-50 clip is dropped from the held-out sets when "
+                              "FoleySet names its Freesound uploader on the training side",
+                     "hear": "CC0 far mics, never in the training pool, so all of it is held out"},
+                 "pools": POOLS, "train_mic": "|".join(x or "mono" for x in TRAIN_MIC),
+                 "thin_rule": "fewer than %d clips or fewer than %d sources in the built held-out set" % (
+                     args.min_heldout_clips, args.min_heldout_sources),
+                 "args": dict(vars(args))},
+        "overlap": pools["overlap"],
+        "types": types, "surfaces": surf,
+        "thin_types": sorted(t for t, v in types.items() if v["thin"]),
+        "thin_surfaces": [s for s, v in surf.items() if v["thin"]],
+        "surfaces_in_other_footstep_subcategories": {
+            "note": "multi-shot FoleySet recordings outside every reference set; counts by pool and surface from "
+                    "original-tags with the same one-surface rule", "counts": pools["steps_other"]},
+        "foleyset": {"heldout_uploaders": sorted(pools["fs_heldout"]),
+                     "kept_for_training": [u for u in pools["fs_big"] if "test" in pools["uploaders"][u]["splits"]],
+                     "uploaders": pools["uploaders"]},
+        "c3gd": {"heldout_guns": sorted(pools["gun_heldout"], key=lambda p: gun_order(pools["plat"], p)),
+                 "train_guns": [p for p, g in pools["guns"].items() if g["pool"] == "train"], "guns": pools["guns"]},
+        "esc50": {"kept": len(esc), "uploader_known_heldout": sum(c["cluster"].startswith("fs:") for c in esc),
+                  "uploader_unknown": sum(not c["cluster"].startswith("fs:") for c in esc),
+                  "dropped_training_uploader": [e for e in report["excluded"]
+                                                if e["reason"] == "Freesound uploader on the training side"]},
+        "hear": {"kept": sum(c["dataset"] == "hear" for c in clips)},
+        "audio_duplicates": {**report.get("audio_duplicates", {}), "rule": AUDIO_RULE,
+                             "dropped": [e for e in report["excluded"] if e["reason"].startswith("audio identical")]},
+        "train_clips": train,
+    }
+
+
+def heldout_summary(info):
+    W = 132
+    print()
+    print("=" * W)
+    print(" HELD-OUT POOLS  (%s)" % info["meta"]["thin_rule"])
+    ov = info["overlap"]
+    print("   FoleySet uploaders by split: %s; Freesound recordings by split: %s" % (
+        ov["foleyset"]["uploaders_by_splits"], ov["foleyset"]["recordings_by_splits"]))
+    print("   C3GD guns by split %s, events %s, recording files %s, the same shot on different mics %s" % (
+        ov["c3gd"]["guns_by_splits"], ov["c3gd"]["events_by_splits"], ov["c3gd"]["recording_files_by_splits"],
+        ov["c3gd"]["shots_by_splits_across_mics"]))
+    fo, cg = info["foleyset"], info["c3gd"]
+    print("   FoleySet: %d held-out uploaders, %d kept for training although they touch test: %s" % (
+        len(fo["heldout_uploaders"]), len(fo["kept_for_training"]), ", ".join(fo["kept_for_training"])))
+    print("   C3GD: %d training guns on the training mic: %s" % (len(cg["train_guns"]), ", ".join(cg["train_guns"])))
+    for p in cg["heldout_guns"]:
+        g = cg["guns"][p]
+        if g["close_mic_clips"]:
+            print("     held out %-24s %-8s %-18s %-26s %s" % (p, g["form_factor"], g["caliber"], g["room"],
+                                                             ",".join(g["events"])))
+    print("   ESC-50: %d kept (%d with a held-out FoleySet uploader, %d with an uploader FoleySet does not name), %d "
+          "dropped for a training-side uploader; HEAR %d" % (
+              info["esc50"]["kept"], info["esc50"]["uploader_known_heldout"], info["esc50"]["uploader_unknown"],
+              len(info["esc50"]["dropped_training_uploader"]), info["hear"]["kept"]))
+    ad = info["audio_duplicates"]
+    print("   FoleySet byte-identical audio: %d groups over %d files, %d across sub-categories, %d across the two sides; "
+          "held-out clips dropped: %s" % (ad.get("groups", 0), ad.get("files_in_groups", 0),
+                                          ad.get("groups_across_labels", 0), ad.get("groups_across_pools", 0),
+                                          ", ".join("%s %d" % x for x in sorted(Counter(
+                                              "%s (%s)" % (e["set"], e["reason"][len("audio identical to "):])
+                                              for e in ad["dropped"]).items())) or "none"))
+    print("-" * W)
+    print("   %-16s %18s %18s %18s %18s   %s" % ("type", "train", "val", "held-out pool", "held-out built", "flag"))
+    for t, v in info["types"].items():
+        pb = v["pools_before_selection"]
+        cells = ["%5d clips %3d src" % (pb.get(p, {}).get("clips", 0), pb.get(p, {}).get("sources", 0))
+                 for p in ("train", "val", "heldout")]
+        hb = v["heldout_built"]
+        print("   %-16s %s %s %s %5d clips %3d src   %s" % (t, cells[0], cells[1], cells[2], hb["clips"], hb["sources"],
+                                                          "THIN (%s)" % v["thin_reason"] if v["thin"] else ""))
+    for s, v in info["surfaces"].items():
+        pb = v["pools_before_selection"]
+        cells = ["%5d clips %3d src" % (pb.get(p, {}).get("clips", 0), pb.get(p, {}).get("sources", 0))
+                 for p in ("train", "val", "heldout")]
+        hb = v["heldout_built"]
+        print("   %-16s %s %s %s %5d clips %3d src   %s%s" % (
+            "footstep " + s, cells[0], cells[1], cells[2], hb["clips"], hb["sources"],
+            "THIN (%s)" % v["thin_reason"] if v["thin"] else "",
+            "" if v["material_check_built"] else "  no material check"))
+    for sub, by in info["surfaces_in_other_footstep_subcategories"]["counts"].items():
+        print("   %s (multi-shot, unused) held-out pool per surface: %s" % (sub, ", ".join(
+            "%s %d clips %d src" % (s, v.get("heldout", {}).get("clips", 0), v.get("heldout", {}).get("sources", 0))
+            for s, v in by.items())))
+    print("   THIN: %s; footstep surfaces %s" % (", ".join(info["thin_types"]) or "none",
+                                                ", ".join(info["thin_surfaces"]) or "none"))
+    print("=" * W)
+
+
+def build_list(args, report, pools=None):
+    rows = foley_rows()
+    users = {r["freesound-id"]: r["username"] for r in rows}
+    audio = pools["audio"] if pools else audio_index(rows, None) if args.dedupe_audio else None
+    clips = c3gd_clips(args, report, pools and pools["gun_heldout"]) + hear_clips(args, report)
+    for sname, spec in SETS.items():
+        if spec["dataset"] == "foleyset":
+            clips += foley_set(sname, spec, rows, args, report, pools and pools["fs_heldout"], audio)
     used = {(SETS[c["set"]]["type"], c["freesound_id"]) for c in clips if c["dataset"] == "foleyset"}
     for sname, spec in SETS.items():
         if spec["dataset"] == "esc50":
-            clips += esc_clips(sname, spec["cls"], users, used, report)
+            clips += esc_clips(sname, spec["cls"], users, used, report, pools and pools["fs_train_side"])
     report["esc_uploaders"] = sum(c["dataset"] == "esc50" and c["cluster"].startswith("fs:") for c in clips)
+    if audio is not None:
+        report["audio_duplicates"] = {k: audio[k] for k in ("groups", "files_in_groups", "groups_across_labels",
+                                                            "groups_across_pools")}
     for sub, why in NOT_USED.items():
         n = sum(r["sub-category"] == sub for r in rows)
         report["not_used"][sub] = {"clips": n, "reason": why}
@@ -604,26 +962,45 @@ def summary(clips, report, built, dropped, scounts, types):
 
 def parse(argv):
     ap = argparse.ArgumentParser(description="Build processed real reference sets for the SARGE vocabulary eval.")
-    ap.add_argument("--out-dir", default=OUT_DIR)
+    ap.add_argument("--out-dir", default=None)
+    ap.add_argument("--heldout", action="store_true")
+    ap.add_argument("--sources-json", default=HELDOUT_JSON)
+    ap.add_argument("--gun-holdout-every", type=int, default=2)
+    ap.add_argument("--min-heldout-clips", type=int, default=30)
+    ap.add_argument("--min-heldout-sources", type=int, default=8)
+    ap.add_argument("--dedupe-audio", action="store_true")
     ap.add_argument("--cap-gun", type=int, default=20)
     ap.add_argument("--cap-uploader", type=int, default=12)
     ap.add_argument("--min-oneshot", type=int, default=30)
     ap.add_argument("--min-oneshot-sources", type=int, default=10)
     ap.add_argument("--min-surface-clips", type=int, default=8)
     ap.add_argument("--min-surface-sources", type=int, default=3)
-    return ap.parse_args(argv)
+    args = ap.parse_args(argv)
+    args.dedupe_audio = bool(args.dedupe_audio or args.heldout)
+    if args.out_dir is None:
+        args.out_dir = HELDOUT_DIR if args.heldout else OUT_DIR
+    if args.gun_holdout_every < 1:
+        raise SystemExit("--gun-holdout-every takes 1 or more")
+    if args.heldout and os.path.normcase(os.path.abspath(os.path.join(ROOT, args.out_dir))) == \
+            os.path.normcase(os.path.abspath(os.path.join(ROOT, OUT_DIR))):
+        raise SystemExit("--heldout would overwrite %s, the full reference build" % OUT_DIR)
+    return args
 
 
 def main(argv=None):
     args = parse(argv)
     t0 = time.perf_counter()
     report = {"args": vars(args), "capped": {}, "excluded": [], "skipped": [], "filtered": {}, "not_used": {}}
-    clips = build_list(args, report)
+    pools = assign(args, foley_rows()) if args.heldout else None
+    clips = build_list(args, report, pools)
     print("selected %d clips, processing at %s s" % (len(clips), " and ".join(LENGTHS)), flush=True)
     clips = materialize(clips, args, report)
     built, dropped, scounts = surfaces(clips, args)
     types = type_table(clips)
     summary(clips, report, built, dropped, scounts, types)
+    info = heldout_info(pools, clips, built, report, args) if pools else None
+    if info:
+        heldout_summary(info)
     man = {"meta": {"root": ROOT, "sr": SR, "intensity": INTENSITY, "target_rms": target_for(INTENSITY),
                     "lengths": {w: {"keep_s": float(w), "gen_s": g} for w, g in LENGTHS.items()},
                     "processing": "AudioClip.from_wav mono, scipy resample_poly to 44100 Hz, sources shorter than the "
@@ -643,6 +1020,17 @@ def main(argv=None):
            "filtered": report["filtered"], "esc_fs_uploader_clusters": report["esc_uploaders"],
            "stale_removed": prune(clips, args),
            "clips": clips}
+    if "audio_duplicates" in report:
+        man["audio_duplicates"] = {**report["audio_duplicates"], "rule": AUDIO_RULE,
+                                   "dropped": [e for e in report["excluded"] if e["reason"].startswith("audio identical")]}
+    if info:
+        man["meta"]["heldout"] = {"sources_json": rel(args.sources_json), "rules": info["meta"]["rules"],
+                                  "pools": POOLS, "thin_types": info["thin_types"],
+                                  "clusters": {"foleyset": sorted("fs:%s" % u for u in pools["fs_heldout"]),
+                                               "c3gd": sorted("c3gd:%s" % g for g in pools["gun_heldout"])}}
+        with open(args.sources_json, "w", encoding="utf-8") as fh:
+            json.dump(info, fh, indent=1)
+        print("saved -> %s" % args.sources_json)
     p = os.path.join(ROOT, args.out_dir, "manifest.json")
     os.makedirs(os.path.dirname(p), exist_ok=True)
     with open(p, "w", encoding="utf-8") as fh:
