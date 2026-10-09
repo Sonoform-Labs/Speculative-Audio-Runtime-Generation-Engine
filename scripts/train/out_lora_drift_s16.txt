@@ -1,0 +1,35 @@
+============================================================================================================================================
+ LORA DRIFT at the production tier (StableAudio3Generator euler, 16 steps, cfg 2.0, fp16, accelerator, hoist and static guard, 1.0 s generation kept at 0.6 s, seeds 0 to 19 through seed_for)
+ drift ratio = median over seeds of the log-mel L1 distance between the base clip and the LoRA clip of the same seed, over the median distance between two base seeds of the same key; 0 = unchanged, 1 = as far as a new seed; seeds the static guard retried in either arm leave the pairs; 95% interval from 2000 seed resamples
+============================================================================================================================================
+ arm base       base weights  248.7 ms/clip  retried 0  repeat max abs 0.00e+00  graphs 0 eager 0 hoisted 6416  -> data/_gate/lora_drift_s16/base
+ arm d0         data/lora/runs/d0_real_sarge/lora_final.safetensors  250.2 ms/clip  retried 3  repeat max abs 0.00e+00  graphs 0 eager 0 hoisted 6480  -> data/_gate/lora_drift_s16/d0
+ arm real       data/lora/runs/real_sarge/lora_final.safetensors  250.5 ms/clip  retried 13  repeat max abs 0.00e+00  graphs 0 eager 0 hoisted 6640  -> data/_gate/lora_drift_s16/real
+--------------------------------------------------------------------------------------------------------------------------------------------
+ gate     40 clips  d0 ratio 1.57 [1.27,2.13] (4.50 / 2.87 dB, 40 pairs)   real ratio 4.72 [3.74,5.61] (13.52 / 2.87 dB, 40 pairs)
+ vocab   400 clips  d0 ratio 1.23 [1.16,1.32] (4.82 / 3.93 dB, 397 pairs)   real ratio 4.05 [3.74,4.34] (15.90 / 3.93 dB, 387 pairs)
+--------------------------------------------------------------------------------------------------------------------------------------------
+ key                   seed dB  base static attack/tail/floor d0 ratio, static, attack/tail/floor        real ratio, static, attack/tail/floor   
+ shoot|rifle              4.75  st 0.00   6.2/ 109/ -86.0       1.45 [1.20,1.76] st 0.00   6.4/ 127/ -86.9    4.75 [3.91,5.60] st 0.00  16.2/ 303/ -38.7
+ shoot|pistol             3.29  st 0.00  15.3/  90/ -65.6       1.29 [0.95,1.36] st 0.00  15.5/ 111/ -66.0    6.35 [4.26,7.41] st 0.00   6.5/ 373/ -37.6
+ reload|rifle             2.20  st 0.00   8.0/  62/ -79.2       1.32 [1.02,1.75] st 0.00   7.6/  90/ -86.6    8.98 [6.79,12.95] st 0.00  17.2/ 168/ -57.1
+ equip|rifle              2.72  st 0.00   4.8/  82/ -79.6       1.71 [1.33,2.09] st 0.00   4.6/ 112/ -85.7    8.35 [6.14,10.95] st 0.00   7.8/ 211/ -45.7
+ empty_click|pistol       5.13  st 0.00   4.8/  17/ -78.1       1.08 [0.93,1.55] st 0.00   3.2/  20/ -85.2    3.30 [2.88,4.43] st 0.00   4.6/ 105/ -52.3
+ explosion|grenade        6.29  st 0.00  13.2/ 393/ -45.5       0.79 [0.63,1.08] st 0.00  13.4/ 379/ -51.6    1.71 [1.29,2.74] st 0.00  20.6/ 537/ -30.9
+ swing|sword              3.49  st 0.00  25.8/ 204/ -70.0       1.60 [1.37,1.90] st 0.00  24.0/ 212/ -72.2    3.11 [2.45,3.57] st 0.00  20.6/ 148/ -61.0
+ open|door                8.54  st 0.00  25.0/ 324/ -81.9       0.76 [0.44,1.63] st 0.00  29.2/ 357/ -70.0    1.80 [1.33,3.08] st 0.00  20.5/ 538/ -26.7
+ slam|door                3.76  st 0.00  15.0/ 533/ -33.7       1.14 [0.95,1.30] st 0.00  14.6/ 528/ -34.0    2.92 [2.02,3.42] st 0.00  22.7/ 510/ -34.5
+ break|window            10.22  st 0.00  26.3/ 380/ -47.6       1.19 [0.54,1.96] st 0.00  26.9/ 406/ -56.4    1.64 [1.00,3.36] st 0.00   6.5/ 543/ -33.1
+ click|button             3.67  st 0.00   4.0/  11/ -69.8       1.43 [1.18,2.02] st 0.00   5.1/  52/ -81.9    5.06 [3.82,7.82] st 0.00   5.4/  62/ -46.5
+ cast|fire_spell          5.18  st 0.00  27.0/ 531/ -28.0       1.07 [0.93,1.22] st 0.00  26.9/ 527/ -30.4    2.40 [2.26,2.67] st 0.00  21.4/ 553/ -20.8
+ punch|body               3.83  st 0.00   5.2/  72/ -87.3       1.02 [0.90,1.37] st 0.00   5.5/ 126/ -89.4    1.74 [1.40,2.31] st 0.00  12.8/  90/ -89.4
+ horn|truck               6.99  st 0.00  15.6/ 315/ -87.1       0.83 [0.69,1.16] st 0.00  23.3/ 357/ -83.5    3.69 [3.15,5.10] st 0.00  22.5/ 564/  -9.7
+ bark|dog                 2.33  st 0.00  20.6/ 143/ -87.5       0.85 [0.75,1.16] st 0.00  28.4/ 168/ -93.1    5.89 [4.99,8.60] st 0.00  27.0/ 506/ -37.6
+ footstep|wood            2.40  st 0.00   4.8/  99/ -82.0       1.54 [1.18,1.96] st 0.00   5.8/ 121/ -91.7    3.19 [2.50,4.14] st 0.00   6.2/ 166/ -88.3
+ footstep|stone           3.01  st 0.00   3.7/ 126/ -74.8       2.19 [1.93,2.65] st 0.00   6.1/ 200/ -80.5    4.62 [3.56,5.98] st 0.00   5.9/ 120/ -48.1
+ footstep|grass           7.00  st 0.00  24.1/ 341/ -69.3       1.07 [0.79,1.48] st 0.00  24.5/ 280/ -84.8    2.31 [2.03,3.05] st 0.00  15.1/ 471/ -32.8
+ footstep|metal           2.45  st 0.00   2.3/ 141/ -80.4       1.16 [0.85,1.46] st 0.00   4.9/ 156/ -90.0    7.30 [5.77,9.09] st 0.00  14.7/ 368/ -38.7
+ footstep|gravel          4.00  st 0.00  10.1/ 338/ -71.5       1.09 [0.87,1.20] st 0.00   9.2/ 307/ -85.6    4.78 [4.05,5.24] st 0.00  11.0/ 541/ -31.1
+--------------------------------------------------------------------------------------------------------------------------------------------
+ each arm folder is a vocab_eval route: --route NAME=data/_gate/lora_drift_s16/NAME (route.json lists the training clusters)
+============================================================================================================================================

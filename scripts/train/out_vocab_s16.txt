@@ -1,0 +1,363 @@
+route base16        20 keys x 20 seeds at 0.6 s from data/_gate/lora_drift_s16/base
+route d016          20 keys x 20 seeds at 0.6 s from data/_gate/lora_drift_s16/d0
+route real16        20 keys x 20 seeds at 0.6 s from data/_gate/lora_drift_s16/real
+references: 58 sets, 2570 clips (6.1 s)
+generator {"loaded": false, "reason": "--reuse with every file on disk"}
+generated s3_g1.0_k0.6   20 keys x 20 seeds  1.6 s  (reused files)  
+gpu after generator: 0 MB allocated, 0 MB reserved
+ast   fit none         215.2 s
+ast   fit silence      221.7 s
+ast   fit tile         222.5 s
+ast   fit tile_floor   228.0 s
+gpu after ast: 8 MB allocated, 20 MB reserved
+judged ast      900.6 s
+Checkpoint path: C:\Users\alanc/panns_data/Cnn14_mAP=0.431.pth
+GPU number: 1
+panns fit none           4.3 s
+panns fit silence       28.6 s
+panns fit tile          28.9 s
+panns fit tile_floor    39.8 s
+gpu after panns: 8 MB allocated, 20 MB reserved
+judged panns    108.3 s
+clap  native  2181.6 s for 4170 clips x 60 texts
+gpu after clap: 8 MB allocated, 20 MB reserved
+judged clap     2182.4 s
+audiobox       123.7 s for 4050 clips
+gpu after audiobox: 8 MB allocated, 20 MB reserved
+judged audiobox 123.9 s
+
+========================================================================================================================================================================
+ VOCABULARY JUDGE PANEL   positive control per type = real recordings cut like generated clips (_extract to the kept length, normalize_loudness at target_for('normal'))
+ negatives = every real set of another family, up to 40 clips per family (16 families), plus 40 synthetic hiss clips and 20 silent or near-silent clips; valid = real >= 0.50 and real - pooled neg >= 0.30; usable = valid and real - hiss >= 0.30 and real - silence >= 0.30
+ intervals: 95% from 2000 bootstrap draws over independent sources (guns, uploaders, ESC-50 source files, HEAR shots) for real clips and over seeds for generated clips; F = usable with both lower bounds past the thresholds
+========================================================================================================================================================================
+ VALIDITY at 0.6 s   per type: usable variants / total, then the chosen variant per model family
+   gunshot_pistol           usable  41/44   ast   tile_floor|gunshot_pistol|gun|thr              real   77% [53%,93%] neg   10% hiss    0% sil    0% gap [+0.43,+0.83] AUC 0.91 worst gun_mech   33% F strict
+                            usable  41/44   clap  native|gunshot_pistol|id|top                   real   91% [85%,97%] neg    2% hiss    0% sil    0% gap [+0.83,+0.95] AUC 0.99 worst gun_mech   17% F strict
+                            usable  41/44   panns tile_floor|gunshot_pistol|gunshot|top          real   95% [91%,99%] neg    3% hiss    0% sil    0% gap [+0.87,+0.95] AUC 0.98 worst gun_mech   83% F
+   gunshot_rifle            usable  35/44   ast   tile_floor|gunshot_rifle|gun|thr               real   83% [70%,92%] neg   10% hiss    0% sil    0% gap [+0.60,+0.82] AUC 0.93 worst gun_mech   33% F strict
+                            usable  35/44   clap  native|gunshot_rifle|idfam|thr                 real   84% [64%,98%] neg   10% hiss    0% sil    0% gap [+0.54,+0.89] AUC 0.95 worst explosion   52% F strict
+                            usable  35/44   panns tile_floor|gunshot_rifle|gunshot|thr           real   96% [90%,99%] neg   10% hiss   12% sil    0% gap [+0.79,+0.91] AUC 0.97 worst gun_mech   83% F
+   gunshot_shotgun          usable  32/44   ast   none|gunshot_shotgun|gunshot|thr               real   99% [95%,100%] neg   10% hiss    0% sil    0% gap [+0.84,+0.92] AUC 0.99 worst gun_mech   67% F strict
+                            usable  32/44   clap  native|gunshot_shotgun|idfam|thr               real   99% [96%,100%] neg   10% hiss    0% sil    0% gap [+0.84,+0.92] AUC 0.98 worst explosion   52% F strict
+                            usable  32/44   panns none|gunshot_shotgun|gunshot|top               real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.87,+0.94] AUC 0.98 worst gun_mech   67% F strict
+   gunshot_far              usable  34/42   ast   tile|gunshot_far|gunshot|thr                   real   98% [94%,100%] neg   10% hiss    0% sil    0% gap [+0.83,+0.91] AUC 0.98 worst gun_mech   50% F strict
+                            usable  34/42   clap  native|gunshot_far|idfam|top                   real  100% [100%,100%] neg    2% hiss    0% sil    0% gap [+0.96,+0.99] AUC 1.00 worst gun_mech   17% F strict
+                            usable  34/42   panns none|gunshot_far|gunshot|top                   real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.87,+0.94] AUC 0.99 worst gun_mech   67% F strict
+   gun_mech                 usable   0/46   NO VALID JUDGE   closest clap|native|gun_mech|p_a_gun_being_reloaded|thr real  100% neg   10% hiss    0% silent   60%   (6 clips from 4 sources, under --min-ref-clips 10 or --min-ref-sources 4)
+   shell_drop               usable   0/26   NO VALID JUDGE   closest clap|native|shell_drop|p_bullet_casings_dropping|top real  100% neg    1% hiss    0% silent    0%   (3 clips from 2 sources, under --min-ref-clips 10 or --min-ref-sources 4)
+   explosion (approx)       usable  31/44   ast   tile|explosion|explosion|thr                   real   75% [53%,97%] neg   10% hiss    0% sil    0% gap [+0.43,+0.87] AUC 0.95 worst gunshot   45% F strict
+                            usable  31/44   clap  native|explosion|p_a_grenade_explosion|thr     real   95% [84%,100%] neg   10% hiss    0% sil    0% gap [+0.74,+0.92] AUC 0.97 worst door   35% F strict
+                            usable  31/44   panns none|explosion|boom|thr                        real   92% [85%,100%] neg   10% hiss    0% sil    0% gap [+0.74,+0.91] AUC 0.95 worst gunshot   45% F strict
+   sword (approx)           usable  22/46   ast   none|sword|blade|top                           real   92% [82%,100%] neg   15% hiss    0% sil    0% gap [+0.67,+0.85] AUC 0.94 worst glass   85% F
+                            usable  22/46   clap  native|sword|id|top                            real   86% [76%,100%] neg    1% hiss    0% sil   50% gap [+0.75,+0.99] AUC 1.00 worst gun_mech   17% F strict
+                            usable  22/46   panns none|sword|blade|top                           real   86% [74%,100%] neg   15% hiss    0% sil    0% gap [+0.59,+0.84] AUC 0.91 worst glass   82% F
+   door_open                usable   7/44   clap  native|door_open|any|top                       real   85% [75%,93%] neg   13% hiss    0% sil    0% gap [+0.61,+0.80] AUC 0.92 worst knock   74% F
+   door_slam                usable  24/44   ast   none|door_slam|slam_only|thr                   real   88% [76%,100%] neg   10% hiss    0% sil    0% gap [+0.66,+0.88] AUC 0.96 worst punch   35% F strict
+                            usable  24/44   clap  native|door_slam|p_a_door_slam|thr             real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.87,+0.93] AUC 0.98 worst knock   64% F strict
+                            usable  24/44   panns none|door_slam|slam|thr                        real   71% [27%,90%] neg   10% hiss    0% sil    0% gap [+0.16,+0.80] AUC 0.95 worst punch   38%  strict
+   glass_break              usable  38/44   ast   none|glass_break|shatter|top                   real   78% [67%,88%] neg    1% hiss    0% sil    0% gap [+0.66,+0.87] AUC 0.98 worst shell   33% F strict
+                            usable  38/44   clap  native|glass_break|any|top                     real   91% [83%,98%] neg    1% hiss    0% sil    0% gap [+0.82,+0.98] AUC 1.00 worst sword   11% F strict
+                            usable  38/44   panns tile_floor|glass_break|glass|top               real   93% [87%,98%] neg    4% hiss    0% sil    0% gap [+0.82,+0.95] AUC 0.99 worst sword   39% F strict
+   ui_click                 usable  11/44   ast   silence|ui_click|click|thr                     real   75% [66%,86%] neg   10% hiss    0% sil    0% gap [+0.55,+0.76] AUC 0.92 worst gun_mech   67% F
+                            usable  11/44   clap  native|ui_click|p_a_button_click|thr           real   88% [80%,95%] neg   10% hiss   20% sil   50% gap [+0.69,+0.85] AUC 0.96 worst gun_mech   50% F strict
+                            usable  11/44   panns none|ui_click|click|thr                        real   72% [61%,82%] neg   10% hiss    0% sil   20% gap [+0.50,+0.73] AUC 0.88 worst gun_mech   33% F strict
+   punch                    usable  22/44   ast   none|punch|hit|thr                             real   69% [56%,80%] neg   10% hiss    0% sil    0% gap [+0.46,+0.70] AUC 0.92 worst gun_mech   33% F strict
+                            usable  22/44   clap  native|punch|any|thr                           real   98% [93%,100%] neg   10% hiss    0% sil    0% gap [+0.82,+0.92] AUC 0.98 worst footstep   40% F strict
+                            usable  22/44   panns none|punch|hit|thr                             real   64% [53%,77%] neg   10% hiss    0% sil    0% gap [+0.42,+0.67] AUC 0.86 worst gun_mech   33% F strict
+   horn (approx)            usable  34/44   ast   none|horn|horn|top                             real   75% [59%,89%] neg    1% hiss    0% sil    0% gap [+0.59,+0.89] AUC 0.98 worst door    8% F strict
+                            usable  34/44   clap  native|horn|p_a_truck_horn|thr                 real   92% [83%,100%] neg   10% hiss    0% sil   50% gap [+0.72,+0.90] AUC 0.97 worst door   40% F strict
+                            usable  34/44   panns none|horn|horn|thr                             real   88% [76%,97%] neg   10% hiss    0% sil    0% gap [+0.65,+0.87] AUC 0.97 worst wind   57% F strict
+   dog_bark                 usable  34/44   ast   tile_floor|dog_bark|bark|thr                   real  100% [100%,100%] neg   10% hiss   25% sil    0% gap [+0.87,+0.93] AUC 1.00 worst shell   33% F strict
+                            usable  34/44   clap  native|dog_bark|p_a_dog_bark|thr               real   98% [92%,100%] neg   10% hiss    0% sil   50% gap [+0.81,+0.92] AUC 0.99 worst horn   60% F strict
+                            usable  34/44   panns tile|dog_bark|bark|thr                         real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.87,+0.93] AUC 1.00 worst horn   18% F strict
+   splash                   usable   8/26   ast   none|splash|splash|top                         real   74% [53%,88%] neg    0% hiss    0% sil    0% gap [+0.52,+0.87] AUC 0.98 worst door    2% F strict
+                            usable   8/26   clap  native|splash|p_a_splash|top                   real   58% [24%,78%] neg    0% hiss    0% sil    0% gap [+0.24,+0.78] AUC 0.95 worst gunshot    0%  strict
+                            usable   8/26   panns tile|splash|splash|thr                         real   84% [65%,94%] neg   10% hiss   42% sil   50% gap [+0.54,+0.84] AUC 0.93 worst gun_mech   33% F strict
+   footstep                 usable  10/44   clap  native|footstep|p_footsteps|thr                real   56% [36%,75%] neg   10% hiss    0% sil   20% gap [+0.26,+0.65] AUC 0.85 worst click   25%  strict
+                            usable  10/44   panns tile|footstep|foot|thr                         real   74% [54%,93%] neg   10% hiss    0% sil    0% gap [+0.44,+0.83] AUC 0.86 worst fire   28% F strict
+   footstep_esc             usable  19/42   ast   none|footstep_esc|foot|thr                     real   84% [71%,95%] neg   10% hiss    0% sil    0% gap [+0.61,+0.85] AUC 0.93 worst explosion   38% F strict
+                            usable  19/42   clap  native|footstep_esc|any|thr                    real   79% [64%,91%] neg   10% hiss   20% sil   10% gap [+0.53,+0.82] AUC 0.93 worst water   42% F strict
+                            usable  19/42   panns tile|footstep_esc|foot|thr                     real   87% [77%,97%] neg   10% hiss    0% sil    0% gap [+0.67,+0.86] AUC 0.94 worst fire   28% F strict
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ VALIDITY at 1.5 s   per type: usable variants / total, then the chosen variant per model family
+   gunshot_pistol           usable  42/44   ast   silence|gunshot_pistol|gunshot|top             real   84% [70%,94%] neg    3% hiss    0% sil    0% gap [+0.67,+0.90] AUC 0.98 worst gun_mech   50% F strict
+                            usable  42/44   clap  native|gunshot_pistol|id|thr                   real   99% [96%,100%] neg   10% hiss    0% sil    0% gap [+0.84,+0.92] AUC 0.99 worst gun_mech   67% F strict
+                            usable  42/44   panns tile_floor|gunshot_pistol|gun|top              real   98% [95%,100%] neg    3% hiss    0% sil    0% gap [+0.92,+0.98] AUC 0.99 worst gun_mech   67% F strict
+   gunshot_rifle            usable  39/44   ast   tile_floor|gunshot_rifle|gunshot|top           real   97% [93%,100%] neg    9% hiss    0% sil    0% gap [+0.83,+0.92] AUC 0.95 worst gun_mech   50% F strict
+                            usable  39/44   clap  native|gunshot_rifle|idfam|thr                 real   81% [57%,97%] neg   10% hiss    0% sil    0% gap [+0.47,+0.88] AUC 0.95 worst gun_mech   67% F
+                            usable  39/44   panns tile_floor|gunshot_rifle|gunshot|top           real   91% [81%,98%] neg    2% hiss    0% sil    0% gap [+0.78,+0.97] AUC 0.97 worst gun_mech   67% F
+   gunshot_shotgun          usable  21/44   ast   none|gunshot_shotgun|gunshot|top               real   93% [77%,100%] neg    3% hiss    0% sil    0% gap [+0.74,+0.98] AUC 0.99 worst gun_mech   50% F strict
+                            usable  21/44   clap  native|gunshot_shotgun|idfam|thr               real   89% [85%,92%] neg   10% hiss    0% sil    0% gap [+0.74,+0.84] AUC 0.96 worst gun_mech   67% F
+                            usable  21/44   panns tile_floor|gunshot_shotgun|gunshot|top         real   99% [95%,100%] neg    2% hiss    0% sil    0% gap [+0.93,+0.99] AUC 0.99 worst gun_mech   67% F strict
+   gunshot_far              usable  38/42   ast   tile|gunshot_far|gunshot|thr                   real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.87,+0.93] AUC 0.99 worst gun_mech   67% F strict
+                            usable  38/42   clap  native|gunshot_far|idfam|top                   real  100% [100%,100%] neg    1% hiss    0% sil    0% gap [+0.97,+1.00] AUC 1.00 worst door    8% F strict
+                            usable  38/42   panns silence|gunshot_far|gunshot|thr                real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.86,+0.93] AUC 0.99 worst explosion   62% F strict
+   gun_mech                 usable   0/46   NO VALID JUDGE   closest clap|native|gun_mech|any|top real  100% neg    5% hiss    0% silent    0%   (6 clips from 4 sources, under --min-ref-clips 10 or --min-ref-sources 4)
+   shell_drop               usable   0/26   NO VALID JUDGE   closest clap|native|shell_drop|p_small_metal_objects_dropping|top real  100% neg    1% hiss    0% silent    0%   (3 clips from 2 sources, under --min-ref-clips 10 or --min-ref-sources 4)
+   explosion (approx)       usable  33/44   ast   tile|explosion|explosion|top                   real  100% [100%,100%] neg    8% hiss    0% sil    0% gap [+0.90,+0.95] AUC 0.99 worst gunshot   42% F strict
+                            usable  33/44   clap  native|explosion|p_a_grenade_explosion|thr     real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.86,+0.93] AUC 1.00 worst water   32% F strict
+                            usable  33/44   panns tile|explosion|explosion|top                   real  100% [100%,100%] neg    5% hiss    0% sil    0% gap [+0.93,+0.98] AUC 1.00 worst gunshot   28% F strict
+   sword (approx)           usable  27/46   ast   none|sword|blade|top                           real   97% [91%,100%] neg   17% hiss    0% sil    0% gap [+0.74,+0.86] AUC 0.94 worst shell  100% F
+                            usable  27/46   clap  native|sword|id|top                            real   97% [88%,100%] neg    1% hiss    0% sil   50% gap [+0.87,+0.99] AUC 1.00 worst gun_mech   17% F strict
+                            usable  27/46   panns tile_floor|sword|blade|top                     real   83% [65%,96%] neg   10% hiss    0% sil    0% gap [+0.54,+0.87] AUC 0.94 worst glass   80% F
+   door_open                usable   8/44   ast   none|door_open|door|top                        real   57% [48%,68%] neg   14% hiss    0% sil    0% gap [+0.34,+0.55] AUC 0.86 worst knock   69% 
+                            usable   8/44   clap  native|door_open|any|top                       real   92% [84%,98%] neg   11% hiss    0% sil    0% gap [+0.73,+0.88] AUC 0.95 worst knock   79% F
+   door_slam                usable  34/44   ast   none|door_slam|slam_only|thr                   real   88% [71%,100%] neg   10% hiss    0% sil    0% gap [+0.61,+0.91] AUC 0.96 worst punch   50% F strict
+                            usable  34/44   clap  native|door_slam|id|thr                        real   96% [91%,100%] neg   10% hiss    0% sil    0% gap [+0.80,+0.92] AUC 0.98 worst knock   62% F strict
+                            usable  34/44   panns tile_floor|door_slam|slam_only|thr             real   88% [56%,100%] neg   10% hiss    0% sil    0% gap [+0.46,+0.89] AUC 0.95 worst footstep   38% F strict
+   glass_break              usable  44/44   ast   none|glass_break|shatter|top                   real   84% [75%,93%] neg    2% hiss    0% sil    0% gap [+0.73,+0.91] AUC 0.98 worst shell   33% F strict
+                            usable  44/44   clap  native|glass_break|any|top                     real   97% [90%,100%] neg    2% hiss    0% sil    0% gap [+0.88,+0.99] AUC 1.00 worst door   12% F strict
+                            usable  44/44   panns tile_floor|glass_break|glass|top               real   98% [95%,100%] neg    5% hiss    0% sil    0% gap [+0.89,+0.97] AUC 1.00 worst sword   50% F strict
+   ui_click                 usable  15/44   ast   silence|ui_click|click|thr                     real   70% [59%,82%] neg   10% hiss    0% sil    0% gap [+0.48,+0.73] AUC 0.92 worst fire   38% F strict
+                            usable  15/44   clap  native|ui_click|p_a_button_click|thr           real   93% [86%,99%] neg   10% hiss   22% sil   50% gap [+0.75,+0.90] AUC 0.97 worst gun_mech   50% F strict
+                            usable  15/44   panns none|ui_click|click|thr                        real   65% [52%,78%] neg   10% hiss    0% sil   10% gap [+0.43,+0.68] AUC 0.89 worst gun_mech   33% F strict
+   punch                    usable  24/44   ast   none|punch|hit|thr                             real   76% [57%,92%] neg   10% hiss    0% sil    0% gap [+0.47,+0.82] AUC 0.93 worst knock   23% F strict
+                            usable  24/44   clap  native|punch|any|thr                           real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.87,+0.93] AUC 0.99 worst footstep   45% F strict
+                            usable  24/44   panns silence|punch|hit|top                          real   50% [28%,72%] neg    5% hiss    0% sil    0% gap [+0.23,+0.67] AUC 0.84 worst knock   26% 
+   horn (approx)            usable  40/44   ast   silence|horn|horn|thr                          real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.86,+0.93] AUC 0.99 worst wind   70% F strict
+                            usable  40/44   clap  native|horn|p_a_truck_horn|thr                 real   95% [87%,100%] neg   10% hiss    0% sil   50% gap [+0.77,+0.91] AUC 0.98 worst door   55% F strict
+                            usable  40/44   panns tile_floor|horn|horn|thr                       real   95% [87%,100%] neg   10% hiss   12% sil    0% gap [+0.76,+0.91] AUC 0.98 worst wind   52% F strict
+   dog_bark                 usable  40/44   ast   tile_floor|dog_bark|bark|thr                   real  100% [100%,100%] neg   10% hiss    0% sil    0% gap [+0.87,+0.93] AUC 1.00 worst door   22% F strict
+                            usable  40/44   clap  native|dog_bark|p_a_dog_bark|top               real   95% [87%,100%] neg    0% hiss    0% sil    0% gap [+0.87,+1.00] AUC 1.00 worst gunshot    0% F strict
+                            usable  40/44   panns tile_floor|dog_bark|bark|top                   real   92% [83%,100%] neg    0% hiss    0% sil    0% gap [+0.83,+1.00] AUC 1.00 worst gunshot    0% F strict
+   splash                   usable  13/26   ast   none|splash|splash|top                         real   90% [78%,100%] neg    0% hiss    0% sil    0% gap [+0.78,+1.00] AUC 1.00 worst footstep    2% F strict
+                            usable  13/26   clap  native|splash|p_a_splash|top                   real   81% [67%,90%] neg    0% hiss    0% sil    0% gap [+0.67,+0.90] AUC 1.00 worst gunshot    0% F strict
+                            usable  13/26   panns tile_floor|splash|splash|thr                   real   97% [93%,100%] neg   10% hiss   25% sil    0% gap [+0.82,+0.92] AUC 0.99 worst click   28% F strict
+   footstep                 usable   1/44   clap  native|footstep|any|thr                        real   54% [40%,70%] neg   10% hiss   18% sil   20% gap [+0.29,+0.60] AUC 0.85 worst water   45% 
+   footstep_esc             usable  36/42   ast   silence|footstep_esc|foot|thr                  real   92% [82%,100%] neg   10% hiss    0% sil    0% gap [+0.72,+0.90] AUC 0.96 worst fire   45% F strict
+                            usable  36/42   clap  native|footstep_esc|p_footsteps|thr            real   97% [91%,100%] neg   10% hiss    0% sil   40% gap [+0.80,+0.92] AUC 0.99 worst water   38% F strict
+                            usable  36/42   panns tile|footstep_esc|foot|thr                     real   95% [86%,100%] neg   10% hiss    0% sil    0% gap [+0.76,+0.91] AUC 0.96 worst explosion   38% F strict
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ CLAP IDENTITY on real clips (one canonical phrase per type + 2 extras + 7 generic distractors), top-1 at 0.6 s
+   gunshot_pistol   exact   91%  family   91%   top-1 a pistol gunshot 128, a punch hitting a body 10, an empty gun clicking 2
+   gunshot_rifle    exact    0%  family   72%   top-1 a pistol gunshot 101, a punch hitting a body 27, swords clashing 3
+   gunshot_shotgun  exact    0%  family   67%   top-1 a pistol gunshot 48, a punch hitting a body 21, a magic fire spell 2
+   gunshot_far      exact    0%  family  100%   top-1 a rifle gunshot 63, a pistol gunshot 25
+   gun_mech         exact   50%  family   50%   top-1 an empty gun clicking 3, swords clashing 1, a user interface click 1
+   shell_drop       exact  100%  family  100%   top-1 bullet casings dropping 3
+   explosion        exact   50%  family   50%   top-1 a grenade explosion 20, a magic fire spell 13, a punch hitting a body 4
+   sword            exact   86%  family   86%   top-1 swords clashing 29, a magic fire spell 3, a sword being drawn 2
+   door_open        exact    6%  family   10%   top-1 a knock 17, a magic fire spell 12, wind 12
+   door_slam        exact   21%  family   21%   top-1 a knock 7, a door slamming shut 5, a magic fire spell 4
+   glass_break      exact   69%  family   69%   top-1 a window breaking 40, bullet casings dropping 8, a magic fire spell 4
+   ui_click         exact   23%  family   23%   top-1 an empty gun clicking 37, a user interface click 27, a punch hitting a body 17
+   punch            exact   88%  family   88%   top-1 a punch hitting a body 37, a magic fire spell 4, an empty gun clicking 1
+   horn             exact   55%  family   55%   top-1 a truck horn 22, a knock 10, a magic fire spell 6
+   dog_bark         exact   85%  family   85%   top-1 a dog barking 34, a knock 3, a magic fire spell 2
+   splash           exact    3%  family    3%   top-1 a magic fire spell 18, a punch hitting a body 7, water dripping 2
+   footstep         exact   12%  family   12%   top-1 a magic fire spell 27, a punch hitting a body 27, a footstep 9
+   footstep_esc     exact   32%  family   32%   top-1 a magic fire spell 17, a footstep 12, a punch hitting a body 6
+========================================================================================================================================================================
+ CLAP MATERIAL CONTROL on real FoleySet single steps (5-way: wood, stone, grass, metal, gravel; chance 20%)
+   0.6 s  wood    real   52% [37%,86%] (23 clips, 4 uploaders)  other surfaces called wood   nan  INVALID   wood 12, stone 7, metal 4
+   0.6 s  overall accuracy   52% on 23 clips, macro over built surfaces   52%
+   1.5 s  wood    real   35% [12%,86%] (23 clips, 4 uploaders)  other surfaces called wood   nan  INVALID   metal 9, wood 8, stone 5, grass 1
+   1.5 s  overall accuracy   35% on 23 clips, macro over built surfaces   35%
+   stone   no real reference (needs 8 clips from 3 uploaders)
+   grass   no real reference (needs 8 clips from 3 uploaders)
+   metal   no real reference (needs 8 clips from 3 uploaders)
+   gravel  no real reference (needs 8 clips from 3 uploaders)
+========================================================================================================================================================================
+ KEYS   cons = min over chosen judges of min(rate / real rate, 1) [95% interval]; judges a=ast p=panns c=clap; target 0.80 of real
+ key                 type            s3_g1.0_k0.6             base16                   d016                     real16                   best          >=0.8  firm   flags
+ shoot|rifle         gunshot_rifle   0.94 [0.73,1.00] acp     0.66 [0.40,0.96] acp     1.00 [0.89,1.00] acp     0.60 [0.34,0.88] acp     d016          yes    yes    
+ shoot|pistol        gunshot_pistol  0.60 [0.37,0.85] acp     1.00 [1.00,1.00] acp     0.89 [0.65,1.00] acp     0.66 [0.42,0.87] acp     base16        yes    yes    
+ reload|rifle        gun_mech          -- no judge              -- no judge              -- no judge              -- no judge            -             no     no     no valid judge at 0.6 s; no valid judge at 1.5 s; too few real references for a judge (6 clips, 4 sources)
+ equip|rifle         -                 -- no judge              -- no judge              -- no judge              -- no judge            -             no     no     no real reference
+ empty_click|pistol  gun_mech          -- no judge              -- no judge              -- no judge              -- no judge            -             no     no     no valid judge at 0.6 s; no valid judge at 1.5 s; too few real references for a judge (6 clips, 4 sources)
+ explosion|grenade   explosion       0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     0.47 [0.20,0.81] acp     real16        no     no     approximate reference
+ swing|sword         sword           0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     s3_g1.0_k0.6  no     no     approximate reference
+ open|door           door_open       1.00 [0.96,1.00] c       1.00 [0.87,1.00] c       0.88 [0.65,1.00] c       1.00 [0.79,1.00] c       s3_g1.0_k0.6  yes    yes    
+ slam|door           door_slam       1.00 [1.00,1.00] acp     1.00 [1.00,1.00] acp     1.00 [0.92,1.00] acp     0.90 [0.75,1.00] acp     s3_g1.0_k0.6  yes    yes    
+ break|window        glass_break     0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     0.00 [0.00,0.00] acp     d016          no     no     
+ click|button        ui_click        0.63 [0.34,0.96] acp     0.28 [0.07,0.55] acp     0.70 [0.39,1.00] acp     0.85 [0.55,1.00] acp     real16        yes    no     
+ cast|fire_spell     -                 -- no judge              -- no judge              -- no judge              -- no judge            -             no     no     no real reference
+ punch|body          punch           0.00 [0.00,0.00] acp     0.47 [0.16,0.80] acp     0.47 [0.15,0.81] acp     0.23 [0.00,0.51] acp     base16        no     no     
+ horn|truck          horn            0.74 [0.49,0.96] acp     1.00 [0.82,1.00] acp     0.92 [0.69,1.00] acp     0.93 [0.63,1.00] acp     base16        yes    yes    approximate reference
+ bark|dog            dog_bark        0.90 [0.75,1.00] acp     0.80 [0.60,0.95] acp     0.80 [0.60,0.95] acp     0.87 [0.70,0.98] acp     s3_g1.0_k0.6  yes    no     
+ footstep|wood       footstep        1.00 [1.00,1.00] cp      1.00 [1.00,1.00] cp      1.00 [1.00,1.00] cp      0.27 [0.00,0.64] cp      s3_g1.0_k0.6  yes    yes    
+ footstep|stone      footstep        0.41 [0.14,0.74] cp      0.72 [0.31,1.00] cp      1.00 [0.70,1.00] cp      0.09 [0.00,0.30] cp      d016          yes    no     no real stone steps for the material check
+ footstep|grass      footstep        0.00 [0.00,0.00] cp      0.07 [0.00,0.23] cp      0.00 [0.00,0.00] cp      0.18 [0.00,0.50] cp      real16        no     no     no real grass steps for the material check
+ footstep|metal      footstep        0.07 [0.00,0.16] cp      0.09 [0.00,0.29] cp      0.00 [0.00,0.00] cp      0.18 [0.00,0.31] cp      real16        no     no     no real metal steps for the material check
+ footstep|gravel     footstep        1.00 [0.87,1.00] cp      1.00 [0.91,1.00] cp      1.00 [1.00,1.00] cp      0.63 [0.26,1.00] cp      d016          yes    yes    no real gravel steps for the material check
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ PER JUDGE rate (ratio to real) for the current and best settings, with McNemar best vs current paired on seed
+   shoot|rifle         s3_g1.0_k0.6  ast   80% (0.97 [0.73,1.25])   clap  100% (1.19 [1.02,1.56])   panns   90% (0.94 [0.78,1.07])
+   shoot|rifle         d016          ast   90% (1.09 [0.89,1.34]) +4/-2 p0.69   clap  100% (1.19 [1.02,1.56]) +0/-0 p1.00   panns  100% (1.04 [1.01,1.11]) +2/-0 p0.50
+   shoot|rifle         base16        ast   55% (0.66 [0.40,0.96]) +1/-6 p0.12   clap  100% (1.19 [1.02,1.56]) +0/-0 p1.00   panns  100% (1.04 [1.01,1.11]) +2/-0 p0.50
+   shoot|rifle         real16        ast   50% (0.60 [0.34,0.89]) +1/-7 p0.07   clap   80% (0.95 [0.70,1.33]) +0/-4 p0.12   panns  100% (1.04 [1.01,1.11]) +2/-0 p0.50
+   shoot|pistol        s3_g1.0_k0.6  ast   75% (0.97 [0.64,1.49])   clap   55% (0.60 [0.37,0.85])   panns  100% (1.05 [1.01,1.10])
+   shoot|pistol        base16        ast  100% (1.30 [1.08,1.89]) +5/-0 p0.06   clap  100% (1.09 [1.03,1.18]) +9/-0 p0.00   panns  100% (1.05 [1.01,1.10]) +0/-0 p1.00
+   shoot|pistol        d016          ast   75% (0.97 [0.67,1.51]) +4/-4 p1.00   clap  100% (1.09 [1.03,1.18]) +9/-0 p0.00   panns   85% (0.89 [0.72,1.05]) +0/-3 p0.25
+   shoot|pistol        real16        ast   80% (1.04 [0.74,1.58]) +4/-3 p1.00   clap   60% (0.66 [0.42,0.89]) +5/-4 p1.00   panns   85% (0.89 [0.73,1.05]) +0/-3 p0.25
+   explosion|grenade   s3_g1.0_k0.6  ast    0% (0.00 [0.00,0.00])   clap  100% (1.05 [1.00,1.19])   panns    5% (0.05 [0.00,0.17])
+   explosion|grenade   real16        ast   35% (0.47 [0.20,0.81]) +7/-0 p0.02   clap   95% (1.00 [0.85,1.16]) +0/-1 p1.00   panns   95% (1.03 [0.88,1.16]) +18/-0 p0.00
+   explosion|grenade   base16        ast    0% (0.00 [0.00,0.00]) +0/-0 p1.00   clap   95% (1.00 [0.85,1.15]) +0/-1 p1.00   panns   60% (0.65 [0.42,0.88]) +11/-0 p0.00
+   explosion|grenade   d016          ast    0% (0.00 [0.00,0.00]) +0/-0 p1.00   clap  100% (1.05 [1.00,1.19]) +0/-0 p1.00   panns   50% (0.54 [0.30,0.77]) +10/-1 p0.01
+   swing|sword         s3_g1.0_k0.6  ast   75% (0.82 [0.59,1.04])   clap    0% (0.00 [0.00,0.00])   panns    0% (0.00 [0.00,0.00])
+   swing|sword         base16        ast   65% (0.71 [0.48,0.96]) +4/-6 p0.75   clap    0% (0.00 [0.00,0.00]) +0/-0 p1.00   panns    0% (0.00 [0.00,0.00]) +0/-0 p1.00
+   swing|sword         d016          ast   75% (0.82 [0.60,1.05]) +5/-5 p1.00   clap    0% (0.00 [0.00,0.00]) +0/-0 p1.00   panns    0% (0.00 [0.00,0.00]) +0/-0 p1.00
+   swing|sword         real16        ast   40% (0.44 [0.22,0.69]) +3/-10 p0.09   clap    0% (0.00 [0.00,0.00]) +0/-0 p1.00   panns    5% (0.06 [0.00,0.19]) +1/-0 p1.00
+   open|door           s3_g1.0_k0.6  clap   95% (1.12 [0.96,1.29])
+   open|door           base16        clap   90% (1.06 [0.87,1.26]) +1/-2 p1.00
+   open|door           d016          clap   75% (0.88 [0.65,1.13]) +0/-4 p0.12
+   open|door           real16        clap   85% (1.00 [0.79,1.22]) +1/-3 p0.62
+   slam|door           s3_g1.0_k0.6  ast  100% (1.14 [1.00,1.31])   clap  100% (1.00 [1.00,1.00])   panns  100% (1.41 [1.11,3.67])
+   slam|door           base16        ast  100% (1.14 [1.00,1.31]) +0/-0 p1.00   clap  100% (1.00 [1.00,1.00]) +0/-0 p1.00   panns  100% (1.41 [1.11,3.67]) +0/-0 p1.00
+   slam|door           d016          ast   95% (1.09 [0.92,1.27]) +0/-1 p1.00   clap  100% (1.00 [1.00,1.00]) +0/-0 p1.00   panns  100% (1.41 [1.11,3.67]) +0/-0 p1.00
+   slam|door           real16        ast  100% (1.14 [1.00,1.31]) +0/-0 p1.00   clap   90% (0.90 [0.75,1.00]) +0/-2 p0.50   panns   95% (1.34 [1.03,3.48]) +0/-1 p1.00
+   break|window        s3_g1.0_k0.6  ast    0% (0.00 [0.00,0.00])   clap    0% (0.00 [0.00,0.00])   panns    0% (0.00 [0.00,0.00])
+   break|window        d016          ast    0% (0.00 [0.00,0.00]) +0/-0 p1.00   clap    0% (0.00 [0.00,0.00]) +0/-0 p1.00   panns   45% (0.48 [0.26,0.73]) +9/-0 p0.00
+   break|window        base16        ast    0% (0.00 [0.00,0.00]) +0/-0 p1.00   clap    0% (0.00 [0.00,0.00]) +0/-0 p1.00   panns   10% (0.11 [0.00,0.27]) +2/-0 p0.50
+   break|window        real16        ast    0% (0.00 [0.00,0.00]) +0/-0 p1.00   clap    0% (0.00 [0.00,0.00]) +0/-0 p1.00   panns    0% (0.00 [0.00,0.00]) +0/-0 p1.00
+   click|button        s3_g1.0_k0.6  ast  100% (1.33 [1.16,1.51])   clap   90% (1.02 [0.85,1.19])   panns   45% (0.63 [0.34,0.97])
+   click|button        real16        ast   80% (1.06 [0.80,1.33]) +0/-4 p0.12   clap   75% (0.85 [0.61,1.08]) +1/-4 p0.38   panns   65% (0.91 [0.59,1.24]) +6/-2 p0.29
+   click|button        base16        ast  100% (1.33 [1.16,1.51]) +0/-0 p1.00   clap   85% (0.97 [0.77,1.14]) +2/-3 p1.00   panns   20% (0.28 [0.07,0.55]) +2/-7 p0.18
+   click|button        d016          ast  100% (1.33 [1.16,1.51]) +0/-0 p1.00   clap   95% (1.08 [0.93,1.22]) +2/-1 p1.00   panns   50% (0.70 [0.39,1.04]) +5/-4 p1.00
+   punch|body          s3_g1.0_k0.6  ast   70% (1.01 [0.70,1.39])   clap  100% (1.02 [1.00,1.07])   panns    0% (0.00 [0.00,0.00])
+   punch|body          base16        ast   95% (1.38 [1.13,1.72]) +5/-0 p0.06   clap   95% (0.97 [0.85,1.06]) +0/-1 p1.00   panns   30% (0.47 [0.16,0.80]) +6/-0 p0.03
+   punch|body          d016          ast   90% (1.30 [1.04,1.64]) +5/-1 p0.22   clap   95% (0.97 [0.85,1.06]) +0/-1 p1.00   panns   30% (0.47 [0.15,0.81]) +6/-0 p0.03
+   punch|body          real16        ast   65% (0.94 [0.61,1.31]) +5/-6 p1.00   clap  100% (1.02 [1.00,1.07]) +0/-0 p1.00   panns   15% (0.23 [0.00,0.51]) +3/-0 p0.25
+   horn|truck          s3_g1.0_k0.6  ast   65% (0.87 [0.56,1.25])   clap   90% (0.97 [0.80,1.14])   panns   65% (0.74 [0.49,1.02])
+   horn|truck          base16        ast   85% (1.13 [0.84,1.51]) +5/-1 p0.22   clap  100% (1.08 [1.00,1.21]) +2/-0 p0.50   panns   90% (1.03 [0.84,1.24]) +6/-1 p0.12
+   horn|truck          d016          ast   75% (1.00 [0.70,1.37]) +3/-1 p0.62   clap   85% (0.92 [0.72,1.10]) +2/-3 p1.00   panns   90% (1.03 [0.84,1.24]) +7/-2 p0.18
+   horn|truck          real16        ast   70% (0.93 [0.63,1.29]) +5/-4 p1.00   clap  100% (1.08 [1.00,1.21]) +2/-0 p0.50   panns   90% (1.03 [0.84,1.23]) +7/-2 p0.18
+   bark|dog            s3_g1.0_k0.6  ast  100% (1.00 [1.00,1.00])   clap  100% (1.03 [1.00,1.08])   panns   90% (0.90 [0.75,1.00])
+   bark|dog            base16        ast  100% (1.00 [1.00,1.00]) +0/-0 p1.00   clap  100% (1.03 [1.00,1.08]) +0/-0 p1.00   panns   80% (0.80 [0.60,0.95]) +1/-3 p0.62
+   bark|dog            d016          ast  100% (1.00 [1.00,1.00]) +0/-0 p1.00   clap   95% (0.97 [0.85,1.08]) +0/-1 p1.00   panns   80% (0.80 [0.60,0.95]) +1/-3 p0.62
+   bark|dog            real16        ast  100% (1.00 [1.00,1.00]) +0/-0 p1.00   clap   85% (0.87 [0.70,1.03]) +0/-3 p0.25   panns   90% (0.90 [0.75,1.00]) +2/-2 p1.00
+   footstep|wood       s3_g1.0_k0.6  clap  100% (1.80 [1.33,2.76])   panns  100% (1.36 [1.07,1.86])
+   footstep|wood       base16        clap  100% (1.80 [1.33,2.76]) +0/-0 p1.00   panns  100% (1.36 [1.07,1.86]) +0/-0 p1.00
+   footstep|wood       d016          clap  100% (1.80 [1.33,2.76]) +0/-0 p1.00   panns  100% (1.36 [1.07,1.86]) +0/-0 p1.00
+   footstep|wood       real16        clap   15% (0.27 [0.00,0.64]) +0/-17 p0.00   panns   95% (1.29 [1.00,1.78]) +0/-1 p1.00
+   footstep|stone      s3_g1.0_k0.6  clap   40% (0.72 [0.31,1.35])   panns   30% (0.41 [0.14,0.75])
+   footstep|stone      d016          clap   65% (1.17 [0.70,1.97]) +8/-3 p0.23   panns  100% (1.36 [1.07,1.86]) +14/-0 p0.00
+   footstep|stone      base16        clap   40% (0.72 [0.31,1.35]) +4/-4 p1.00   panns   75% (1.02 [0.70,1.46]) +10/-1 p0.01
+   footstep|stone      real16        clap    5% (0.09 [0.00,0.30]) +0/-7 p0.02   panns   95% (1.29 [1.00,1.77]) +13/-0 p0.00
+   footstep|grass      s3_g1.0_k0.6  clap    0% (0.00 [0.00,0.00])   panns   60% (0.82 [0.48,1.27])
+   footstep|grass      real16        clap   10% (0.18 [0.00,0.50]) +2/-0 p0.50   panns   60% (0.82 [0.49,1.25]) +5/-5 p1.00
+   footstep|grass      base16        clap    5% (0.09 [0.00,0.33]) +1/-0 p1.00   panns    5% (0.07 [0.00,0.23]) +1/-12 p0.00
+   footstep|grass      d016          clap    0% (0.00 [0.00,0.00]) +0/-0 p1.00   panns   25% (0.34 [0.11,0.67]) +2/-9 p0.07
+   footstep|metal      s3_g1.0_k0.6  clap    5% (0.09 [0.00,0.32])   panns    5% (0.07 [0.00,0.23])
+   footstep|metal      real16        clap   10% (0.18 [0.00,0.50]) +2/-1 p1.00   panns   15% (0.20 [0.00,0.46]) +3/-1 p0.62
+   footstep|metal      base16        clap    5% (0.09 [0.00,0.33]) +1/-1 p1.00   panns   25% (0.34 [0.09,0.65]) +5/-1 p0.22
+   footstep|metal      d016          clap   25% (0.45 [0.13,0.96]) +5/-1 p0.22   panns    0% (0.00 [0.00,0.00]) +0/-1 p1.00
+   footstep|gravel     s3_g1.0_k0.6  clap   75% (1.35 [0.87,2.18])   panns   95% (1.29 [0.98,1.77])
+   footstep|gravel     d016          clap  100% (1.80 [1.33,2.76]) +5/-0 p0.06   panns   95% (1.29 [1.00,1.77]) +1/-1 p1.00
+   footstep|gravel     base16        clap   95% (1.71 [1.25,2.64]) +4/-0 p0.12   panns   90% (1.22 [0.91,1.69]) +1/-2 p1.00
+   footstep|gravel     real16        clap   35% (0.63 [0.26,1.21]) +1/-9 p0.02   panns   55% (0.75 [0.42,1.17]) +0/-8 p0.01
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ UNVALIDATED keys, CLAP identity top-1 shown for information only
+   equip|rifle         s3_g1.0_k0.6  swords clashing 10, an empty gun clicking 4, a punch hitting a body 4
+   equip|rifle         base16        swords clashing 16, a pistol gunshot 3, a punch hitting a body 1
+   equip|rifle         d016          a pistol gunshot 12, swords clashing 8
+   equip|rifle         real16        a magic fire spell 11, a pistol gunshot 5, a punch hitting a body 4
+   cast|fire_spell     s3_g1.0_k0.6  a magic fire spell 20
+   cast|fire_spell     base16        a magic fire spell 20
+   cast|fire_spell     d016          a magic fire spell 20
+   cast|fire_spell     real16        a magic fire spell 20
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ FOOTSTEP MATERIAL on generated clips (CLAP 5-way; judged only where the real control for that surface passes)
+   footstep|wood       s3_g1.0_k0.6   70%*   base16   90%*   d016  100%*   real16   65%*
+   footstep|stone      s3_g1.0_k0.6  100%*   base16  100%*   d016  100%*   real16   35%*
+   footstep|grass      s3_g1.0_k0.6   70%*   base16  100%*   d016   50%*   real16   65%*
+   footstep|metal      s3_g1.0_k0.6   85%*   base16    5%*   d016    5%*   real16   45%*
+   footstep|gravel     s3_g1.0_k0.6   35%*   base16   85%*   d016    0%*   real16   90%*
+   * = unjudged (CLAP fails the real wood control at 0.6 s; no real grass single steps; no real gravel single steps; no real metal single steps; no real stone single steps)
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ SHAPE vs the real set at the same length (gen median / real median, share of generated clips inside the real 10-90% range) and Audiobox PQ gen / real
+   shoot|rifle         s3_g1.0_k0.6  tail_ms 114/328 0%  decay100_db -26.9/-17 100%  low500 0.287/0.207 85%  crest_db 24.5/18.9 100%  attack_ms 6.81/1.07 55%  floor_db -80.4/-38.4 0%  in-range 0.57  PQ 7.35 / 6.41  ref gunshot_rifle all
+   shoot|rifle         d016          tail_ms 127/328 0%  decay100_db -25.7/-17 100%  low500 0.564/0.207 20%  crest_db 23.2/18.9 100%  attack_ms 6.37/1.07 65%  floor_db -85.1/-38.4 0%  in-range 0.48  PQ 6.94 / 6.41  ref gunshot_rifle all
+   shoot|rifle         base16        tail_ms 109/328 0%  decay100_db -28.3/-17 100%  low500 0.417/0.207 65%  crest_db 25.6/18.9 100%  attack_ms 6.2/1.07 60%  floor_db -83.8/-38.4 0%  in-range 0.54  PQ 7.52 / 6.41  ref gunshot_rifle all
+   shoot|rifle         real16        tail_ms 303/328 55%  decay100_db -15.7/-17 75%  low500 0.0205/0.207 80%  crest_db 20.4/18.9 100%  attack_ms 16.2/1.07 35%  floor_db -38.7/-38.4 65%  in-range 0.68  PQ 6.22 / 6.41  ref gunshot_rifle all
+   shoot|pistol        s3_g1.0_k0.6  tail_ms 101/298 10%  decay100_db -31.9/-16.3 0%  low500 0.167/0.0939 90%  crest_db 21/18.5 95%  attack_ms 15.7/0.884 0%  floor_db -71.6/-42.3 0%  in-range 0.33  PQ 7.10 / 6.54  ref gunshot_pistol all
+   shoot|pistol        base16        tail_ms 90.4/298 0%  decay100_db -32.6/-16.3 0%  low500 0.0938/0.0939 85%  crest_db 21.5/18.5 90%  attack_ms 15.3/0.884 0%  floor_db -65.6/-42.3 0%  in-range 0.29  PQ 7.47 / 6.54  ref gunshot_pistol all
+   shoot|pistol        d016          tail_ms 111/298 0%  decay100_db -29.9/-16.3 0%  low500 0.324/0.0939 45%  crest_db 21.2/18.5 100%  attack_ms 15.5/0.884 0%  floor_db -65.3/-42.3 0%  in-range 0.24  PQ 7.09 / 6.54  ref gunshot_pistol all
+   shoot|pistol        real16        tail_ms 373/298 30%  decay100_db -15.7/-16.3 65%  low500 0.0306/0.0939 45%  crest_db 20.9/18.5 65%  attack_ms 6.49/0.884 5%  floor_db -37.6/-42.3 45%  in-range 0.42  PQ 6.25 / 6.54  ref gunshot_pistol all
+   reload|rifle        s3_g1.0_k0.6  tail_ms 78.5/139 100%  decay100_db -33.7/-41.6 100%  low500 0.0147/0.0224 85%  crest_db 26.1/20.3 0%  attack_ms 12.4/17.5 20%  floor_db -75.7/-66.4 5%  in-range 0.52  PQ 7.78 / 7.78  ref gun_mech all
+   reload|rifle        base16        tail_ms 61.9/139 70%  decay100_db -39.9/-41.6 100%  low500 0.00908/0.0224 40%  crest_db 27.2/20.3 0%  attack_ms 7.97/17.5 30%  floor_db -78.6/-66.4 0%  in-range 0.40  PQ 7.82 / 7.78  ref gun_mech all
+   reload|rifle        d016          tail_ms 89.8/139 100%  decay100_db -30.8/-41.6 100%  low500 0.0195/0.0224 100%  crest_db 25.3/20.3 0%  attack_ms 7.57/17.5 20%  floor_db -85.2/-66.4 0%  in-range 0.53  PQ 7.75 / 7.78  ref gun_mech all
+   reload|rifle        real16        tail_ms 168/139 50%  decay100_db -33.1/-41.6 85%  low500 0.011/0.0224 60%  crest_db 21.1/20.3 45%  attack_ms 17.2/17.5 40%  floor_db -57.1/-66.4 60%  in-range 0.57  PQ 7.10 / 7.78  ref gun_mech all
+   equip|rifle         s3_g1.0_k0.6  no real set for shape   PQ 7.75
+   equip|rifle         base16        no real set for shape   PQ 7.81
+   equip|rifle         d016          no real set for shape   PQ 7.64
+   equip|rifle         real16        no real set for shape   PQ 6.82
+   empty_click|pistol  s3_g1.0_k0.6  tail_ms 229/139 50%  decay100_db -62.6/-41.6 0%  low500 0.00635/0.0224 30%  crest_db 29.4/20.3 0%  attack_ms 4.88/17.5 5%  floor_db -75.7/-66.4 10%  in-range 0.16  PQ 7.79 / 7.78  ref gun_mech all
+   empty_click|pistol  base16        tail_ms 17.5/139 45%  decay100_db -62.9/-41.6 0%  low500 0.00639/0.0224 35%  crest_db 29.9/20.3 0%  attack_ms 4.8/17.5 0%  floor_db -77.1/-66.4 0%  in-range 0.13  PQ 7.92 / 7.78  ref gun_mech all
+   empty_click|pistol  d016          tail_ms 20.1/139 25%  decay100_db -66.5/-41.6 0%  low500 0.00489/0.0224 20%  crest_db 27/20.3 0%  attack_ms 3.15/17.5 0%  floor_db -83.6/-66.4 0%  in-range 0.07  PQ 7.89 / 7.78  ref gun_mech all
+   empty_click|pistol  real16        tail_ms 105/139 30%  decay100_db -42.6/-41.6 60%  low500 0.0133/0.0224 70%  crest_db 23.8/20.3 0%  attack_ms 4.64/17.5 5%  floor_db -52.3/-66.4 45%  in-range 0.35  PQ 7.27 / 7.78  ref gun_mech all
+   explosion|grenade   s3_g1.0_k0.6  tail_ms 386/503 90%  decay100_db -12.5/-24.2 95%  low500 0.933/0.752 20%  crest_db 16.2/24 35%  attack_ms 13/0.839 80%  floor_db -54.2/-33.2 25%  in-range 0.58  PQ 6.33 / 5.81  ref explosion all
+   explosion|grenade   real16        tail_ms 537/503 70%  decay100_db -12.6/-24.2 85%  low500 0.852/0.752 65%  crest_db 17.1/24 50%  attack_ms 20.6/0.839 50%  floor_db -30.9/-33.2 70%  in-range 0.65  PQ 6.03 / 5.81  ref explosion all
+   explosion|grenade   base16        tail_ms 393/503 95%  decay100_db -11.7/-24.2 100%  low500 0.909/0.752 65%  crest_db 15.8/24 40%  attack_ms 13.2/0.839 65%  floor_db -40.7/-33.2 50%  in-range 0.69  PQ 6.47 / 5.81  ref explosion all
+   explosion|grenade   d016          tail_ms 379/503 95%  decay100_db -10.2/-24.2 75%  low500 0.927/0.752 25%  crest_db 15/24 0%  attack_ms 13.4/0.839 85%  floor_db -50.6/-33.2 20%  in-range 0.50  PQ 6.45 / 5.81  ref explosion all
+   swing|sword         s3_g1.0_k0.6  tail_ms 177/516 65%  decay100_db -25.7/-13.7 50%  low500 0.951/0.013 0%  crest_db 17.2/15.7 100%  attack_ms 24.3/6.54 100%  floor_db -71.7/-32.5 0%  in-range 0.53  PQ 6.53 / 6.36  ref sword all
+   swing|sword         base16        tail_ms 204/516 85%  decay100_db -22.8/-13.7 75%  low500 0.826/0.013 0%  crest_db 19.1/15.7 100%  attack_ms 25.8/6.54 100%  floor_db -70/-32.5 0%  in-range 0.60  PQ 7.17 / 6.36  ref sword all
+   swing|sword         d016          tail_ms 212/516 100%  decay100_db -17.4/-13.7 100%  low500 0.721/0.013 0%  crest_db 19.1/15.7 100%  attack_ms 24/6.54 100%  floor_db -68.5/-32.5 15%  in-range 0.69  PQ 6.63 / 6.36  ref sword all
+   swing|sword         real16        tail_ms 148/516 50%  decay100_db -23.4/-13.7 65%  low500 0.976/0.013 0%  crest_db 17.5/15.7 90%  attack_ms 20.6/6.54 90%  floor_db -61/-32.5 50%  in-range 0.57  PQ 6.95 / 6.36  ref sword all
+   open|door           s3_g1.0_k0.6  tail_ms 318/555 85%  decay100_db -16.2/-8.96 100%  low500 0.694/0.0728 100%  crest_db 21.5/15.9 65%  attack_ms 25.1/21.9 80%  floor_db -69.5/-23.5 20%  in-range 0.75  PQ 6.97 / 6.25  ref door_open all
+   open|door           base16        tail_ms 324/555 90%  decay100_db -15.7/-8.96 100%  low500 0.721/0.0728 100%  crest_db 22/15.9 85%  attack_ms 25/21.9 70%  floor_db -80.9/-23.5 20%  in-range 0.78  PQ 7.14 / 6.25  ref door_open all
+   open|door           d016          tail_ms 357/555 75%  decay100_db -12.5/-8.96 95%  low500 0.844/0.0728 100%  crest_db 18.6/15.9 100%  attack_ms 29.2/21.9 30%  floor_db -70/-23.5 20%  in-range 0.70  PQ 6.93 / 6.25  ref door_open all
+   open|door           real16        tail_ms 538/555 85%  decay100_db -12.8/-8.96 95%  low500 0.616/0.0728 75%  crest_db 18.1/15.9 95%  attack_ms 20.5/21.9 95%  floor_db -26.7/-23.5 95%  in-range 0.90  PQ 6.21 / 6.25  ref door_open all
+   slam|door           s3_g1.0_k0.6  tail_ms 502/470 100%  decay100_db -12.8/-12.7 95%  low500 0.924/0.919 100%  crest_db 16.3/14 70%  attack_ms 23.8/25.1 85%  floor_db -38.3/-33.8 90%  in-range 0.90  PQ 6.66 / 6.38  ref door_slam all
+   slam|door           base16        tail_ms 533/470 100%  decay100_db -12.1/-12.7 100%  low500 0.89/0.919 100%  crest_db 16/14 80%  attack_ms 15/25.1 75%  floor_db -33.7/-33.8 100%  in-range 0.92  PQ 6.67 / 6.38  ref door_slam all
+   slam|door           d016          tail_ms 528/470 95%  decay100_db -10.5/-12.7 95%  low500 0.925/0.919 100%  crest_db 15.6/14 90%  attack_ms 14.6/25.1 90%  floor_db -34/-33.8 100%  in-range 0.95  PQ 6.85 / 6.38  ref door_slam all
+   slam|door           real16        tail_ms 510/470 80%  decay100_db -12.1/-12.7 95%  low500 0.884/0.919 75%  crest_db 17.7/14 30%  attack_ms 22.7/25.1 95%  floor_db -34.5/-33.8 75%  in-range 0.75  PQ 6.58 / 6.38  ref door_slam all
+   break|window        s3_g1.0_k0.6  tail_ms 391/539 90%  decay100_db -22.6/-12.6 50%  low500 0.0884/0.0337 100%  crest_db 24.7/16.3 5%  attack_ms 26.2/12.1 55%  floor_db -45.7/-28.4 55%  in-range 0.59  PQ 6.99 / 6.27  ref glass_break all
+   break|window        d016          tail_ms 406/539 85%  decay100_db -21.4/-12.6 70%  low500 0.144/0.0337 95%  crest_db 22.5/16.3 55%  attack_ms 26.9/12.1 15%  floor_db -54.9/-28.4 35%  in-range 0.59  PQ 7.11 / 6.27  ref glass_break all
+   break|window        base16        tail_ms 380/539 55%  decay100_db -24/-12.6 30%  low500 0.11/0.0337 100%  crest_db 24.6/16.3 10%  attack_ms 26.3/12.1 50%  floor_db -46.9/-28.4 55%  in-range 0.50  PQ 7.36 / 6.27  ref glass_break all
+   break|window        real16        tail_ms 543/539 70%  decay100_db -18.9/-12.6 75%  low500 0.0708/0.0337 80%  crest_db 21.2/16.3 75%  attack_ms 6.53/12.1 95%  floor_db -33.1/-28.4 85%  in-range 0.80  PQ 6.37 / 6.27  ref glass_break all
+   click|button        s3_g1.0_k0.6  tail_ms 13.2/354 30%  decay100_db -61.4/-30.4 5%  low500 0.0879/0.216 100%  crest_db 28.9/20.9 65%  attack_ms 5.01/4.69 95%  floor_db -63.7/-38.4 100%  in-range 0.66  PQ 7.10 / 6.66  ref ui_click all
+   click|button        real16        tail_ms 62.2/354 35%  decay100_db -38.9/-30.4 85%  low500 0.0556/0.216 95%  crest_db 24/20.9 100%  attack_ms 5.43/4.69 85%  floor_db -46.5/-38.4 75%  in-range 0.79  PQ 6.87 / 6.66  ref ui_click all
+   click|button        base16        tail_ms 11/354 5%  decay100_db -70.4/-30.4 0%  low500 0.0996/0.216 100%  crest_db 28.4/20.9 70%  attack_ms 4/4.69 100%  floor_db -69.8/-38.4 85%  in-range 0.60  PQ 7.51 / 6.66  ref ui_click all
+   click|button        d016          tail_ms 52.3/354 5%  decay100_db -58.6/-30.4 5%  low500 0.0933/0.216 100%  crest_db 28.1/20.9 70%  attack_ms 5.1/4.69 100%  floor_db -80.9/-38.4 0%  in-range 0.47  PQ 7.95 / 6.66  ref ui_click all
+   cast|fire_spell     s3_g1.0_k0.6  no real set for shape   PQ 5.95
+   cast|fire_spell     base16        no real set for shape   PQ 5.81
+   cast|fire_spell     d016          no real set for shape   PQ 5.99
+   cast|fire_spell     real16        no real set for shape   PQ 5.85
+   punch|body          s3_g1.0_k0.6  tail_ms 66.6/164 25%  decay100_db -41.3/-25.7 20%  low500 0.962/0.925 100%  crest_db 23.4/17.2 0%  attack_ms 7.93/14.6 90%  floor_db -84.7/-51.5 5%  in-range 0.40  PQ 7.48 / 6.94  ref punch all
+   punch|body          base16        tail_ms 72/164 40%  decay100_db -38.2/-25.7 35%  low500 0.944/0.925 100%  crest_db 23.3/17.2 5%  attack_ms 5.16/14.6 100%  floor_db -85.5/-51.5 0%  in-range 0.47  PQ 7.53 / 6.94  ref punch all
+   punch|body          d016          tail_ms 126/164 85%  decay100_db -33.7/-25.7 60%  low500 0.939/0.925 100%  crest_db 22.9/17.2 5%  attack_ms 5.49/14.6 100%  floor_db -87.5/-51.5 10%  in-range 0.60  PQ 7.49 / 6.94  ref punch all
+   punch|body          real16        tail_ms 90.3/164 55%  decay100_db -35/-25.7 55%  low500 0.92/0.925 85%  crest_db 20.5/17.2 35%  attack_ms 12.8/14.6 95%  floor_db -87.6/-51.5 30%  in-range 0.59  PQ 7.38 / 6.94  ref punch all
+   horn|truck          s3_g1.0_k0.6  tail_ms 354/563 35%  decay100_db -11.6/-5.05 55%  low500 0.861/0.218 65%  crest_db 15.5/12.4 60%  attack_ms 21.4/23.3 80%  floor_db -54.3/-14.9 5%  in-range 0.50  PQ 5.82 / 6.26  ref horn all
+   horn|truck          base16        tail_ms 315/563 25%  decay100_db -13.6/-5.05 40%  low500 0.682/0.218 95%  crest_db 16/12.4 50%  attack_ms 15.6/23.3 85%  floor_db -84.8/-14.9 5%  in-range 0.50  PQ 6.28 / 6.26  ref horn all
+   horn|truck          d016          tail_ms 357/563 20%  decay100_db -14.5/-5.05 40%  low500 0.687/0.218 90%  crest_db 15.6/12.4 60%  attack_ms 23.3/23.3 95%  floor_db -76.3/-14.9 5%  in-range 0.52  PQ 6.44 / 6.26  ref horn all
+   horn|truck          real16        tail_ms 564/563 60%  decay100_db -4.11/-5.05 89%  low500 0.107/0.218 70%  crest_db 12.5/12.4 95%  attack_ms 22.5/23.3 80%  floor_db -9.7/-14.9 65%  in-range 0.77  PQ 6.58 / 6.26  ref horn all
+   bark|dog            s3_g1.0_k0.6  tail_ms 154/507 35%  decay100_db -21.8/-18.1 95%  low500 0.0194/0.0219 100%  crest_db 19.7/15.4 10%  attack_ms 27/21.5 65%  floor_db -82.3/-39.2 0%  in-range 0.51  PQ 7.38 / 6.55  ref dog_bark all
+   bark|dog            base16        tail_ms 143/507 15%  decay100_db -22.8/-18.1 90%  low500 0.00765/0.0219 100%  crest_db 18.8/15.4 70%  attack_ms 20.6/21.5 75%  floor_db -85.9/-39.2 0%  in-range 0.58  PQ 7.52 / 6.55  ref dog_bark all
+   bark|dog            d016          tail_ms 168/507 85%  decay100_db -23.2/-18.1 80%  low500 0.0124/0.0219 100%  crest_db 18.3/15.4 90%  attack_ms 28.4/21.5 50%  floor_db -93.2/-39.2 0%  in-range 0.67  PQ 7.49 / 6.55  ref dog_bark all
+   bark|dog            real16        tail_ms 506/507 95%  decay100_db -13.6/-18.1 90%  low500 0.00605/0.0219 90%  crest_db 15.4/15.4 90%  attack_ms 27/21.5 55%  floor_db -37.6/-39.2 50%  in-range 0.78  PQ 6.40 / 6.55  ref dog_bark all
+   footstep|wood       s3_g1.0_k0.6  tail_ms 83.9/222 10%  decay100_db -34.6/-18.3 15%  low500 0.963/0.505 95%  crest_db 23.6/18.7 0%  attack_ms 5.52/2.18 100%  floor_db -79.7/-43.1 0%  in-range 0.37  PQ 7.30 / 6.65  ref footstep wood
+   footstep|wood       base16        tail_ms 99.4/222 25%  decay100_db -34/-18.3 20%  low500 0.908/0.505 100%  crest_db 24.1/18.7 5%  attack_ms 4.81/2.18 100%  floor_db -81.5/-43.1 0%  in-range 0.42  PQ 7.61 / 6.65  ref footstep wood
+   footstep|wood       d016          tail_ms 121/222 95%  decay100_db -30.5/-18.3 50%  low500 0.92/0.505 100%  crest_db 21.6/18.7 35%  attack_ms 5.84/2.18 100%  floor_db -90.3/-43.1 0%  in-range 0.63  PQ 7.70 / 6.65  ref footstep wood
+   footstep|wood       real16        tail_ms 166/222 85%  decay100_db -24.6/-18.3 85%  low500 0.947/0.505 95%  crest_db 20.9/18.7 60%  attack_ms 6.18/2.18 100%  floor_db -86.6/-43.1 20%  in-range 0.74  PQ 6.99 / 6.65  ref footstep wood
+   footstep|stone      s3_g1.0_k0.6  tail_ms 107/284 25%  decay100_db -31/-20.2 65%  low500 0.484/0.469 100%  crest_db 26.9/19.5 0%  attack_ms 4.27/20.2 100%  floor_db -74.2/-43.4 0%  in-range 0.48  PQ 7.82 / 6.65  ref footstep all
+   footstep|stone      d016          tail_ms 200/284 85%  decay100_db -26.9/-20.2 90%  low500 0.611/0.469 100%  crest_db 25/19.5 10%  attack_ms 6.05/20.2 95%  floor_db -79.8/-43.4 0%  in-range 0.63  PQ 7.72 / 6.65  ref footstep all
+   footstep|stone      base16        tail_ms 126/284 65%  decay100_db -30.3/-20.2 85%  low500 0.411/0.469 100%  crest_db 27.3/19.5 0%  attack_ms 3.72/20.2 100%  floor_db -74.8/-43.4 0%  in-range 0.58  PQ 7.80 / 6.65  ref footstep all
+   footstep|stone      real16        tail_ms 120/284 35%  decay100_db -33.8/-20.2 55%  low500 0.845/0.469 100%  crest_db 21.9/19.5 80%  attack_ms 5.94/20.2 100%  floor_db -48.1/-43.4 80%  in-range 0.75  PQ 6.30 / 6.65  ref footstep all
+   footstep|grass      s3_g1.0_k0.6  tail_ms 283/284 100%  decay100_db -24.6/-20.2 95%  low500 0.943/0.469 100%  crest_db 21/19.5 90%  attack_ms 23.6/20.2 95%  floor_db -72.9/-43.4 0%  in-range 0.80  PQ 7.04 / 6.65  ref footstep all
+   footstep|grass      real16        tail_ms 471/284 75%  decay100_db -23/-20.2 95%  low500 0.835/0.469 85%  crest_db 20.8/19.5 90%  attack_ms 15.1/20.2 80%  floor_db -32.8/-43.4 45%  in-range 0.78  PQ 6.15 / 6.65  ref footstep all
+   footstep|grass      base16        tail_ms 341/284 100%  decay100_db -21.1/-20.2 95%  low500 0.878/0.469 100%  crest_db 21.5/19.5 65%  attack_ms 24.1/20.2 75%  floor_db -69.2/-43.4 0%  in-range 0.72  PQ 6.99 / 6.65  ref footstep all
+   footstep|grass      d016          tail_ms 280/284 100%  decay100_db -28.3/-20.2 100%  low500 0.818/0.469 100%  crest_db 25.2/19.5 5%  attack_ms 24.5/20.2 100%  floor_db -83.5/-43.4 0%  in-range 0.67  PQ 7.62 / 6.65  ref footstep all
+   footstep|metal      s3_g1.0_k0.6  tail_ms 142/284 95%  decay100_db -26.7/-20.2 100%  low500 0.939/0.469 100%  crest_db 25/19.5 0%  attack_ms 2.36/20.2 100%  floor_db -77.9/-43.4 0%  in-range 0.66  PQ 7.66 / 6.65  ref footstep all
+   footstep|metal      real16        tail_ms 368/284 65%  decay100_db -15.4/-20.2 95%  low500 0.806/0.469 85%  crest_db 19.6/19.5 95%  attack_ms 14.7/20.2 95%  floor_db -38.7/-43.4 70%  in-range 0.84  PQ 6.13 / 6.65  ref footstep all
+   footstep|metal      base16        tail_ms 141/284 100%  decay100_db -25.6/-20.2 95%  low500 0.922/0.469 100%  crest_db 25.7/19.5 0%  attack_ms 2.32/20.2 100%  floor_db -79.8/-43.4 0%  in-range 0.66  PQ 7.84 / 6.65  ref footstep all
+   footstep|metal      d016          tail_ms 156/284 100%  decay100_db -24.3/-20.2 100%  low500 0.912/0.469 100%  crest_db 23.1/19.5 60%  attack_ms 4.9/20.2 100%  floor_db -88.7/-43.4 0%  in-range 0.77  PQ 7.69 / 6.65  ref footstep all
+   footstep|gravel     s3_g1.0_k0.6  tail_ms 297/284 100%  decay100_db -24.6/-20.2 100%  low500 0.454/0.469 100%  crest_db 24.9/19.5 20%  attack_ms 4.02/20.2 100%  floor_db -72.4/-43.4 5%  in-range 0.71  PQ 7.31 / 6.65  ref footstep all
+   footstep|gravel     d016          tail_ms 307/284 100%  decay100_db -22.6/-20.2 100%  low500 0.49/0.469 100%  crest_db 23.6/19.5 30%  attack_ms 9.24/20.2 100%  floor_db -84/-43.4 0%  in-range 0.72  PQ 6.93 / 6.65  ref footstep all
+   footstep|gravel     base16        tail_ms 338/284 100%  decay100_db -21/-20.2 100%  low500 0.43/0.469 100%  crest_db 23.1/19.5 50%  attack_ms 10.1/20.2 100%  floor_db -71.4/-43.4 0%  in-range 0.75  PQ 7.05 / 6.65  ref footstep all
+   footstep|gravel     real16        tail_ms 541/284 30%  decay100_db -19.1/-20.2 90%  low500 0.283/0.469 85%  crest_db 20.9/19.5 95%  attack_ms 11/20.2 90%  floor_db -31.1/-43.4 40%  in-range 0.72  PQ 6.23 / 6.65  ref footstep all
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ GENERATION  median ms per clip and static guard counts per setting
+   s3_g1.0_k0.6  median reused ms  
+   base16        route data/_gate/lora_drift_s16/base, 20 keys, steps 16, route.json yes
+   d016          route data/_gate/lora_drift_s16/d0, 20 keys, steps 16, route.json yes
+   real16        route data/_gate/lora_drift_s16/real, 20 keys, steps 16, route.json yes
+========================================================================================================================================================================
+ NO VALID JUDGE at 0.6 s: gun_mech, shell_drop
+ NO VALID JUDGE at 1.5 s: gun_mech, shell_drop
+ NO REAL REFERENCE: equip|rifle, cast|fire_spell
+ APPROXIMATE REFERENCE: explosion (ESC-50 fireworks stand in for a grenade explosion), sword (FoleySet Sword is mostly clashes and draws, few swings), horn (ESC-50 car_horn stands in for a truck horn)
+ LISTEN data/_gate/listen/vocab_best_refs_heldout_s3_g1.0_k0.6_base16_d016_real16.wav in order: shoot|rifle s3_g1.0_k0.6 | shoot|rifle d016 | shoot|rifle base16 | shoot|rifle real16 | shoot|pistol s3_g1.0_k0.6 | shoot|pistol base16 | shoot|pistol d016 | shoot|pistol real16 | reload|rifle s3_g1.0_k0.6 | reload|rifle base16 | reload|rifle d016 | reload|rifle real16 (no judged setting) | equip|rifle s3_g1.0_k0.6 | equip|rifle base16 | equip|rifle d016 | equip|rifle real16 (no judged setting) | empty_click|pistol s3_g1.0_k0.6 | empty_click|pistol base16 | empty_click|pistol d016 | empty_click|pistol real16 (no judged setting) | explosion|grenade s3_g1.0_k0.6 | explosion|grenade real16 | explosion|grenade base16 | explosion|grenade d016 | swing|sword s3_g1.0_k0.6 | swing|sword base16 | swing|sword d016 | swing|sword real16 | open|door s3_g1.0_k0.6 | open|door base16 | open|door d016 | open|door real16 | slam|door s3_g1.0_k0.6 | slam|door base16 | slam|door d016 | slam|door real16 | break|window s3_g1.0_k0.6 | break|window d016 | break|window base16 | break|window real16 | click|button s3_g1.0_k0.6 | click|button real16 | click|button base16 | click|button d016 | cast|fire_spell s3_g1.0_k0.6 | cast|fire_spell base16 | cast|fire_spell d016 | cast|fire_spell real16 (no judged setting) | punch|body s3_g1.0_k0.6 | punch|body base16 | punch|body d016 | punch|body real16 | horn|truck s3_g1.0_k0.6 | horn|truck base16 | horn|truck d016 | horn|truck real16 | bark|dog s3_g1.0_k0.6 | bark|dog base16 | bark|dog d016 | bark|dog real16 | footstep|wood s3_g1.0_k0.6 | footstep|wood base16 | footstep|wood d016 | footstep|wood real16 | footstep|stone s3_g1.0_k0.6 | footstep|stone d016 | footstep|stone base16 | footstep|stone real16 | footstep|grass s3_g1.0_k0.6 | footstep|grass real16 | footstep|grass base16 | footstep|grass d016 | footstep|metal s3_g1.0_k0.6 | footstep|metal real16 | footstep|metal base16 | footstep|metal d016 | footstep|gravel s3_g1.0_k0.6 | footstep|gravel d016 | footstep|gravel base16 | footstep|gravel real16
+========================================================================================================================================================================
+saved -> D:\Python\SAGE\scripts\bench\out_vocab_eval_refs_heldout_s3_g1.0_k0.6_base16_d016_real16.json
