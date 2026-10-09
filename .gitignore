@@ -27,3 +27,4 @@ data/lora/
 scripts/train/*.log
 scripts/train/*.err
 scripts/bench/*.err
+scripts/train/*_progress.txt
