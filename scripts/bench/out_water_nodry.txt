@@ -1,0 +1,301 @@
+sets (1280 clips, 8.1 s to load): ctl:water_drops@0.6=40, ctl:water_drops@1.0=40, ctl:water_drops@1.5=40, ctl:water_drops@full=40, ctl:crackling_fire@0.6=40, ctl:crackling_fire@1.0=40, ctl:crackling_fire@1.5=40, ctl:crackling_fire@full=40, ctl:wind@0.6=40, ctl:wind@1.0=40, ctl:wind@1.5=40, ctl:wind@full=40, ctl:door_wood_knock@0.6=40, ctl:door_wood_knock@1.0=40, ctl:door_wood_knock@1.5=40, ctl:door_wood_knock@full=40, ctl:glass_breaking@0.6=40, ctl:glass_breaking@1.0=40, ctl:glass_breaking@1.5=40, ctl:glass_breaking@full=40, ctl:footsteps@0.6=40, ctl:footsteps@1.0=40, ctl:footsteps@1.5=40, ctl:footsteps@full=40, ctl:static@0.6=40, ctl:static@1.0=40, ctl:static@1.5=40, ctl:static@full=40, tier|water_s3_current=80, tier|water_s3_nodry=80
+static rule recomputed with water_probe.metrics
+ast   fit none          66.0 s
+ast   fit silence       67.8 s
+ast   fit tile          68.2 s
+ast   fit tile_floor    69.9 s
+judged ast   282.4 s
+Checkpoint path: C:\Users\alanc/panns_data/Cnn14_mAP=0.431.pth
+GPU number: 1
+panns fit none           2.2 s
+panns fit silence        8.8 s
+panns fit tile           8.9 s
+panns fit tile_floor    12.2 s
+judged panns 35.8 s
+  clap native   ctl:water_drops@0.6                       40 clips    21.1 s
+  clap native   ctl:water_drops@1.0                       40 clips    41.7 s
+  clap native   ctl:water_drops@1.5                       40 clips    62.3 s
+  clap native   ctl:water_drops@full                      40 clips    83.1 s
+  clap native   ctl:crackling_fire@0.6                    40 clips   103.9 s
+  clap native   ctl:crackling_fire@1.0                    40 clips   124.4 s
+  clap native   ctl:crackling_fire@1.5                    40 clips   145.4 s
+  clap native   ctl:crackling_fire@full                   40 clips   166.1 s
+  clap native   ctl:wind@0.6                              40 clips   187.4 s
+  clap native   ctl:wind@1.0                              40 clips   207.4 s
+  clap native   ctl:wind@1.5                              40 clips   228.4 s
+  clap native   ctl:wind@full                             40 clips   249.2 s
+  clap native   ctl:door_wood_knock@0.6                   40 clips   270.0 s
+  clap native   ctl:door_wood_knock@1.0                   40 clips   290.6 s
+  clap native   ctl:door_wood_knock@1.5                   40 clips   311.5 s
+  clap native   ctl:door_wood_knock@full                  40 clips   332.6 s
+  clap native   ctl:glass_breaking@0.6                    40 clips   353.6 s
+  clap native   ctl:glass_breaking@1.0                    40 clips   374.7 s
+  clap native   ctl:glass_breaking@1.5                    40 clips   395.8 s
+  clap native   ctl:glass_breaking@full                   40 clips   416.6 s
+  clap native   ctl:footsteps@0.6                         40 clips   436.9 s
+  clap native   ctl:footsteps@1.0                         40 clips   457.6 s
+  clap native   ctl:footsteps@1.5                         40 clips   478.8 s
+  clap native   ctl:footsteps@full                        40 clips   499.7 s
+  clap native   ctl:static@0.6                            40 clips   520.9 s
+  clap native   ctl:static@1.0                            40 clips   541.7 s
+  clap native   ctl:static@1.5                            40 clips   563.8 s
+  clap native   ctl:static@full                           40 clips   584.7 s
+  clap native   gen:tier|water_s3_current                 80 clips   626.0 s
+  clap native   gen:tier|water_s3_nodry                   80 clips   667.1 s
+clap  fit native       667.1 s
+judged clap  669.0 s
+
+======================================================================================================================================================
+ WATER JUDGE PANEL   positive control = ESC-50 water_drops (40 clips), negatives = crackling_fire, wind, door_wood_knock, glass_breaking, footsteps (200 clips pooled)
+ control crops: _extract onset window then normalize_loudness at target_for('normal'), plus the full 5 s files
+ top = any water label in the AudioSet top 5 (AST, PANNs) or a water phrase as CLAP argmax; thr = summed water probability above the 90th percentile of the pooled negatives at that length
+ valid = real >= 0.50 and real - pooled neg >= 0.30;  Y = also real - every single negative class >= 0.30, y = pooled rule only, - = invalid
+ hiss = 40 synthetic static clips (spectral slope, high-pass Hz: 0.00/50, 0.50/50, 1.00/200, 1.25/400) cut the same way; h = valid but real - hiss < 0.30, so the judge calls static water and never scores generated clips
+======================================================================================================================================================
+ ast    water_all       Water; Rain; Raindrop; Rain on surface; Stream; Waterfall; Ocean; Waves, surf; Gurgling; Liquid; Splash, splatter; Slosh; Drip; Pour; Trickle, dribble; Gush; Fill (with liquid); Boiling; Plop; Water tap, faucet; Sink (filling or washing); Bathtub (filling or washing); Toilet flush
+ ast    liquid          Water; Raindrop; Gurgling; Liquid; Splash, splatter; Slosh; Drip; Pour; Trickle, dribble; Gush; Fill (with liquid); Boiling; Plop
+ ast    splash          Splash, splatter; Slosh; Plop
+ ast    drip            Drip; Raindrop   (diagnostic, never ranked)
+ panns  water_all       Water; Rain; Raindrop; Rain on surface; Stream; Waterfall; Ocean; Waves, surf; Gurgling; Liquid; Splash, splatter; Slosh; Drip; Pour; Trickle, dribble; Gush; Fill (with liquid); Boiling; Plop; Water tap, faucet; Sink (filling or washing); Bathtub (filling or washing); Toilet flush
+ panns  liquid          Water; Raindrop; Gurgling; Liquid; Splash, splatter; Slosh; Drip; Pour; Trickle, dribble; Gush; Fill (with liquid); Boiling; Plop
+ panns  splash          Splash, splatter; Slosh; Plop
+ panns  drip            Drip; Raindrop   (diagnostic, never ranked)
+ clap   water_splashing water splashing
+ clap   something_dropping_into_water something dropping into water
+ clap   a_splash        a splash
+ clap   water           water
+ clap   liquid_sloshing liquid sloshing
+ clap   water_dripping  water dripping   (diagnostic, never ranked)
+ clap   any             water splashing; something dropping into water; a splash; water; liquid sloshing
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ VALIDITY at 0.6 s
+ judge|fit|set                             | top:  real   neg  fire  wind knock glass  foot  hiss ok | thr:  real  fire  wind  hiss ok |   AUC AUCnz AUChs
+ ast|none|drip                             | top:   28%    1%    5%    0%    0%    0%    0%    0%  - | thr:   62%   28%   12%   32%  Y |  0.87  0.77  0.66
+ ast|none|liquid                           | top:   48%    2%    8%    0%    0%    2%    2%    2%  - | thr:   60%   28%    8%   32%  h |  0.85  0.78  0.65
+ ast|none|splash                           | top:   45%    0%    0%    0%    0%    0%    0%    0%  - | thr:   70%   10%   10%   70%  h |  0.87  0.82  0.67
+ ast|none|water_all                        | top:   48%    6%   15%   10%    0%    2%    2%   45%  - | thr:   52%   28%   20%   48%  h |  0.81  0.67  0.49
+ ast|silence|drip                          | top:   40%    1%    5%    0%    0%    0%    0%    0%  - | thr:   68%   32%    5%   22%  Y |  0.90  0.83  0.78
+ ast|silence|liquid                        | top:   57%    2%    5%    0%    0%    0%    2%    0%  Y | thr:   70%   42%    0%    0%  y |  0.90  0.85  0.90
+ ast|silence|splash                        | top:   48%    0%    0%    0%    0%    0%    0%    0%  - | thr:   78%   12%    0%    5%  Y |  0.89  0.88  0.88
+ ast|silence|water_all                     | top:   57%    6%   12%   15%    0%    0%    5%   65%  h | thr:   55%   20%   28%   68%  h |  0.84  0.72  0.55
+ ast|tile_floor|drip                       | top:   15%    1%    0%    0%    0%    0%    5%    0%  - | thr:   55%   28%    0%    0%  y |  0.85  0.80  0.87
+ ast|tile_floor|liquid                     | top:   25%    2%    0%    0%    0%    0%    8%    0%  - | thr:   55%   22%    0%    0%  y |  0.76  0.72  0.85
+ ast|tile_floor|splash                     | top:   18%    0%    0%    0%    0%    0%    0%    0%  - | thr:   68%    5%    0%   10%  Y |  0.83  0.89  0.81
+ ast|tile_floor|water_all                  | top:   25%    3%    8%    0%    0%    0%    8%    0%  - | thr:   52%   25%    2%    0%  y |  0.72  0.64  0.65
+ ast|tile|drip                             | top:   12%    0%    0%    0%    0%    0%    2%    0%  - | thr:   57%   25%    0%    0%  Y |  0.84  0.79  0.80
+ ast|tile|liquid                           | top:   22%    0%    0%    0%    0%    0%    2%    0%  - | thr:   55%   18%    0%    0%  y |  0.75  0.72  0.82
+ ast|tile|splash                           | top:   15%    0%    0%    0%    0%    0%    0%    0%  - | thr:   62%    8%    0%    8%  Y |  0.85  0.90  0.83
+ ast|tile|water_all                        | top:   22%    2%    2%    0%    0%    0%    5%    0%  - | thr:   48%   20%    8%    0%  - |  0.72  0.64  0.62
+ clap|native|a_splash                      | top:   68%    1%    2%    0%    0%    0%    2%    0%  Y | thr:   85%   30%    2%    2%  Y |  0.95  0.92  0.89
+ clap|native|any                           | top:   80%    2%    5%    0%    2%    0%    2%    0%  Y | thr:   88%   30%    5%    2%  Y |  0.96  0.94  0.93
+ clap|native|liquid_sloshing               | top:   15%    1%    0%    0%    2%    0%    2%    0%  - | thr:   68%    5%   12%    5%  Y |  0.92  0.93  0.91
+ clap|native|something_dropping_into_water | top:   72%    0%    0%    0%    0%    0%    2%    0%  Y | thr:   95%   32%    5%   22%  Y |  0.99  0.98  0.97
+ clap|native|water                         | top:   72%    1%    2%    0%    0%    0%    2%    0%  Y | thr:   85%   35%    5%    0%  Y |  0.95  0.92  0.94
+ clap|native|water_dripping                | top:   62%    0%    0%    0%    0%    0%    2%    0%  Y | thr:   98%   42%    0%    0%  Y |  0.98  0.97  1.00
+ clap|native|water_splashing               | top:   12%    0%    0%    0%    0%    0%    0%    0%  - | thr:   88%   25%    5%  100%  h |  0.95  0.92  0.76
+ panns|none|drip                           | top:   52%    0%    0%    0%    0%    0%    0%    0%  Y | thr:   78%   22%   15%   95%  h |  0.89  0.82  0.71
+ panns|none|liquid                         | top:   62%    0%    0%    0%    0%    0%    2%    0%  Y | thr:   70%   15%   18%   92%  h |  0.86  0.77  0.69
+ panns|none|splash                         | top:   18%    0%    0%    0%    0%    0%    0%    0%  - | thr:   70%   15%    8%  100%  h |  0.82  0.79  0.67
+ panns|none|water_all                      | top:   62%    5%    2%   20%    0%    0%    2%   90%  h | thr:   62%    8%   40%  100%  h |  0.81  0.68  0.48
+ panns|silence|drip                        | top:   10%    0%    0%    0%    0%    0%    0%    0%  - | thr:   78%   22%    0%  100%  h |  0.91  0.88  0.71
+ panns|silence|liquid                      | top:   62%   16%    5%    0%   62%    5%    8%    0%  y | thr:   65%    2%    0%    0%  y |  0.87  0.95  0.87
+ panns|silence|splash                      | top:   60%   16%    5%    0%   62%    5%    8%    0%  y | thr:   52%    0%    0%    0%  y |  0.84  0.95  0.98
+ panns|silence|water_all                   | top:   62%   16%    5%    0%   62%    5%    8%    0%  y | thr:   68%    2%    0%   10%  y |  0.87  0.93  0.73
+ panns|tile_floor|drip                     | top:   50%    0%    2%    0%    0%    0%    0%    0%  Y | thr:   70%   35%    2%    2%  Y |  0.93  0.87  0.86
+ panns|tile_floor|liquid                   | top:   62%    2%    5%    0%    0%    0%    5%    0%  Y | thr:   72%   28%    8%    0%  Y |  0.92  0.86  0.89
+ panns|tile_floor|splash                   | top:   30%    0%    0%    0%    0%    0%    0%    0%  - | thr:   82%   10%   12%   95%  h |  0.90  0.89  0.74
+ panns|tile_floor|water_all                | top:   62%   10%   10%   28%    0%    0%   10%   32%  Y | thr:   68%   12%   28%   25%  Y |  0.87  0.75  0.73
+ panns|tile|drip                           | top:   50%    0%    2%    0%    0%    0%    0%    0%  Y | thr:   72%   35%    2%    5%  Y |  0.92  0.86  0.87
+ panns|tile|liquid                         | top:   62%    2%    2%    0%    0%    0%    5%    0%  Y | thr:   75%   30%    5%    0%  Y |  0.90  0.84  0.89
+ panns|tile|splash                         | top:   30%    0%    0%    0%    0%    0%    0%    0%  - | thr:   80%   10%   10%   82%  h |  0.87  0.87  0.75
+ panns|tile|water_all                      | top:   62%    8%    5%   28%    0%    0%    8%   20%  Y | thr:   65%    8%   35%   20%  Y |  0.85  0.74  0.73
+   ast|none                       top1 on real water: Plop 8, Sound effect 5, Drip 4   on hiss: Static 36, Waterfall 4
+   ast|silence                    top1 on real water: Plop 13, Silence 11, Chink, clink 5   on hiss: Pink noise 19, Noise 12, White noise 4
+   ast|tile_floor                 top1 on real water: Music 15, Tick-tock 14, Drip 3   on hiss: Static 40
+   ast|tile                       top1 on real water: Music 16, Tick-tock 7, Tick 4   on hiss: Static 40
+   panns|none                     top1 on real water: Music 16, Drip 9, Plop 3   on hiss: Static 20, Pink noise 13, White noise 5
+   panns|silence                  top1 on real water: Silence 32, Plop 6, Music 2   on hiss: Silence 40
+   panns|tile_floor               top1 on real water: Music 12, Drip 10, Plop 5   on hiss: Static 30, Pink noise 8, Music 2
+   panns|tile                     top1 on real water: Music 9, Drip 8, Plop 7   on hiss: Static 24, Pink noise 8, Music 8
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ VALIDITY at 1.0 s
+ judge|fit|set                             | top:  real   neg  fire  wind knock glass  foot  hiss ok | thr:  real  fire  wind  hiss ok |   AUC AUCnz AUChs
+ ast|none|drip                             | top:   35%    4%   18%    0%    0%    0%    0%    0%  - | thr:   65%   32%   10%   20%  Y |  0.89  0.77  0.75
+ ast|none|liquid                           | top:   52%    4%   20%    0%    0%    0%    2%    2%  Y | thr:   62%   35%    5%   22%  y |  0.88  0.78  0.72
+ ast|none|splash                           | top:   42%    0%    0%    0%    0%    0%    0%    0%  - | thr:   72%   20%    8%   62%  h |  0.90  0.85  0.72
+ ast|none|water_all                        | top:   52%    8%   20%   18%    0%    0%    2%   48%  h | thr:   48%   28%   22%   50%  - |  0.83  0.68  0.51
+ ast|silence|drip                          | top:   50%    2%    8%    0%    0%    0%    2%    0%  Y | thr:   70%   38%    8%   22%  Y |  0.93  0.84  0.87
+ ast|silence|liquid                        | top:   65%    4%   15%    0%    0%    0%    2%    0%  Y | thr:   75%   42%    2%    0%  Y |  0.93  0.87  0.94
+ ast|silence|splash                        | top:   48%    0%    0%    0%    0%    0%    0%    0%  - | thr:   82%   20%    0%    0%  Y |  0.93  0.92  0.92
+ ast|silence|water_all                     | top:   65%   10%   25%   25%    0%    0%    2%   70%  h | thr:   52%   25%   22%   55%  h |  0.87  0.73  0.58
+ ast|tile_floor|drip                       | top:   38%    2%   12%    0%    0%    0%    0%    0%  - | thr:   55%   35%    0%    0%  y |  0.87  0.78  0.90
+ ast|tile_floor|liquid                     | top:   48%    4%   15%    2%    0%    0%    2%    0%  - | thr:   55%   32%    2%    0%  y |  0.82  0.76  0.86
+ ast|tile_floor|splash                     | top:   22%    0%    0%    0%    0%    0%    0%    0%  - | thr:   72%    8%    2%   12%  Y |  0.91  0.94  0.90
+ ast|tile_floor|water_all                  | top:   48%    8%   25%   12%    0%    0%    2%    0%  - | thr:   52%   28%   12%    0%  y |  0.77  0.65  0.71
+ ast|tile|drip                             | top:   38%    1%    5%    0%    0%    0%    0%    0%  - | thr:   57%   32%    5%    0%  y |  0.87  0.78  0.84
+ ast|tile|liquid                           | top:   48%    2%    5%    2%    0%    0%    0%    0%  - | thr:   60%   28%    5%    0%  Y |  0.82  0.75  0.84
+ ast|tile|splash                           | top:   28%    0%    0%    0%    0%    0%    0%    0%  - | thr:   75%   10%    2%    8%  Y |  0.92  0.95  0.90
+ ast|tile|water_all                        | top:   48%    4%   15%    8%    0%    0%    0%    0%  - | thr:   52%   28%   12%    0%  y |  0.78  0.66  0.72
+ clap|native|a_splash                      | top:   72%    1%    5%    0%    0%    0%    0%    0%  Y | thr:   92%   22%    5%    0%  Y |  0.98  0.96  0.97
+ clap|native|any                           | top:   82%    2%    5%    0%    0%    0%    2%    0%  Y | thr:   95%   20%    8%    0%  Y |  0.98  0.98  0.99
+ clap|native|liquid_sloshing               | top:   30%    0%    0%    0%    0%    0%    2%    0%  - | thr:   85%   10%    8%    0%  Y |  0.95  0.96  0.99
+ clap|native|something_dropping_into_water | top:   80%    0%    0%    0%    0%    0%    0%    0%  Y | thr:  100%   28%    8%    5%  Y |  1.00  0.99  1.00
+ clap|native|water                         | top:   78%    2%    5%    0%    0%    0%    2%    0%  Y | thr:   95%   32%    2%    8%  Y |  0.98  0.97  0.96
+ clap|native|water_dripping                | top:   70%    0%    0%    0%    0%    0%    2%    0%  Y | thr:   98%   40%    0%    0%  Y |  0.99  0.99  1.00
+ clap|native|water_splashing               | top:   22%    0%    0%    0%    0%    0%    0%    0%  - | thr:   90%   20%    8%   98%  h |  0.98  0.96  0.86
+ panns|none|drip                           | top:   68%    0%    0%    0%    0%    0%    0%    0%  Y | thr:   88%   32%    8%   28%  Y |  0.95  0.91  0.89
+ panns|none|liquid                         | top:   72%    2%    0%    0%    5%    0%    5%    0%  Y | thr:   85%   25%   10%   28%  Y |  0.93  0.90  0.90
+ panns|none|splash                         | top:   30%    1%    0%    0%    5%    0%    0%    0%  - | thr:   85%   10%    5%   18%  Y |  0.91  0.92  0.86
+ panns|none|water_all                      | top:   72%    8%    8%   20%    5%    0%    5%   45%  h | thr:   72%   15%   30%   45%  h |  0.88  0.78  0.69
+ panns|silence|drip                        | top:   68%    0%    0%    0%    0%    0%    0%    0%  Y | thr:   85%   15%   12%  100%  h |  0.93  0.89  0.77
+ panns|silence|liquid                      | top:   75%    2%    0%    0%    8%    0%    2%    0%  Y | thr:   82%   10%   12%   62%  h |  0.90  0.87  0.79
+ panns|silence|splash                      | top:   50%    2%    0%    0%    8%    0%    0%    0%  Y | thr:   75%    5%    5%   30%  Y |  0.88  0.87  0.83
+ panns|silence|water_all                   | top:   75%    3%    2%    2%    8%    0%    2%   55%  h | thr:   78%   10%   25%   92%  h |  0.88  0.83  0.67
+ panns|tile_floor|drip                     | top:   65%    0%    0%    0%    0%    0%    0%    0%  Y | thr:   82%   38%    2%   25%  Y |  0.94  0.89  0.85
+ panns|tile_floor|liquid                   | top:   68%    1%    0%    0%    2%    0%    2%    0%  Y | thr:   80%   35%    5%   18%  Y |  0.92  0.87  0.87
+ panns|tile_floor|splash                   | top:   35%    0%    0%    0%    2%    0%    0%    0%  - | thr:   82%   12%    5%   80%  h |  0.91  0.91  0.78
+ panns|tile_floor|water_all                | top:   68%    9%   12%   28%    2%    0%    2%   50%  h | thr:   68%   18%   30%   40%  h |  0.88  0.76  0.71
+ panns|tile|drip                           | top:   65%    0%    0%    0%    0%    0%    0%    0%  Y | thr:   80%   35%    5%   18%  Y |  0.93  0.88  0.86
+ panns|tile|liquid                         | top:   70%    2%    0%    0%    2%    0%    5%    0%  Y | thr:   80%   28%    5%   10%  Y |  0.91  0.86  0.87
+ panns|tile|splash                         | top:   42%    0%    0%    0%    2%    0%    0%    0%  - | thr:   78%   10%    8%   18%  Y |  0.89  0.89  0.81
+ panns|tile|water_all                      | top:   70%    8%    5%   28%    2%    0%    5%   38%  Y | thr:   70%   18%   30%   38%  Y |  0.87  0.77  0.72
+   ast|none                       top1 on real water: Plop 8, Sound effect 6, Drip 5   on hiss: Static 34, Waterfall 6
+   ast|silence                    top1 on real water: Silence 11, Plop 10, Chink, clink 5   on hiss: Pink noise 25, Noise 10, Waterfall 4
+   ast|tile_floor                 top1 on real water: Music 11, Tick-tock 9, Tick 6   on hiss: Static 40
+   ast|tile                       top1 on real water: Music 9, Tick 8, Drip 5   on hiss: Static 40
+   panns|none                     top1 on real water: Drip 15, Music 6, Plop 4   on hiss: Static 22, Waterfall 12, Noise 3
+   panns|silence                  top1 on real water: Drip 17, Music 9, Plop 7   on hiss: Static 40
+   panns|tile_floor               top1 on real water: Drip 11, Music 7, Plop 6   on hiss: Static 24, Pink noise 6, Noise 5
+   panns|tile                     top1 on real water: Drip 10, Plop 8, Music 5   on hiss: Static 17, Music 8, Pink noise 6
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ VALIDITY at 1.5 s
+ judge|fit|set                             | top:  real   neg  fire  wind knock glass  foot  hiss ok | thr:  real  fire  wind  hiss ok |   AUC AUCnz AUChs
+ ast|none|drip                             | top:   45%    4%   18%    0%    0%    0%    0%    0%  - | thr:   70%   38%    8%   15%  Y |  0.90  0.80  0.80
+ ast|none|liquid                           | top:   57%    6%   22%    0%    0%    0%    5%    0%  Y | thr:   68%   35%    8%   22%  Y |  0.90  0.82  0.80
+ ast|none|splash                           | top:   45%    0%    0%    0%    0%    0%    0%    0%  - | thr:   82%   10%    8%   50%  Y |  0.92  0.87  0.81
+ ast|none|water_all                        | top:   57%    8%   22%   15%    0%    0%    5%   50%  h | thr:   62%   25%   20%   52%  h |  0.86  0.73  0.61
+ ast|silence|drip                          | top:   62%    2%   10%    0%    0%    0%    0%    0%  Y | thr:   78%   42%    5%   10%  Y |  0.94  0.86  0.90
+ ast|silence|liquid                        | top:   72%    4%   15%    0%    0%    0%    2%    0%  Y | thr:   85%   42%    2%    0%  Y |  0.95  0.90  0.96
+ ast|silence|splash                        | top:   45%    0%    0%    0%    0%    0%    2%    0%  - | thr:   95%   20%    2%    2%  Y |  0.96  0.95  0.97
+ ast|silence|water_all                     | top:   72%    8%   18%   22%    0%    0%    2%   72%  h | thr:   68%   25%   25%   57%  h |  0.90  0.78  0.66
+ ast|tile_floor|drip                       | top:   45%    4%   18%    0%    0%    0%    0%    0%  - | thr:   70%   38%    0%    0%  Y |  0.89  0.81  0.94
+ ast|tile_floor|liquid                     | top:   50%    5%   22%    2%    0%    0%    0%    0%  y | thr:   68%   32%    5%    0%  Y |  0.86  0.80  0.88
+ ast|tile_floor|splash                     | top:   25%    0%    0%    0%    0%    0%    0%    0%  - | thr:   82%    8%    2%    2%  Y |  0.92  0.94  0.94
+ ast|tile_floor|water_all                  | top:   52%   12%   40%   18%    0%    0%    2%   18%  y | thr:   52%   30%   18%    0%  y |  0.81  0.68  0.76
+ ast|tile|drip                             | top:   48%    4%   18%    0%    0%    0%    0%    0%  - | thr:   72%   38%    2%    0%  Y |  0.88  0.78  0.88
+ ast|tile|liquid                           | top:   55%    6%   22%    2%    2%    0%    2%    0%  Y | thr:   70%   35%    5%    0%  Y |  0.85  0.78  0.85
+ ast|tile|splash                           | top:   35%    0%    0%    0%    2%    0%    0%    0%  - | thr:   80%   12%    2%    2%  Y |  0.92  0.93  0.94
+ ast|tile|water_all                        | top:   57%   12%   35%   18%    2%    0%    5%   18%  y | thr:   52%   28%   20%    0%  y |  0.80  0.67  0.73
+ clap|native|a_splash                      | top:   65%    2%    5%    0%    0%    0%    2%    0%  Y | thr:   92%   30%    5%   62%  Y |  0.98  0.96  0.92
+ clap|native|any                           | top:   82%    2%    5%    0%    0%    0%    2%    0%  Y | thr:   95%   22%    5%   50%  Y |  0.98  0.98  0.94
+ clap|native|liquid_sloshing               | top:   18%    0%    0%    0%    0%    0%    0%    0%  - | thr:   85%    8%   12%    0%  Y |  0.95  0.96  0.95
+ clap|native|something_dropping_into_water | top:   80%    0%    0%    0%    0%    0%    0%    0%  Y | thr:  100%   28%    8%   65%  Y |  0.99  0.99  1.00
+ clap|native|water                         | top:   80%    0%    0%    0%    0%    0%    2%    0%  Y | thr:   90%   30%    5%   32%  Y |  0.97  0.95  0.90
+ clap|native|water_dripping                | top:   70%    0%    0%    0%    0%    0%    0%    0%  Y | thr:   98%   42%    0%    0%  Y |  0.99  0.98  1.00
+ clap|native|water_splashing               | top:   20%    0%    0%    0%    0%    0%    0%    0%  - | thr:   88%   22%   10%  100%  h |  0.96  0.94  0.79
+ panns|none|drip                           | top:   70%    0%    2%    0%    0%    0%    0%    0%  Y | thr:   85%   40%    5%   28%  Y |  0.95  0.91  0.86
+ panns|none|liquid                         | top:   72%    2%    2%    0%    5%    0%    5%    0%  Y | thr:   82%   32%    2%   32%  Y |  0.95  0.92  0.91
+ panns|none|splash                         | top:   22%    1%    0%    0%    5%    0%    0%    0%  - | thr:   75%    5%    0%    0%  Y |  0.89  0.92  0.88
+ panns|none|water_all                      | top:   72%    8%    8%   22%    5%    0%    5%   50%  h | thr:   70%   20%   28%   52%  h |  0.89  0.79  0.69
+ panns|silence|drip                        | top:   65%    0%    0%    0%    0%    0%    0%    0%  Y | thr:   80%   22%   10%   95%  h |  0.92  0.87  0.73
+ panns|silence|liquid                      | top:   75%    3%    0%    2%    8%    0%    5%    0%  Y | thr:   80%   20%   15%   38%  Y |  0.91  0.86  0.78
+ panns|silence|splash                      | top:   40%    2%    0%    0%    8%    0%    0%    0%  - | thr:   78%    8%   15%   10%  Y |  0.89  0.87  0.85
+ panns|silence|water_all                   | top:   75%    5%    2%   10%    8%    0%    5%   82%  h | thr:   75%   20%   22%   80%  h |  0.89  0.81  0.66
+ panns|tile_floor|drip                     | top:   62%    1%    5%    0%    0%    0%    0%    0%  Y | thr:   85%   35%    8%   35%  Y |  0.95  0.91  0.88
+ panns|tile_floor|liquid                   | top:   70%    2%    8%    0%    2%    0%    2%    0%  Y | thr:   90%   35%    5%   32%  Y |  0.96  0.93  0.93
+ panns|tile_floor|splash                   | top:   45%    0%    0%    0%    2%    0%    0%    0%  - | thr:   88%   10%   10%   62%  h |  0.93  0.93  0.85
+ panns|tile_floor|water_all                | top:   70%    8%   12%   25%    2%    0%    2%   50%  h | thr:   75%   20%   28%   50%  h |  0.91  0.82  0.75
+ panns|tile|drip                           | top:   62%    2%    8%    0%    0%    0%    0%    0%  Y | thr:   82%   35%    8%   32%  Y |  0.94  0.89  0.87
+ panns|tile|liquid                         | top:   68%    6%    8%    0%   12%    2%    5%    0%  Y | thr:   85%   28%    2%    2%  Y |  0.94  0.92  0.93
+ panns|tile|splash                         | top:   50%    3%    0%    0%   12%    2%    0%    0%  Y | thr:   82%    5%    0%    0%  Y |  0.90  0.92  0.87
+ panns|tile|water_all                      | top:   70%   11%   10%   25%   12%    2%    5%   48%  h | thr:   70%   15%   28%   48%  h |  0.90  0.81  0.75
+   ast|none                       top1 on real water: Drip 7, Plop 6, Ping 5   on hiss: Static 33, Waterfall 7
+   ast|silence                    top1 on real water: Silence 10, Plop 9, Drip 7   on hiss: Pink noise 22, Noise 12, Waterfall 5
+   ast|tile_floor                 top1 on real water: Drip 11, Tick-tock 8, Music 5   on hiss: Static 38, White noise 2
+   ast|tile                       top1 on real water: Drip 9, Music 6, Tick-tock 5   on hiss: Static 40
+   panns|none                     top1 on real water: Drip 17, Music 6, Plop 4   on hiss: Static 16, Waterfall 9, Noise 6
+   panns|silence                  top1 on real water: Drip 17, Music 8, Plop 5   on hiss: Static 34, Waterfall 6
+   panns|tile_floor               top1 on real water: Drip 17, Music 6, Plop 6   on hiss: Static 14, Noise 13, Waterfall 8
+   panns|tile                     top1 on real water: Drip 14, Plop 9, Music 6   on hiss: Noise 13, Static 8, Music 8
+------------------------------------------------------------------------------------------------------------------------------------------------------
+ VALIDITY at full
+ judge|fit|set                             | top:  real   neg  fire  wind knock glass  foot  hiss ok | thr:  real  fire  wind  hiss ok |   AUC AUCnz AUChs
+ ast|none|drip                             | top:   72%    4%   15%    2%    0%    0%    0%    0%  Y | thr:   88%   40%    5%    2%  Y |  0.95  0.89  0.93
+ ast|none|liquid                           | top:   82%    7%   28%    2%    0%    0%    5%    0%  Y | thr:   88%   38%    5%    2%  Y |  0.94  0.90  0.93
+ ast|none|splash                           | top:   48%    0%    0%    0%    0%    0%    0%    0%  - | thr:   85%    8%   18%   22%  Y |  0.96  0.95  0.91
+ ast|none|water_all                        | top:   82%   14%   38%   30%    0%    0%    5%   62%  h | thr:   70%   22%   28%   50%  h |  0.91  0.81  0.71
+ ast|silence|drip                          | top:   78%    2%   12%    0%    0%    0%    0%    0%  Y | thr:   88%   42%    8%    0%  Y |  0.95  0.90  0.94
+ ast|silence|liquid                        | top:   80%    4%   22%    0%    0%    0%    0%    0%  Y | thr:   88%   45%    2%    0%  Y |  0.96  0.92  0.96
+ ast|silence|splash                        | top:   40%    0%    0%    0%    0%    0%    0%    0%  - | thr:   92%   18%    5%    0%  Y |  0.98  0.98  0.98
+ ast|silence|water_all                     | top:   80%   11%   30%   25%    0%    0%    0%   80%  h | thr:   80%   25%   25%   50%  Y |  0.92  0.81  0.75
+ ast|tile_floor|drip                       | top:   70%    5%   22%    2%    0%    0%    0%    0%  Y | thr:   90%   40%    8%    2%  Y |  0.96  0.91  0.99
+ ast|tile_floor|liquid                     | top:   70%    7%   28%    2%    0%    0%    5%    0%  Y | thr:   92%   42%    5%    2%  Y |  0.96  0.91  0.99
+ ast|tile_floor|splash                     | top:   28%    0%    0%    0%    0%    0%    0%    0%  - | thr:   92%   12%    0%    2%  Y |  0.98  0.99  0.99
+ ast|tile_floor|water_all                  | top:   70%   16%   40%   32%    0%    0%    5%  100%  h | thr:   55%   22%   28%   28%  h |  0.90  0.76  0.62
+ ast|tile|drip                             | top:   70%    4%   18%    2%    0%    0%    0%    0%  Y | thr:   82%   40%    8%    2%  Y |  0.93  0.85  0.90
+ ast|tile|liquid                           | top:   72%    6%   28%    2%    2%    0%    0%    0%  Y | thr:   85%   42%    5%    2%  Y |  0.93  0.86  0.91
+ ast|tile|splash                           | top:   38%    0%    0%    0%    2%    0%    0%    0%  - | thr:   85%   15%    0%    0%  Y |  0.96  0.96  0.96
+ ast|tile|water_all                        | top:   75%   14%   35%   32%    2%    0%    0%  100%  h | thr:   55%   20%   30%   28%  h |  0.87  0.72  0.63
+ clap|native|a_splash                      | top:   78%    0%    0%    0%    0%    0%    0%    0%  Y | thr:  100%   22%    2%   68%  Y |  1.00  1.00  0.99
+ clap|native|any                           | top:   92%    2%    0%    0%    0%    0%   12%    0%  Y | thr:  100%    8%    5%   48%  Y |  0.99  1.00  1.00
+ clap|native|liquid_sloshing               | top:   57%    2%    0%    0%    0%    0%   10%    0%  Y | thr:   88%    5%    5%    0%  Y |  0.96  0.99  1.00
+ clap|native|something_dropping_into_water | top:   88%    0%    0%    0%    0%    0%    0%    0%  Y | thr:  100%   20%    0%   20%  Y |  1.00  1.00  1.00
+ clap|native|water                         | top:   90%    1%    0%    0%    0%    0%    5%    0%  Y | thr:  100%   12%    8%   65%  Y |  0.99  0.99  0.96
+ clap|native|water_dripping                | top:   85%    0%    0%    0%    0%    0%    0%    0%  Y | thr:  100%   22%    0%    0%  Y |  1.00  1.00  1.00
+ clap|native|water_splashing               | top:   52%    0%    0%    0%    0%    0%    2%    0%  Y | thr:  100%    2%    8%  100%  h |  0.99  1.00  0.96
+ panns|none|drip                           | top:   78%    1%    5%    0%    0%    0%    0%    0%  Y | thr:   90%   38%   10%   48%  Y |  0.97  0.93  0.91
+ panns|none|liquid                         | top:   85%    2%    8%    0%    5%    0%    0%    0%  Y | thr:   90%   38%    5%   48%  Y |  0.97  0.94  0.93
+ panns|none|splash                         | top:   32%    1%    0%    0%    5%    0%    0%    0%  - | thr:   88%    8%    5%    0%  Y |  0.93  0.94  0.91
+ panns|none|water_all                      | top:   85%   10%   12%   30%    5%    0%    0%   52%  Y | thr:   85%   15%   35%   50%  Y |  0.93  0.84  0.74
+ panns|silence|drip                        | top:   80%    0%    2%    0%    0%    0%    0%    0%  Y | thr:   88%   38%    8%   57%  Y |  0.95  0.91  0.85
+ panns|silence|liquid                      | top:   85%    6%   20%    2%    5%    0%    2%   15%  Y | thr:   85%   35%   12%   25%  Y |  0.93  0.88  0.85
+ panns|silence|splash                      | top:   32%    1%    0%    0%    5%    0%    0%    0%  - | thr:   88%   10%   28%    0%  Y |  0.93  0.89  0.91
+ panns|silence|water_all                   | top:   85%   10%   22%   18%    5%    0%    2%   82%  h | thr:   85%   25%   25%   50%  Y |  0.93  0.86  0.76
+ panns|tile_floor|drip                     | top:   78%    0%    2%    0%    0%    0%    0%    0%  Y | thr:   92%   40%   10%   30%  Y |  0.98  0.95  0.93
+ panns|tile_floor|liquid                   | top:   85%    2%    5%    0%    2%    0%    0%    0%  Y | thr:   92%   40%    2%   45%  Y |  0.98  0.96  0.96
+ panns|tile_floor|splash                   | top:   45%    0%    0%    0%    2%    0%    0%    0%  - | thr:   95%   10%   12%    8%  Y |  0.98  0.98  0.97
+ panns|tile_floor|water_all                | top:   85%    8%   12%   25%    2%    0%    0%   52%  Y | thr:   82%   15%   35%   50%  Y |  0.94  0.86  0.78
+ panns|tile|drip                           | top:   78%    0%    2%    0%    0%    0%    0%    0%  Y | thr:   85%   38%   10%   48%  Y |  0.97  0.93  0.91
+ panns|tile|liquid                         | top:   85%    2%    5%    0%    2%    0%    2%    0%  Y | thr:   88%   40%    2%   32%  Y |  0.97  0.94  0.93
+ panns|tile|splash                         | top:   38%    0%    0%    0%    2%    0%    0%    0%  - | thr:   90%   15%    5%    0%  Y |  0.95  0.95  0.91
+ panns|tile|water_all                      | top:   85%   10%   12%   35%    2%    0%    2%   52%  Y | thr:   85%   18%   32%   50%  Y |  0.94  0.85  0.77
+   ast|none                       top1 on real water: Drip 13, Plop 8, Wind chime 3   on hiss: Static 25, Waterfall 13, White noise 2
+   ast|silence                    top1 on real water: Drip 13, Plop 10, Silence 4   on hiss: Noise 17, Pink noise 14, Waterfall 5
+   ast|tile_floor                 top1 on real water: Drip 18, Tick-tock 7, Music 4   on hiss: White noise 19, Pink noise 14, Waterfall 6
+   ast|tile                       top1 on real water: Drip 14, Plop 6, Music 4   on hiss: White noise 19, Pink noise 13, Waterfall 7
+   panns|none                     top1 on real water: Drip 18, Plop 6, Music 5   on hiss: Waterfall 19, Noise 14, Static 6
+   panns|silence                  top1 on real water: Drip 22, Plop 6, Music 4   on hiss: Static 29, Waterfall 11
+   panns|tile_floor               top1 on real water: Drip 21, Plop 6, Music 5   on hiss: Waterfall 19, Noise 18, Static 2
+   panns|tile                     top1 on real water: Drip 19, Plop 7, Music 4   on hiss: Waterfall 20, Noise 18, Static 2
+======================================================================================================================================================
+ STATIC (water_probe rule: long-term flatness >= 0.15 and onset rise <= 8.0 dB)
+   controls @0.6   water    0%   fire    0%   wind    0%   knock    0%   glass   20%   foot    0%   hiss  100%
+   controls @1.0   water    0%   fire    0%   wind    0%   knock    0%   glass   20%   foot    0%   hiss  100%
+   controls @1.5   water    0%   fire    0%   wind    0%   knock    0%   glass   20%   foot    0%   hiss  100%
+   controls @full  water    0%   fire    0%   wind    0%   knock    0%   glass   20%   foot    0%   hiss  100%
+   tier|water_s3_current              win 0.6   recomputed    1%   probe json   n/a   agree -
+   tier|water_s3_nodry                win 0.6   recomputed    0%   probe json   n/a   agree -
+======================================================================================================================================================
+ GENERATED at the 0.6 s window: 2 sets, usable judge variants 43 (valid and passing the hiss check)
+   ast    ast|silence|liquid|top                           real   57%  neg    2%  fire    5%  wind    0%  hiss    0%  AUC 0.90  AUCnz 0.85  AUChs 0.90  strict
+   clap   clap|native|something_dropping_into_water|thr    real   95%  neg   10%  fire   32%  wind    5%  hiss   22%  AUC 0.99  AUCnz 0.98  AUChs 0.97  strict
+   panns  panns|tile_floor|liquid|thr                      real   72%  neg   10%  fire   28%  wind    8%  hiss    0%  AUC 0.92  AUCnz 0.86  AUChs 0.89  strict
+   other usable variants: ast|none|drip|thr, ast|silence|liquid|thr, ast|silence|splash|thr, ast|silence|drip|thr, ast|tile|liquid|thr, ast|tile|splash|thr, ast|tile|drip|thr, ast|tile_floor|water_all|thr, ast|tile_floor|liquid|thr, ast|tile_floor|splash|thr, ast|tile_floor|drip|thr, panns|none|liquid|top, panns|none|drip|top, panns|silence|water_all|top, panns|silence|water_all|thr, panns|silence|liquid|top, panns|silence|liquid|thr, panns|silence|splash|top, panns|silence|splash|thr, panns|tile|water_all|top, panns|tile|water_all|thr, panns|tile|liquid|top, panns|tile|liquid|thr, panns|tile|drip|top, panns|tile|drip|thr, panns|tile_floor|water_all|top, panns|tile_floor|water_all|thr, panns|tile_floor|liquid|top, panns|tile_floor|drip|top, panns|tile_floor|drip|thr, clap|native|something_dropping_into_water|top, clap|native|a_splash|top, clap|native|a_splash|thr, clap|native|water|top, clap|native|water|thr, clap|native|liquid_sloshing|thr, clap|native|water_dripping|top, clap|native|water_dripping|thr, clap|native|any|top, clap|native|any|thr
+   valid on real water but failing the hiss check: ast|none|liquid|thr, ast|none|splash|thr, ast|none|water_all|thr, ast|silence|water_all|thr, ast|silence|water_all|top, clap|native|water_splashing|thr, panns|none|drip|thr, panns|none|liquid|thr, panns|none|splash|thr, panns|none|water_all|thr, panns|none|water_all|top, panns|silence|drip|thr, panns|tile_floor|splash|thr, panns|tile|splash|thr
+ RANKING (cons = min over chosen judges of min(rate / real rate, 1); McNemar vs tier|water_s3_current paired on key+seed, x = different window)
+ rank set                                cons   mean  static | ast rate(ratio) vs ref         | clap rate(ratio) vs ref        | panns rate(ratio) vs ref      
+    1 tier|water_s3_nodry                0.09   0.29      0% |    6%(0.11) +1/-15 p0.00       |   65%(0.68) +6/-14 p0.12       |    6%(0.09) +4/-3 p1.00       
+    2 tier|water_s3_current              0.07   0.42      1% |   24%(0.41) -                  |   75%(0.79) -                  |    5%(0.07) -                 
+ PER KEY rate per chosen judge (the control is drops, so compare splash keys against footstep keys)
+ set                              judge    footstep|water    impact|water      land|water    splash|water   lead water label on hits
+ tier|water_s3_nodry              ast                  5%              0%             10%             10%   Liquid 2, Water 1, Plop 1
+ tier|water_s3_nodry              clap                20%             85%             65%             90%   something dropping into water 52
+ tier|water_s3_nodry              panns                5%             10%              5%              5%   Drip 2, Plop 2, Water 1
+ tier|water_s3_current            ast                 20%              0%             50%             25%   Liquid 10, Plop 7, Slosh 1
+ tier|water_s3_current            clap                50%             70%             90%             90%   something dropping into water 60
+ tier|water_s3_current            panns               10%              0%              5%              5%   Plop 2, Water 1, Drip 1
+ WITHIN LENGTH (vs the same length with current wording, same window)
+======================================================================================================================================================
+ VERDICT: 0.6 s best tier|water_s3_nodry cons 0.09
+======================================================================================================================================================
+saved -> D:\Python\SAGE\scripts\bench\out_water_nodry.json
