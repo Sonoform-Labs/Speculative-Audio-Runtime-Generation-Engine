@@ -23,6 +23,7 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import resample_poly
 
+from sarge.generators.stable_audio import build_prompt
 from sarge.loudness import PEAK_CEILING, target_for
 
 ROOT = os.path.dirname(os.path.dirname(HERE))
@@ -34,9 +35,15 @@ C3GD = os.path.join(DATA, "c3gd", "C3GD")
 ESC_DIRS = [os.path.join(ROOT, "data", "esc50"), os.path.join(ROOT, "data", "real_footsteps")]
 SOURCES = os.path.join(BENCH, "heldout_sources.json")
 OUT = os.path.join("data", "lora", "real")
-STYLES = ("natural", "sarge")
+STYLES = ("natural", "sarge", "engine")
 SUFFIX = "dry, isolated sound effect"
 INTENSITY = "normal"
+ENGINE_PAIRS = {
+    "DoorOpenClose": ("open", "door"), "DrawerOpenClose": ("open", "drawer"), "WindowOpenClose": ("open", "window"),
+    "EatDrink": ("eat", "food"), "HeartBeat": ("heartbeat", "chest"), "IceCube": ("clink", "ice cube"),
+    "MetalScape": ("scrape", "metal"), "GunMechanism": ("reload", "gun"), "PunchHit": ("punch", "body"),
+}
+NOT_SURFACE = {"shoe", "shoes", "boot", "boots", "run", "stop", "walk", "walking", "step", "steps"}
 FADE_IN = 0.005
 FADE_OUT = 0.05
 SILENT_RMS = 1e-6
@@ -67,6 +74,11 @@ CAPTION_RULES = {
     "sarge": "'a <sub-category phrase>, <top tag>, dry, isolated sound effect' (the tag part dropped when no tag "
              "qualifies), the same suffix every production prompt from build_prompt ends with. C3GD uses '<form "
              "factor> gunshot' as the sub-category and the caliber as the tag",
+    "engine": "build_prompt(event, material, 'normal'), the prompt the engine sends for that key. Footstep clips "
+              "become footstep on the top tag, or on ground when no tag qualifies or the tag names footwear or "
+              "gait; a label of two or more words reads as '<material...> <event>' (GlassBreak is break on glass, "
+              "C3GD rifle gunshot is gunshot on rifle); a one-word label is the event on its top tag, or on its "
+              "category; ENGINE_PAIRS fixes the labels that rule misreads",
     "top_tag": "the clip tag carried by the most training clips of its sub-category, among tags with at least "
                "--min-tag-df clips from --min-tag-users uploaders in that sub-category, at most --max-tag-share of the "
                "sub-category, at most --max-cat-share of its FoleySet category, present in at most --max-tag-spread "
@@ -300,6 +312,19 @@ def sarge_caption(sub, tag):
     return "%s, %s, %s" % (head, tag, SUFFIX) if tag else "%s, %s" % (head, SUFFIX)
 
 
+def engine_caption(e, tag):
+    words = e["sub_phrase"].split()
+    if e["label"] in ENGINE_PAIRS:
+        ev, mat = ENGINE_PAIRS[e["label"]]
+    elif phrase(e["category"]) == "footstep":
+        ev, mat = "footstep", tag if tag and tag not in NOT_SURFACE else "ground"
+    elif len(words) > 1:
+        ev, mat = words[-1], " ".join(words[:-1])
+    else:
+        ev, mat = words[0], tag or phrase(e["category"])
+    return build_prompt(ev, mat, INTENSITY)
+
+
 def caption(e, st, args):
     if e["dataset"] == "c3gd":
         tag = e["tags"][0]
@@ -309,7 +334,8 @@ def caption(e, st, args):
         nat = clean(e["description"], args.min_words, args.max_words)
         if len(nat.split()) < 2:
             nat = ", ".join([e["sub_phrase"]] + [t.replace("-", " ") for t in e["tags"][:args.max_tags]])
-    return {"natural": nat, "sarge": sarge_caption(e["sub_phrase"], tag)}, tag
+    eng = engine_caption(e, "" if e["dataset"] == "c3gd" else tag)
+    return {"natural": nat, "sarge": sarge_caption(e["sub_phrase"], tag), "engine": eng}, tag
 
 
 def label_weights(entries, mode):

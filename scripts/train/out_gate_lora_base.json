@@ -1,0 +1,166 @@
+{
+ "real_footsteps": {
+  "transients": {
+   "crest_db": 18.74921669960022,
+   "crest_sd": 4.766129533651326,
+   "attack_ms": 10.396825396825399,
+   "n": 40
+  }
+ },
+ "real_crop": {
+  "clap": {
+   "footstep_rate": 0.875,
+   "p_foot": 0.784449428319931,
+   "material_acc": NaN
+  },
+  "ast": {
+   "footstep_rate": 0.225,
+   "p_foot": 0.0042717596516013145,
+   "top1": [
+    "fireworks",
+    "clapping",
+    "clapping",
+    "fireworks",
+    "fireworks",
+    "clapping"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.45,
+   "p_foot": 0.037205636501312256,
+   "top1": [
+    "basketball bounce",
+    "basketball bounce",
+    "walk, footsteps",
+    "walk, footsteps",
+    "walk, footsteps",
+    "basketball bounce"
+   ]
+  },
+  "audiobox": {
+   "CE": 3.3138821601867674,
+   "CU": 5.982273280620575,
+   "PC": 2.5468933641910554,
+   "PQ": 6.216923177242279
+  }
+ },
+ "neg": {
+  "clap": {
+   "footstep_rate": 0.18,
+   "p_foot": 0.10590487718582153,
+   "material_acc": NaN
+  },
+  "ast": {
+   "footstep_rate": 0.0,
+   "p_foot": 0.0004055177851114422,
+   "top1": [
+    "static",
+    "clapping",
+    "tick-tock",
+    "hum",
+    "music",
+    "sound effect"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.02,
+   "p_foot": 0.0012862198054790497,
+   "top1": [
+    "chop",
+    "crumpling, crinkling",
+    "patter",
+    "pigeon, dove",
+    "whip",
+    "typewriter"
+   ]
+  }
+ },
+ "steps3_b1_lora_base": {
+  "steps": 3,
+  "gen_ms": 54.06559999391902,
+  "transients": {
+   "crest_db": 21.30464415550232,
+   "crest_sd": 2.3439782098408184,
+   "attack_ms": 4.4104308390022675,
+   "n": 40
+  },
+  "clap": {
+   "footstep_rate": 0.2,
+   "p_foot": 0.14367876946926117,
+   "material_acc": 0.825
+  },
+  "ast": {
+   "footstep_rate": 0.0,
+   "p_foot": 0.001426410221029073,
+   "top1": [
+    "music",
+    "heart sounds, heartbeat",
+    "heart murmur",
+    "heart sounds, heartbeat",
+    "heart murmur",
+    "heart sounds, heartbeat"
+   ]
+  },
+  "panns": {
+   "footstep_rate": 0.125,
+   "p_foot": 0.005634936038404703,
+   "top1": [
+    "knock",
+    "knock",
+    "knock",
+    "knock",
+    "knock",
+    "knock"
+   ]
+  },
+  "audiobox": {
+   "CE": 3.356405371427536,
+   "CU": 6.96272463798523,
+   "PC": 1.9953165411949159,
+   "PQ": 7.485564708709717
+  },
+  "gate": {
+   "consensus": 0.2285714285714286,
+   "judges": {
+    "clap": {
+     "gen": 0.2,
+     "real": 0.875,
+     "neg": 0.18,
+     "ratio": 0.2285714285714286,
+     "valid": true
+    },
+    "ast": {
+     "gen": 0.0,
+     "real": 0.225,
+     "neg": 0.0,
+     "ratio": 0.0,
+     "valid": false
+    },
+    "panns": {
+     "gen": 0.125,
+     "real": 0.45,
+     "neg": 0.02,
+     "ratio": 0.2777777777777778,
+     "valid": false
+    }
+   },
+   "checks": {
+    "taggers": false,
+    "crest": true,
+    "pq": true
+   },
+   "pass": false
+  }
+ },
+ "gate_args": {
+  "fit": "tile",
+  "clap_set": "hard",
+  "k": 0.8,
+  "crest_sd": 1.0,
+  "pq_margin": 0.5,
+  "min_real": 0.5,
+  "min_gap": 0.3,
+  "variants": 10,
+  "real_keep": 0.0
+ }
+}

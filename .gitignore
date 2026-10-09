@@ -23,3 +23,7 @@ sidecar.log
 .cache/
 data/_gate/
 scripts/bench/*.log
+data/lora/
+scripts/train/*.log
+scripts/train/*.err
+scripts/bench/*.err
