@@ -1,0 +1,175 @@
+research only: an audit flagged EA patent US12420192B2 as mapping onto an init_audio anchor-bank route, so nothing here ships before a freedom-to-operate read
+pool: 5150 clips (scripts/bench/heldout_sources.json trainable rule: FoleySet split train from the 1433 uploaders whose pool is train, C3GD split train on oh_farm|DAVE|mono from the 9 guns whose pool is train), 43.9 s
+library: 5150 clips in the pool, 0 cached embeddings, 5150 to embed
+  library   256/5150    134.1 s  eta   2563 s
+  library   512/5150    268.4 s  eta   2432 s
+  library   768/5150    404.6 s  eta   2308 s
+  library  1024/5150    539.8 s  eta   2175 s
+  library  1280/5150    674.5 s  eta   2039 s
+  library  1536/5150    808.5 s  eta   1902 s
+  library  1792/5150    942.8 s  eta   1767 s
+  library  2048/5150   1077.6 s  eta   1632 s
+  library  2304/5150   1212.1 s  eta   1497 s
+  library  2560/5150   1345.7 s  eta   1361 s
+  library  2816/5150   1479.1 s  eta   1226 s
+  library  3072/5150   1613.0 s  eta   1091 s
+  library  3328/5150   1745.6 s  eta    956 s
+  library  3584/5150   1879.5 s  eta    821 s
+  library  3840/5150   2015.1 s  eta    687 s
+  library  4096/5150   2149.4 s  eta    553 s
+  library  4352/5150   2283.2 s  eta    419 s
+  library  4608/5150   2416.9 s  eta    284 s
+  library  4864/5150   2551.1 s  eta    150 s
+  library  5120/5150   2685.8 s  eta     16 s
+  library  5150/5150   2702.0 s  eta      0 s
+gpu after clap library: 8 MB allocated, 20 MB reserved
+generator {"name": "stableaudio3", "model_name": "small-sfx", "model_half": true, "cfg_scale": 2.0, "sampler_type": "euler", "steps": 3, "detail_steps": 3, "gen_duration_s": 1.0, "duration_s": 0.6, "duration_padding_s": 1.0, "fast": true, "hoist_prompts": 8, "static_guard": true, "max_static_retries": 2, "sample_rate": 44100, "detail_keys": ["liquid", "splash", "water"], "accelerated": true, "hoisted": true}
+generated s3_g1.0_k0.6   20 keys x 20 seeds  22.7 s  median 54.9 ms  p90 55.8 ms  static_checks 401 static_exhausted 0 static_flagged 1 static_rescued 1 static_retries 1  cond_misses 19 graphs 0 replays 0 eager 0 capture_failures 0 hoisted 1203 plain 0 slots 0 fills 19 cache_hits 382 slot_failures [] hoist_capture_failures []
+generated replay         20 keys x 20 seeds  6.9 s  median 66.9 ms  p90 67.8 ms  nonfinite 100  cond_misses 0 graphs 0 replays 0 eager 0 capture_failures 0 hoisted 300 plain 0 slots 0 fills 100 cache_hits 0 slot_failures [] hoist_capture_failures []
+generated anc_n0.5       20 keys x 20 seeds  31.1 s  median 67.7 ms  p90 69.3 ms  static_checks 454 static_exhausted 15 static_flagged 32 static_rescued 17 static_retries 54  cond_misses 0 graphs 0 replays 0 eager 0 capture_failures 0 hoisted 1362 plain 0 slots 0 fills 454 cache_hits 0 slot_failures [] hoist_capture_failures []
+generated anc_n0.7       20 keys x 20 seeds  37.8 s  median 68.0 ms  p90 203.3 ms  static_checks 551 static_exhausted 41 static_flagged 97 static_rescued 56 static_retries 151  cond_misses 0 graphs 0 replays 0 eager 0 capture_failures 0 hoisted 1653 plain 0 slots 0 fills 551 cache_hits 0 slot_failures [] hoist_capture_failures []
+generated anc_n0.9       20 keys x 20 seeds  31.2 s  median 68.0 ms  p90 71.1 ms  static_checks 454 static_exhausted 9 static_flagged 37 static_rescued 28 static_retries 54  cond_misses 0 graphs 0 replays 0 eager 0 capture_failures 0 hoisted 1362 plain 0 slots 0 fills 454 cache_hits 0 slot_failures [] hoist_capture_failures []
+gpu after generator: 32 MB allocated, 80 MB reserved
+clap  outputs   894.3 s for 1700 clips
+gpu after clap outputs: 32 MB allocated, 80 MB reserved
+copy  metrics    46.3 s for 1700 output rows and 15400 pairs
+
+================================================================================================================================================================
+ ANCHOR ROUTE   research only: an audit flagged EA patent US12420192B2 as mapping onto an init_audio anchor-bank route, so nothing here ships before a freedom-to-operate read
+================================================================================================================================================================
+ POOL  scripts/bench/heldout_sources.json trainable rule: FoleySet split train from the 1433 uploaders whose pool is train, C3GD split train on oh_farm|DAVE|mono from the 9 guns whose pool is train
+   candidates 5395, kept 5150 (silent 0), excluded audio identical to a held-out or eval clip 154, audio identical to another pool clip 12, same Freesound recording as an ESC-50 file 21, tagged ai-generated 3, uploader of an ESC-50 file 55
+   held-out sets {'user': 418, 'gun': 43, 'ids': 0, 'fsid': 0, 'file': 0, 'crec': 0}  allow sets {'user': 1433, 'gun': 9}  explicit clips 0 (unresolved 0)  eval manifest data/refs_heldout/manifest.json
+   sources shared with the held-out references: clusters 0, recordings 0, files 0, held-out clusters 0; ESC-50 files 349, their FoleySet uploaders 13
+   library c3gd train 332, foleyset train 4818; 1292 sources
+   FoleySet audit by PCM md5: 10000 files, 9691 distinct; 82 groups repeat one recording under several rows (391 files), 53 of them mix sub-categories (331 files: GlassBreak 71, PaperTear 69, IceBreak 62, BoneBreak 43, WoodBreak 23, MetalDrop 23, CanCrush 23, BottleCrush 17); eval references inside mixed groups: none
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ RETRIEVAL  CLAP text embedding of the SARGE prompt against the CLAP audio embedding of every library clip at 0.6 s; top 5 by cosine; anchor of variant v = rank v mod 5
+   match shares are for reading only: label = FoleySet sub-category or C3GD form factor of a real reference set of the key's type, cat = its FoleySet category, surf = surface named in the tags, eval = anchor shares an uploader or gun with that type's eval references
+   shoot|rifle         text   8.2 ms search  0.14 ms  label   60% cat  100% eval    0%  cos 0.700..0.630 (library median 0.182)  4 sources
+                       c3gd_2990 pistol/hk_45 0.700  c3gd_2174 pistol/sig_P320 0.645  c3gd_4186 rifle/lmt_ar10 0.640  c3gd_842 rifle/custom_ar15_30.. 0.639  c3gd_4189 rifle/lmt_ar10 0.630
+   shoot|pistol        text   8.7 ms search  0.23 ms  label   40% cat  100% eval    0%  cos 0.680..0.657 (library median 0.156)  4 sources
+                       c3gd_105 shotgun/winchester_1400 0.680  c3gd_2990 pistol/hk_45 0.678  c3gd_868 rifle/custom_ar15_30.. 0.672  c3gd_2174 pistol/sig_P320 0.660  c3gd_113 shotgun/winchester_1400 0.657
+   reload|rifle        text   8.3 ms search  0.16 ms  label   40% cat   80% eval    0%  cos 0.734..0.662 (library median 0.161)  5 sources
+                       fs_06721 GunMechanism/coolabc 0.734  fs_03156 Stapler/Swoboman87 0.675  fs_06201 BottleCrush/energyzonesounds 0.670  fs_05452 GunMechanism/SgtFlexxx 0.663  fs_04956 Stapler/luongthenguyen1 0.662
+   equip|rifle         text   8.2 ms search  0.13 ms  label     - cat     - eval     -  cos 0.715..0.635 (library median 0.206)  4 sources
+                       fs_06721 GunMechanism/coolabc 0.715  fs_00219 Kiss/IanLyanx 0.671  fs_03754 BoneBreak/soularitysound 0.670  fs_05771 Chain/jaimage 0.641  fs_05364 BoneBreak/soularitysound 0.635
+   empty_click|pistol  text   8.4 ms search  0.22 ms  label    0% cat   80% eval    0%  cos 0.586..0.571 (library median 0.124)  4 sources
+                       fs_01724 Stapler/idabrandao 0.586  fs_06446 Stapler/idabrandao 0.580  fs_05409 SwitchToggle/elle-trudgett 0.577  fs_04925 SwitchToggle/martian 0.575  fs_03754 BoneBreak/soularitysound 0.571
+   explosion|grenade   text   8.3 ms search  0.14 ms  label    0% cat    0% eval    0%  cos 0.679..0.591 (library median 0.205)  3 sources
+                       fs_07136 IceBreak/JarredGibb 0.679  fs_00039 PenWriting/AfterDarkAnima.. 0.643  fs_06528 IceBreak/JarredGibb 0.641  fs_01582 PenWriting/deameon1427 0.598  fs_05263 IceBreak/JarredGibb 0.591
+   swing|sword         text   8.3 ms search  0.13 ms  label    0% cat   20% eval    0%  cos 0.566..0.537 (library median 0.131)  5 sources
+                       fs_02889 Walk/efpstudio 0.566  fs_04461 Knife/Hano_van_Dalen 0.562  fs_07325 PencilWriting/Joao_Janz 0.548  fs_02047 Walk/jskrundz 0.547  fs_05848 ZipperZip/Primitv094 0.537
+   open|door           text   8.6 ms search  0.21 ms  label   40% cat   40% eval    0%  cos 0.560..0.535 (library median 0.120)  4 sources
+                       fs_04602 DoorOpenClose/philberts 0.560  fs_02743 Latch/DrFahrts 0.547  fs_05908 DoorOpenClose/Profispiesser 0.541  fs_00869 Knob/kamilesantos 0.535  fs_01489 Latch/DrFahrts 0.535
+   slam|door           text   8.2 ms search  0.13 ms  label    0% cat   60% eval    0%  cos 0.577..0.523 (library median 0.114)  5 sources
+                       fs_00153 DoorOpenClose/Citlaly 0.577  fs_07878 Walk/glock102020202 0.557  fs_03946 DoorOpenClose/ProductionNow 0.541  fs_00026 Knock/jjohnsharpp 0.537  fs_02638 DrawerOpenClose/IBarona 0.523
+   break|window        text   8.3 ms search  0.14 ms  label   80% cat   80% eval    0%  cos 0.645..0.627 (library median 0.170)  5 sources
+                       fs_05196 GlassBreak/holisoysilvi 0.645  fs_06906 GlassBreak/zxaudiocraft 0.644  fs_07788 Lock/l4red0 0.640  fs_03479 GlassBreak/univ_lyon3 0.640  fs_05584 GlassBreak/Tallis0410 0.627
+   click|button        text   8.6 ms search  0.21 ms  label   60% cat   80% eval    0%  cos 0.528..0.482 (library median 0.059)  5 sources
+                       fs_04979 MouseButtonClick/BraveFrog 0.528  fs_04087 MouseButtonClick/joop221262eljoop 0.520  fs_07549 Knob/redz_410 0.517  fs_00905 EatDrink/miekyj 0.483  fs_02632 MouseButtonClick/soundsofscienc.. 0.482
+   cast|fire_spell     text   8.2 ms search  0.13 ms  label     - cat     - eval     -  cos 0.317..0.287 (library median 0.058)  5 sources
+                       fs_01108 SingleStep/sturmankin 0.317  fs_03584 PaperRubbing/Robert_Strauss 0.298  fs_06416 Walk/FabrizioRecchi 0.289  fs_02775 Breath/vero.marengere 0.288  fs_06889 Run/makenoisemusic 0.287
+   punch|body          text   8.3 ms search  0.14 ms  label   40% cat   40% eval    0%  cos 0.629..0.605 (library median 0.177)  5 sources
+                       fs_07430 PunchHit/Themiwa100 0.629  fs_04864 PunchHit/nicktermer 0.621  fs_07000 ClothRubbing/200221-WeanBek.. 0.619  fs_03438 Walk/stomachache 0.609  fs_00651 KeyboardTyping/nakenne 0.605
+   horn|truck          text   8.5 ms search  0.20 ms  label    0% cat    0% eval    0%  cos 0.486..0.404 (library median 0.044)  5 sources
+                       fs_06368 DoorSqueak/MathewHenry 0.486  fs_07170 DoorSqueak/Fantozzi 0.437  fs_02199 DoorSqueak/The_Sean_ 0.411  fs_07617 DoorOpenClose/TiesWijnen 0.411  fs_02015 DoorSqueak/iammokhtari 0.404
+   bark|dog            text   8.4 ms search  0.15 ms  label    0% cat    0% eval    0%  cos 0.473..0.384 (library median 0.100)  5 sources
+                       fs_01816 ZipperZip/AndreaM84 0.473  fs_03202 PenWriting/Joao_Janz 0.400  fs_00039 PenWriting/AfterDarkAnima.. 0.394  fs_02224 Kiss/MagnumDaFolf 0.389  fs_07787 Kiss/F.M.Audio 0.384
+   footstep|wood       text   8.5 ms search  0.15 ms  label   20% cat   60% surf   40% eval    0%  cos 0.683..0.632 (library median 0.193)  4 sources
+                       fs_00640 Knock/Gutek 0.683  fs_07885 Knock/Gutek 0.682  fs_00638 Walk/alec_mackay 0.646  fs_03566 SingleStep/sturmankin 0.635  fs_03356 Walk/Galbenshire 0.632
+   footstep|stone      text   8.6 ms search  0.24 ms  label    0% cat  100% surf   20% eval    0%  cos 0.619..0.590 (library median 0.212)  4 sources
+                       fs_03668 Walk/JanIsAGuy 0.619  fs_04059 Walk/conleec 0.608  fs_01853 Walk/conleec 0.607  fs_02170 Walk/Frigus_XIII 0.603  fs_04579 Walk/audioninja001 0.590
+   footstep|grass      text   8.2 ms search  0.13 ms  label   60% cat  100% surf   40% eval    0%  cos 0.648..0.619 (library median 0.155)  3 sources
+                       fs_06809 SingleStep/Ali_6868 0.648  fs_07551 SingleStep/Ali_6868 0.643  fs_04514 Run/taure 0.643  fs_04842 SingleStep/Ali_6868 0.624  fs_04977 Walk/spenceomatic 0.619
+   footstep|metal      text   8.6 ms search  0.23 ms  label    0% cat   20% surf    0% eval    0%  cos 0.580..0.550 (library median 0.220)  5 sources
+                       fs_03356 Walk/Galbenshire 0.580  fs_05885 Fall/DanielVega 0.574  fs_06353 WindowOpenClose/animationIsaac 0.567  fs_00348 DoorOpenClose/CantikFrantik 0.564  fs_07035 Knock/Vampirella17 0.550
+   footstep|gravel     text   8.4 ms search  0.23 ms  label    0% cat  100% surf   20% eval    0%  cos 0.697..0.661 (library median 0.206)  4 sources
+                       fs_07154 Walk/Sonicquinn 0.697  fs_01636 Walk/Sonicquinn 0.672  fs_05455 Walk/simonjeffery13 0.670  fs_03668 Walk/JanIsAGuy 0.670  fs_06927 Walk/soozenextthing 0.661
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ SCHEDULES  sigma per sampler step as stable_audio_3 build_schedule makes it for 3 steps
+   replay       [0.0, 0.0, 0.0, 0.0]  LogSNRShift
+   anc_n0.5     [0.5, 0.6755, 0.3468, 0.0]  LogSNRShift
+   anc_n0.7     [0.7, 0.8614, 0.4783, 0.0]  LogSNRShift
+   anc_n0.9     [0.9, 0.9488, 0.613, 0.0]  LogSNRShift
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ COPYING  each output against its anchor at 0.6 s: clap = CLAP audio cosine, mel = log-mel pattern correlation, wave = waveform correlation, env = 5 ms envelope correlation, best lag within +-50 ms
+   nulls: replay = encode and decode of the anchor (what pure replay scores), plain = production generation of the same key and seed against the same anchor, neighbour = nearest other library recording to the anchor
+   replay         clap  0.11 [-0.03, 0.21]  mel -1.00 [-1.00,-1.00]  wave  0.00 [ 0.00, 0.00]  env -1.00 [-1.00,-1.00]
+   plain          clap  0.44 [ 0.22, 0.62]  mel  0.64 [ 0.18, 0.85]  wave  0.10 [ 0.02, 0.26]  env  0.75 [ 0.31, 0.92]
+   real_neighbor  clap  0.83 [ 0.77, 0.91]  mel  0.67 [ 0.30, 0.93]  wave  0.10 [ 0.03, 0.31]  env  0.73 [ 0.22, 0.90]
+   replay-like = clap >= -0.025 and mel >= -1.000 (replay p10); plain-like = clap <= 0.616 and mel <= 0.853 (plain p90)
+   setting      clap                  mel                   wave                  env                    nn=anch     rank nn_cos   replay    plain
+   anc_n0.5      0.55 [ 0.33, 0.75]      0.74 [ 0.45, 0.91]      0.14 [ 0.06, 0.38]      0.83 [ 0.45, 0.95]           1%      136  0.774     100%      54%
+   anc_n0.7      0.44 [ 0.12, 0.65]      0.68 [ 0.18, 0.87]      0.10 [ 0.03, 0.28]      0.76 [ 0.18, 0.92]           0%      344  0.725     100%      72%
+   anc_n0.9      0.43 [ 0.19, 0.60]      0.65 [ 0.22, 0.86]      0.10 [ 0.02, 0.26]      0.74 [ 0.32, 0.92]           0%      472  0.732     100%      84%
+   s3_g1.0_k0.6  0.44 [ 0.22, 0.62]      0.64 [ 0.18, 0.85]      0.10 [ 0.02, 0.26]      0.75 [ 0.31, 0.92]           0%      412  0.743     100%      82%
+   replay        0.11 [-0.03, 0.21]     -1.00 [-1.00,-1.00]      0.00 [ 0.00, 0.00]     -1.00 [-1.00,-1.00]           0%     1524  0.399      90%     100%
+   per key, median clap / mel against the anchor, then replay-like share
+   shoot|rifle         anc_n0.5  0.67/ 0.88 100%  anc_n0.7  0.55/ 0.77 100%  anc_n0.9  0.55/ 0.79 100%  s3_g1.0_k0.6  0.55/ 0.76 100%  replay  0.15/-1.00 100%
+   shoot|pistol        anc_n0.5  0.77/ 0.84 100%  anc_n0.7  0.61/ 0.77 100%  anc_n0.9  0.53/ 0.80 100%  s3_g1.0_k0.6  0.60/ 0.81 100%  replay  0.14/-1.00 100%
+   reload|rifle        anc_n0.5  0.65/ 0.71 100%  anc_n0.7  0.49/ 0.54 100%  anc_n0.9  0.51/ 0.47 100%  s3_g1.0_k0.6  0.60/ 0.48 100%  replay  0.10/-1.00 80%
+   equip|rifle         anc_n0.5  0.56/ 0.78 100%  anc_n0.7  0.55/ 0.81 100%  anc_n0.9  0.50/ 0.74 100%  s3_g1.0_k0.6  0.56/ 0.68 100%  replay  0.16/-1.00 100%
+   empty_click|pistol  anc_n0.5  0.39/ 0.75 100%  anc_n0.7  0.26/ 0.72 100%  anc_n0.9  0.35/ 0.67 100%  s3_g1.0_k0.6  0.41/ 0.68 100%  replay  0.15/-1.00 100%
+   explosion|grenade   anc_n0.5  0.64/ 0.80 100%  anc_n0.7  0.58/ 0.75 100%  anc_n0.9  0.46/ 0.72 100%  s3_g1.0_k0.6  0.47/ 0.72 100%  replay  0.14/-1.00 100%
+   swing|sword         anc_n0.5  0.53/ 0.72 100%  anc_n0.7  0.34/ 0.60 100%  anc_n0.9  0.31/ 0.68 100%  s3_g1.0_k0.6  0.32/ 0.69 100%  replay  0.21/-1.00 100%
+   open|door           anc_n0.5  0.67/ 0.76 100%  anc_n0.7  0.56/ 0.58 100%  anc_n0.9  0.34/ 0.42 100%  s3_g1.0_k0.6  0.31/ 0.53 95%  replay  0.11/-1.00 100%
+   slam|door           anc_n0.5  0.62/ 0.83 100%  anc_n0.7  0.55/ 0.80 100%  anc_n0.9  0.56/ 0.79 100%  s3_g1.0_k0.6  0.52/ 0.79 100%  replay  0.14/-1.00 100%
+   break|window        anc_n0.5  0.41/ 0.71 100%  anc_n0.7  0.43/ 0.69 100%  anc_n0.9  0.42/ 0.60 100%  s3_g1.0_k0.6  0.39/ 0.64 100%  replay  0.00/-1.00 80%
+   click|button        anc_n0.5  0.38/ 0.62 100%  anc_n0.7  0.33/ 0.27 100%  anc_n0.9  0.28/ 0.35 95%  s3_g1.0_k0.6  0.35/ 0.41 100%  replay  0.11/-1.00 80%
+   cast|fire_spell     anc_n0.5  0.47/ 0.84 100%  anc_n0.7  0.38/ 0.78 100%  anc_n0.9  0.22/ 0.43 100%  s3_g1.0_k0.6  0.25/ 0.35 100%  replay  0.08/-1.00 80%
+   punch|body          anc_n0.5  0.61/ 0.78 100%  anc_n0.7  0.60/ 0.78 100%  anc_n0.9  0.50/ 0.50 100%  s3_g1.0_k0.6  0.56/ 0.49 100%  replay  0.02/-1.00 80%
+   horn|truck          anc_n0.5  0.34/ 0.49 95%  anc_n0.7  0.35/ 0.31 100%  anc_n0.9  0.18/ 0.24 95%  s3_g1.0_k0.6  0.20/ 0.17 100%  replay  0.12/-1.00 100%
+   bark|dog            anc_n0.5  0.47/ 0.88 100%  anc_n0.7  0.44/ 0.87 100%  anc_n0.9  0.35/ 0.81 100%  s3_g1.0_k0.6  0.36/ 0.82 100%  replay  0.12/-1.00 100%
+   footstep|wood       anc_n0.5  0.59/ 0.62 100%  anc_n0.7  0.12/ 0.50 100%  anc_n0.9  0.45/ 0.41 100%  s3_g1.0_k0.6  0.48/ 0.35 100%  replay -0.06/-1.00 40%
+   footstep|stone      anc_n0.5  0.48/ 0.38 100%  anc_n0.7  0.19/ 0.26 100%  anc_n0.9  0.50/ 0.61 100%  s3_g1.0_k0.6  0.51/ 0.61 100%  replay  0.08/-1.00 100%
+   footstep|grass      anc_n0.5  0.46/ 0.78 100%  anc_n0.7  0.29/ 0.73 95%  anc_n0.9  0.27/ 0.72 100%  s3_g1.0_k0.6  0.37/ 0.69 100%  replay  0.10/-1.00 80%
+   footstep|metal      anc_n0.5  0.55/ 0.79 100%  anc_n0.7  0.39/ 0.62 95%  anc_n0.9  0.45/ 0.70 100%  s3_g1.0_k0.6  0.44/ 0.69 100%  replay  0.08/-1.00 80%
+   footstep|gravel     anc_n0.5  0.71/ 0.60 100%  anc_n0.7  0.16/ 0.49 100%  anc_n0.9  0.41/ 0.70 100%  s3_g1.0_k0.6  0.38/ 0.67 100%  replay  0.18/-1.00 100%
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ VARIANTS  pairs of the 20 seeds of one key: same = both from one anchor, diff = two different anchors, anchors = the retrieved real clips against each other
+   s3_g1.0_k0.6 plain n3800 clap  0.86 mel  0.94 wave  0.65 env  0.94
+   raw          anchors n200  clap  0.69 mel  0.58 wave  0.08 env  0.68
+   anc_n0.5     same n600  clap  0.89 mel  0.95 wave  0.65 env  0.94   diff n3200 clap  0.69 mel  0.74 wave  0.15 env  0.73
+   anc_n0.7     same n600  clap  0.75 mel  0.83 wave  0.32 env  0.84   diff n3200 clap  0.62 mel  0.63 wave  0.10 env  0.70
+   anc_n0.9     same n600  clap  0.82 mel  0.92 wave  0.49 env  0.92   diff n3200 clap  0.80 mel  0.91 wave  0.42 env  0.91
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ SHAPE  medians per key (attack ms 10-90%, tail ms within 30 dB, floor dB, level 100 ms after the peak); raw is the real anchor
+                       raw                          replay                       anc_n0.5                     anc_n0.7                     anc_n0.9                     s3_g1.0_k0.6               
+   shoot|rifle           2.3   313  -44.0  -10.9         0.0   600    nan    0.0        20.1   270  -75.5  -18.6         7.8   232  -76.6  -23.9         6.8   114  -78.1  -25.8         6.8   114  -80.4  -26.9     
+   shoot|pistol          2.3   289  -44.1  -14.9         0.0   600    nan    0.0        20.6   198  -53.7  -18.2        12.0   174  -56.4  -28.8         7.5    92  -81.9  -33.5        15.7   101  -71.6  -31.9     
+   reload|rifle          6.3   499  -40.6  -27.9         0.0   600    nan    0.0        22.9   270  -60.4  -33.8        24.0   122  -73.9  -35.7         6.6    76  -77.0  -35.4        12.4    79  -75.7  -33.7     
+   equip|rifle          13.5    73  -41.3  -34.5         0.0   600    nan    0.0         8.1    83  -81.9  -38.3        11.3    79  -77.4  -41.4         4.2    76  -76.8  -40.8         4.7    85  -77.2  -36.7     
+   empty_click|pistol    5.3   299  -59.9  -28.6         0.0   600    nan    0.0         7.2    45  -82.9  -55.1         8.4    82  -83.5  -55.4         5.0    18  -76.6  -67.5         4.9   229  -75.7  -62.6     
+   explosion|grenade    26.3   519  -34.9  -18.8         0.0   600    nan    0.0        14.0   531  -28.8  -11.9        12.2   490  -38.2   -8.2        12.9   368  -60.4  -12.4        13.0   386  -54.2  -12.5     
+   swing|sword           7.4   478  -36.6  -17.8         0.0   600    nan    0.0        26.0   190  -52.4  -24.4        25.9   216  -57.9  -17.4        23.3   198  -67.4  -19.3        24.3   177  -71.7  -25.7     
+   open|door            24.6   525  -38.2  -19.9         0.0   600    nan    0.0        16.9   523  -36.0  -21.5        11.6   490  -38.9  -19.5        25.2   353  -73.2  -16.3        25.1   318  -69.5  -16.2     
+   slam|door            13.7   272  -54.6  -14.1         0.0   600    nan    0.0        25.8   342  -46.0  -14.1        26.7   324  -45.4  -13.6        21.3   462  -40.3  -13.9        23.8   502  -38.3  -12.8     
+   break|window          1.2   497  -38.1  -17.9         0.0   600    nan    0.0        13.5   425  -44.9  -14.3        23.1   381  -47.6  -13.5        26.2   393  -48.2  -21.9        26.2   391  -45.7  -22.6     
+   click|button          0.8   536  -28.9  -27.2         0.0   600    nan    0.0         6.5   528  -68.2  -51.2        16.2   277  -72.7  -41.7         6.1    16  -66.5  -62.6         5.0    13  -63.7  -61.4     
+   cast|fire_spell      49.9   280  -30.0  -12.9         0.0   600    nan    0.0        77.5   352  -68.0  -10.5        76.7   229  -74.5   -6.2        28.8   440  -40.9  -16.2        26.6   491  -31.1  -17.3     
+   punch|body           17.3   144  -42.6  -21.2         0.0   600    nan    0.0        11.9   114  -64.9  -32.9        11.5   113  -81.9  -32.9         7.9    83  -82.5  -39.0         7.9    67  -84.7  -41.3     
+   horn|truck           22.6   555  -18.5   -4.4         0.0   600    nan    0.0        27.0   300  -82.2  -14.8        22.6   262  -61.1  -15.0        21.5   296  -80.9  -12.3        21.4   354  -54.3  -11.6     
+   bark|dog             25.9   172  -54.7  -15.2         0.0   600    nan    0.0        26.0   124  -82.2  -25.9        26.9   142  -83.1  -21.5        27.3   143  -83.3  -22.9        27.0   154  -82.3  -21.8     
+   footstep|wood         3.6   523  -28.8  -26.0         0.0   600    nan    0.0         9.2   181  -68.5  -32.4         8.8   165  -63.3  -19.5         5.9    81  -79.9  -35.7         5.5    84  -79.7  -34.6     
+   footstep|stone        3.2   557  -39.6  -24.9         0.0   600    nan    0.0         4.7   158  -57.3  -32.2        20.7   166  -75.2  -32.2         3.9   115  -73.5  -31.9         4.3   107  -74.2  -31.0     
+   footstep|grass       59.8   306  -30.8  -17.9         0.0   600    nan    0.0        24.8   384  -63.5  -13.3        26.7   357  -64.3  -11.3        18.1   276  -70.9  -18.7        23.6   283  -72.9  -24.6     
+   footstep|metal       22.2   203  -55.9  -16.3         0.0   600    nan    0.0        12.9   370  -71.0  -24.5        15.0   181  -69.8  -23.8         2.3   132  -77.8  -27.7         2.4   142  -77.9  -26.7     
+   footstep|gravel      24.6   499  -33.9  -21.7         0.0   600    nan    0.0        25.2   487  -48.4   -7.6        26.9   243  -86.0   -9.5         6.2   292  -69.8  -21.1         4.0   297  -72.4  -24.6     
+   static guard verdict on the saved clips (raw = real anchors, so a flag there means the guard objects to real room tone): raw 7% (hiss 28)  replay 0%  anc_n0.5 4% (hiss 15)  anc_n0.7 10% (hiss 41)  anc_n0.9 2% (hiss 9)  s3_g1.0_k0.6 0%
+----------------------------------------------------------------------------------------------------------------------------------------------------------------
+ LATENCY  per clip, batch 1, after warm-up; anchor clips include the anchor encode, sampling, decode, _finish and the static guard
+   s3_g1.0_k0.6 median   54.9 ms  p90   55.8  max  109.3  over 400 clips  static_checks 401 static_exhausted 0 static_flagged 1 static_rescued 1 static_retries 1
+   replay       median   66.9 ms  p90   67.8  max   69.9  over 100 clips  nonfinite 100
+   anc_n0.5     median   67.7 ms  p90   69.3  max  206.1  over 400 clips  static_checks 454 static_exhausted 15 static_flagged 32 static_rescued 17 static_retries 54
+   anc_n0.7     median   68.0 ms  p90  203.3  max  213.1  over 400 clips  static_checks 551 static_exhausted 41 static_flagged 97 static_rescued 56 static_retries 151
+   anc_n0.9     median   68.0 ms  p90   71.1  max  204.6  over 400 clips  static_checks 454 static_exhausted 9 static_flagged 37 static_rescued 28 static_retries 54
+   retrieval per new key: CLAP text 8.3 ms + search 0.15 ms over 5150 clips (median over keys); later clips of the key reuse the anchor list
+   anc_n0.5     steady 67.7 ms per clip (+12.8 vs plain), first clip of a new key 76.2 ms
+   anc_n0.7     steady 68.0 ms per clip (+13.0 vs plain), first clip of a new key 76.5 ms
+   anc_n0.9     steady 68.0 ms per clip (+13.0 vs plain), first clip of a new key 76.5 ms
+================================================================================================================================================================
+ LISTEN data/_gate/listen/anchor_route.wav  per key and seed: shoot|rifle v0 [raw replay anc_n0.5 anc_n0.7 anc_n0.9 s3_g1.0_k0.6] anchor c3gd_2990 | shoot|rifle v1 [raw replay anc_n0.5 anc_n0.7 anc_n0.9 s3_g1.0_k0.6] anchor c3gd_2174 | shoot|pistol v0 [raw replay anc_n0.5 anc_n0.7 anc_n0.9 s3_g1.0_k0.6] anchor c3gd_105 | shoot|pistol v1 [raw replay anc_n0.5 anc_n0.7 anc_n0.9 s3_g1.0_k0.6] anchor c3gd_2990 | ...
+ SCORE with the validated judges: python scripts/bench/anchor_route.py score --gen-dir data\_gate\anchor
+================================================================================================================================================================
+saved -> D:\Python\SAGE\scripts\bench\out_anchor_route.json

@@ -32,6 +32,9 @@ ROOT = os.path.dirname(os.path.dirname(BENCH))
 SR = 44100
 INTENSITY = "normal"
 WINS = ["0.6", "1.5"]
+CONTROLS = ("hiss@", "silent@")
+SILENT_ZEROS = 10
+SILENT_DB = (-90.0, -80.0, -70.0, -60.0, -90.0, -80.0, -70.0, -60.0, -75.0, -65.0)
 PRODUCTION = {"sampler_type": "euler", "steps": 3}
 SETTINGS = {
     "s3_g1.0_k0.6": {"steps": 3, "detail_steps": 3, "gen_duration_s": 1.0, "duration_s": 0.6},
@@ -251,6 +254,16 @@ def build_hiss(sets, meta):
         meta[name] = {"kind": "hiss", "type": None, "family": "hiss", "win": w,
                       "ids": ["hiss_%02d" % j for j in range(len(raw))],
                       "clusters": ["hiss:%02d" % j for j in range(len(raw))], "spectra": spec}
+    rng = np.random.default_rng(77)
+    for w in WINS:
+        n = int(round(float(w) * SR))
+        quiet = [(rng.standard_normal(n) * 10 ** (db / 20.0)).astype(np.float32) for db in SILENT_DB]
+        name = "silent@%s" % w
+        sets[name] = [np.zeros(n, np.float32) for _ in range(SILENT_ZEROS)] + quiet
+        meta[name] = {"kind": "silent", "type": None, "family": "silent", "win": w,
+                      "ids": ["silent_%02d" % j for j in range(len(sets[name]))],
+                      "clusters": ["silent:%02d" % j for j in range(len(sets[name]))],
+                      "levels_db": [None] * SILENT_ZEROS + list(SILENT_DB)}
 
 
 def make_generator():
@@ -438,7 +451,7 @@ def run_clap(sets, args):
 
 
 def run_audiobox(sets, args):
-    names = [n for n in sets if not n.startswith("hiss@")]
+    names = [n for n in sets if not n.startswith(CONTROLS)]
     flat = [x for n in names for x in sets[n]]
     owner = [n for n in names for _ in sets[n]]
     t0 = time.perf_counter()
@@ -557,8 +570,8 @@ def evaluate(var, meta, pools, family, args, boot):
         _fam, _fit, t, _lab = base.split("|")
         for w in WINS:
             pos = pos_sets(meta, t, w)
-            hz = "hiss@%s" % w
-            if not pos or hz not in d or any(n not in d for n in pos):
+            hz, sz = "hiss@%s" % w, "silent@%s" % w
+            if not pos or hz not in d or sz not in d or any(n not in d for n in pos):
                 continue
             negf = {f: p for f, p in pools[w].items() if f != family[t]}
             rs = cat([d[n]["score"] for n in pos])
@@ -581,16 +594,17 @@ def evaluate(var, meta, pools, family, args, boot):
                       for f, p in negf.items()}
                 ph = cat(list(nh.values())).astype(bool)
                 hh = hits(d[hz], rule, tau)
-                rr, nr, hr = frac(rh), frac(ph), frac(hh)
+                sh = hits(d[sz], rule, tau)
+                rr, nr, hr, sr_ = frac(rh), frac(ph), frac(hh), frac(sh)
                 byf = {f: frac(v) for f, v in nh.items()}
                 rb = boot.rate("real|%s|%s" % (t, w), rc, rh)
                 nb = boot.rate("neg|%s|%s" % (family[t], w), pool_c, ph)
                 rci, gci = ci(rb), ci(rb - nb)
                 valid = bool(rr >= args.min_real and rr - nr >= args.min_gap)
-                hiss_ok = bool(rr - hr >= args.min_gap)
+                hiss_ok = bool(rr - hr >= args.min_gap and rr - sr_ >= args.min_gap)
                 worst = max(byf, key=byf.get) if byf else None
                 ctl.setdefault("%s|%s" % (base, rule), {})[w] = {
-                    "real": rr, "real_ci": rci, "neg": nr, "neg_ci": ci(nb), "gap_ci": gci, "hiss": hr,
+                    "real": rr, "real_ci": rci, "neg": nr, "neg_ci": ci(nb), "gap_ci": gci, "hiss": hr, "silent": sr_,
                     "neg_by_family": byf, "worst_family": worst, "auc": a, "tau": tau,
                     "n_real": int(len(rh)), "k_real": int(len(set(rc))), "n_neg": int(len(ph)),
                     "k_neg": int(len(set(pool_c))),
@@ -598,6 +612,7 @@ def evaluate(var, meta, pools, family, args, boot):
                     "real_by_stratum": {s: frac(rh[np.array([x == s for x in rst])]) for s in sorted(set(rst))},
                     "real_top1": top1, "real_lead": lead,
                     "hiss_top1": Counter(d[hz]["top1"]).most_common(3),
+                    "silent_top1": Counter(d[sz]["top1"]).most_common(3),
                     "valid": valid, "hiss_ok": hiss_ok, "usable": bool(valid and hiss_ok and enough),
                     "strict": bool(rr >= args.min_real and byf and rr - max(byf.values()) >= args.min_gap),
                     "firm": bool(valid and hiss_ok and enough and rci[0] >= args.min_real and gci[0] >= args.min_gap)}
@@ -900,9 +915,10 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
     print(" VOCABULARY JUDGE PANEL   positive control per type = real recordings cut like generated clips (_extract to the"
           " kept length, normalize_loudness at target_for('%s'))" % INTENSITY)
     print(" negatives = every real set of another family, up to %d clips per family (%d families), plus %d synthetic hiss"
-          " clips; valid = real >= %.2f and real - pooled neg >= %.2f; usable = valid and real - hiss >= %.2f" % (
-              args.neg_per_family, len(pools[WINS[0]]), len(meta["hiss@%s" % WINS[0]]["ids"]), args.min_real,
-              args.min_gap, args.min_gap))
+          " clips and %d silent or near-silent clips; valid = real >= %.2f and real - pooled neg >= %.2f; usable = valid"
+          " and real - hiss >= %.2f and real - silence >= %.2f" % (
+              args.neg_per_family, len(pools[WINS[0]]), len(meta["hiss@%s" % WINS[0]]["ids"]),
+              len(meta["silent@%s" % WINS[0]]["ids"]), args.min_real, args.min_gap, args.min_gap, args.min_gap))
     print(" intervals: 95%% from %d bootstrap draws over independent sources (guns, uploaders, ESC-50 source files, HEAR"
           " shots) for real clips and over seeds for generated clips; F = usable with both lower bounds past the"
           " thresholds" % args.boot)
@@ -919,18 +935,20 @@ def report(meta, ctl, chosen, cons, gen, summary, mat_ctl, mat_gen, shapes_cmp, 
                 b = ctl[best][w] if best else None
                 few = b and (b["n_real"] < args.min_ref_clips or b["k_real"] < args.min_ref_sources)
                 print("   %-24s usable %3d/%-3d  NO VALID JUDGE%s%s" % (
-                    tag, len(us), len(vs), "   closest %s real %s neg %s hiss %s" % (
-                        best, pct(b["real"]), pct(b["neg"]), pct(b["hiss"])) if b else "",
+                    tag, len(us), len(vs), "   closest %s real %s neg %s hiss %s silent %s" % (
+                        best, pct(b["real"]), pct(b["neg"]), pct(b["hiss"]), pct(b["silent"])) if b else "",
                     "   (%d clips from %d sources, under --min-ref-clips %d or --min-ref-sources %d)" % (
                         b["n_real"], b["k_real"], args.min_ref_clips, args.min_ref_sources) if few else ""))
                 continue
             first = True
             for f, v in ch.items():
                 c = ctl[v][w]
-                print("   %-24s usable %3d/%-3d  %-5s %-46s real %s [%s,%s] neg %s hiss %s gap [%+.2f,%+.2f] AUC %.2f"
+                print("   %-24s usable %3d/%-3d  %-5s %-46s real %s [%s,%s] neg %s hiss %s sil %s gap [%+.2f,%+.2f]"
+                      " AUC %.2f"
                       " worst %s %s %s%s" % (
                           tag if first else "", len(us), len(vs), f, v.split("|", 1)[1], pct(c["real"]),
                           pct(c["real_ci"][0]).strip(), pct(c["real_ci"][1]).strip(), pct(c["neg"]), pct(c["hiss"]),
+                          pct(c["silent"]),
                           c["gap_ci"][0], c["gap_ci"][1], c["auc"]["pooled"], c["worst_family"],
                           pct(c["neg_by_family"].get(c["worst_family"], NAN)), "F" if c["firm"] else "",
                           " strict" if c["strict"] else ""))
@@ -1166,7 +1184,7 @@ def main(argv=None):
     gen["_identity"] = {g: Counter(var[idv][g]["top1"]).most_common(3) for g, m in meta.items()
                         if m["kind"] == "gen"} if idv else {}
     mat_ctl, mat_gen = material(mpred, meta, man, args, boot) if mpred else ({}, {})
-    shapes = {n: shape_rows(x) for n, x in sets.items() if not n.startswith("hiss@")}
+    shapes = {n: shape_rows(x) for n, x in sets.items() if not n.startswith(CONTROLS)}
     shapes_cmp = {}
     for g, m in meta.items():
         if m["kind"] != "gen" or not m["type"]:

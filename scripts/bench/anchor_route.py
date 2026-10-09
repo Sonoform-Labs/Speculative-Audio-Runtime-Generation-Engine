@@ -779,7 +779,19 @@ def gen_anchor(g, key, variant, anchor, sigma, shift, stats, guard=True):
     steps = g._steps_for(key)
     base = _seed(key, variant)
 
+    def replay():
+        import torch
+        sam = g._model
+        n = int(sam._adapt_sample_size([{"prompt": "", "seconds_total": g.gen_duration_s}], 5292032,
+                                       g.duration_padding_s))
+        with g._lock, torch.inference_mode():
+            z, _ = sam._encode_audio_input((int(g.sample_rate), np.ascontiguousarray(anchor, dtype=np.float32)), n)
+            audio = sam.model.pretransform.decode(z)
+        return g._finish(g._numpy(audio), key)
+
     def once(seed):
+        if sigma <= 0.0:
+            return replay()
         kw = g._inputs([prompt])
         if shift is not None:
             kw["dist_shift"] = shift
