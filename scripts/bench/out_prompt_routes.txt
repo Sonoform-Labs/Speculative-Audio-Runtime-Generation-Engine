@@ -1,0 +1,64 @@
+variant compound        15 keys changed  median 54.9 ms  static_checks 404 static_exhausted 0 static_flagged 3 static_rescued 3 static_retries 4
+   shoot|rifle          a rifle shoot, dry, isolated sound effect
+   shoot|pistol         a pistol shoot, dry, isolated sound effect
+   reload|rifle         a rifle reload, dry, isolated sound effect
+   equip|rifle          a rifle equip, dry, isolated sound effect
+   empty_click|pistol   a pistol empty click, dry, isolated sound effect
+   explosion|grenade    a grenade explosion, dry, isolated sound effect
+   swing|sword          a sword swing, dry, isolated sound effect
+   open|door            a door open, dry, isolated sound effect
+   slam|door            a door slam, dry, isolated sound effect
+   break|window         a window break, dry, isolated sound effect
+   click|button         a button click, dry, isolated sound effect
+   cast|fire_spell      a fire spell cast, dry, isolated sound effect
+   punch|body           a body punch, dry, isolated sound effect
+   horn|truck           a truck horn, dry, isolated sound effect
+   bark|dog             a dog bark, dry, isolated sound effect
+   footstep|wood        a normal wooden footstep on wood, a clear distinct footstep, dry, isolated sound effect
+   footstep|stone       a normal stone footstep on stone, a clear distinct footstep, dry, isolated sound effect
+   footstep|grass       a normal footstep on grass, a clear distinct footstep, dry, isolated sound effect
+   footstep|metal       a normal metallic footstep on metal, a clear distinct footstep, dry, isolated sound effect
+   footstep|gravel      a normal gravelly footstep on gravel, a clear distinct footstep, dry, isolated sound effect
+variant nodry           20 keys changed  median 55.1 ms  static_checks 402 static_exhausted 0 static_flagged 2 static_rescued 2 static_retries 2
+   shoot|rifle          a shoot on rifle, isolated sound effect
+   shoot|pistol         a shoot on pistol, isolated sound effect
+   reload|rifle         a reload on rifle, isolated sound effect
+   equip|rifle          a equip on rifle, isolated sound effect
+   empty_click|pistol   a empty_click on pistol, isolated sound effect
+   explosion|grenade    a explosion on grenade, isolated sound effect
+   swing|sword          a swing on sword, isolated sound effect
+   open|door            a open on door, isolated sound effect
+   slam|door            a slam on door, isolated sound effect
+   break|window         a break on window, isolated sound effect
+   click|button         a click on button, isolated sound effect
+   cast|fire_spell      a cast on fire_spell, isolated sound effect
+   punch|body           a punch on body, isolated sound effect
+   horn|truck           a horn on truck, isolated sound effect
+   bark|dog             a bark on dog, isolated sound effect
+   footstep|wood        a normal wooden footstep on wood, a clear distinct footstep, isolated sound effect
+   footstep|stone       a normal stone footstep on stone, a clear distinct footstep, isolated sound effect
+   footstep|grass       a normal footstep on grass, a clear distinct footstep, isolated sound effect
+   footstep|metal       a normal metallic footstep on metal, a clear distinct footstep, isolated sound effect
+   footstep|gravel      a normal gravelly footstep on gravel, a clear distinct footstep, isolated sound effect
+variant compound_nodry  20 keys changed  median 55.2 ms  static_checks 400 static_exhausted 0 static_flagged 0 static_rescued 0 static_retries 0
+   shoot|rifle          a rifle shoot, isolated sound effect
+   shoot|pistol         a pistol shoot, isolated sound effect
+   reload|rifle         a rifle reload, isolated sound effect
+   equip|rifle          a rifle equip, isolated sound effect
+   empty_click|pistol   a pistol empty click, isolated sound effect
+   explosion|grenade    a grenade explosion, isolated sound effect
+   swing|sword          a sword swing, isolated sound effect
+   open|door            a door open, isolated sound effect
+   slam|door            a door slam, isolated sound effect
+   break|window         a window break, isolated sound effect
+   click|button         a button click, isolated sound effect
+   cast|fire_spell      a fire spell cast, isolated sound effect
+   punch|body           a body punch, isolated sound effect
+   horn|truck           a truck horn, isolated sound effect
+   bark|dog             a dog bark, isolated sound effect
+   footstep|wood        a normal wooden footstep on wood, a clear distinct footstep, isolated sound effect
+   footstep|stone       a normal stone footstep on stone, a clear distinct footstep, isolated sound effect
+   footstep|grass       a normal footstep on grass, a clear distinct footstep, isolated sound effect
+   footstep|metal       a normal metallic footstep on metal, a clear distinct footstep, isolated sound effect
+   footstep|gravel      a normal gravelly footstep on gravel, a clear distinct footstep, isolated sound effect
+routes -> data\_gate\prompt_routes  (score with vocab_eval.py --route NAME=data\_gate\prompt_routes/NAME)
