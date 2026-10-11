@@ -1,0 +1,26 @@
+{
+ "same-s": {
+  "params_m": 108.244529,
+  "load_s": 2.327264299999996,
+  "roundtrip_ms_median": 15.622249999992732,
+  "files": 400,
+  "sample_rate": 44100,
+  "latent_shape": [
+   1,
+   256,
+   8
+  ]
+ },
+ "same-l": {
+  "params_m": 852.127073,
+  "load_s": 537.4432349,
+  "roundtrip_ms_median": 93.13200000002553,
+  "files": 400,
+  "sample_rate": 44100,
+  "latent_shape": [
+   1,
+   256,
+   7
+  ]
+ }
+}

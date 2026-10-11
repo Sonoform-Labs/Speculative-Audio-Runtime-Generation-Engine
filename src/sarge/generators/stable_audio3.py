@@ -43,7 +43,8 @@ class StableAudio3Generator(Generator):
                  duration_padding_s: float = 1.0, mid_noise: float | None = None,
                  hoist_prompts: int | None = 8, static_guard: bool = True, max_static_retries: int = 2,
                  compile_mode: str | None = None, compile_decode: bool = False, cfg_interval=None,
-                 graph_decode: bool = False, hoist_rope: bool = False, skip_first_step: bool = False, **_):
+                 graph_decode: bool = False, hoist_rope: bool = False, skip_first_step: bool = False,
+                 fp16_accumulation: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -69,6 +70,7 @@ class StableAudio3Generator(Generator):
         self.graph_decode = bool(graph_decode)
         self.hoist_rope = bool(hoist_rope)
         self.skip_first_step = bool(skip_first_step)
+        self.fp16_accumulation = bool(fp16_accumulation)
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
@@ -84,6 +86,8 @@ class StableAudio3Generator(Generator):
         from stable_audio_3 import StableAudioModel
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        if self.fp16_accumulation and hasattr(torch.backends.cuda.matmul, "allow_fp16_accumulation"):
+            torch.backends.cuda.matmul.allow_fp16_accumulation = True
         self._model = StableAudioModel.from_pretrained(
             self.model_name, device=self.device, model_half=self.model_half)
         sr = getattr(self._model, "sample_rate", None)
