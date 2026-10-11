@@ -33,6 +33,25 @@ Through the sidecar, the first request for each of 8 keys took a median 84.0 ms 
 
 Batching pays less than August expected. In the eager build, 8 clips took 514.2 ms against 169.5 ms for one (`out_bench_launch.json`). That is 64.3 ms per clip and three times the single-clip wall time, where August had predicted barely more than one. After the graph and the headroom cut, a pair takes 126 ms, or 63 ms per clip against 67.7 ms alone (`out_fast_equiv.json`). Batches above one skip the T5 cache to stay bit identical (`Accelerator.kwargs` in `src/sarge/generators/sa3_fast.py`), which probably eats most of the gain; that split is unmeasured. The background loop's batch of 2 now buys about 7% throughput.
 
+### Compiling and the schedule (2026-10-11)
+
+The profile said the old figure undersold the slack. An eager `torch.profiler` pass put most GPU time in small elementwise kernels and dtype casts (about 2,100 multiplies, 1,600 copies and 3,300 casts per clip, plus a composite RMSNorm), with the matrix multiplies in the minority (`scripts/bench/out_speed_levers.json`). That is the case kernel fusion exists for, and `triton-windows` 3.2.0.post21 made `torch.compile` work on this machine.
+
+| Change, inside one run each | ms per clip | Output vs eager | Source |
+|---|---|---|---|
+| Eager graph and hoist (same-run baseline) | 61.8 to 62.3 | reference | `out_compile_probe.txt`, `out_compile_probe2.txt` |
+| `torch.compile` of `_forward` inside the CUDA graph | 45.2 | 0.044 of a seed change (log-mel) | `out_compile_probe.txt` |
+| plus the compiled decoder | 42.4 | 0.107 | same |
+| max-autotune in place of default | 44.8 | 0.045 | same |
+| Decoder CUDA graph alone | 61.2 | bit identical | `out_compile_probe2.txt` |
+| Rope hoist alone | 61.5 | bit identical | same |
+| Compiled DiT and decoder, decoder graph, rope hoist | 41.5 | 0.107 | same |
+| plus skipping the t=1.0 Euler step | 30.2 | 0.248 | same |
+
+The held-out judges scored the compiled engine the same as eager on every judged key (`scripts/bench/out_vocab_speed.txt`), and the full set with the first step dropped stayed inside every interval with no McNemar drop: rifle 0.84 against 0.94, pistol 0.55 against 0.60, dog 0.85 against 0.90, wood and gravel steps 1.00 (`out_vocab_full.txt`). The first step moves the noise level from 1.0 to 0.970, so the model call there buys almost nothing. Both now run in the default and quality tiers of `scripts/run_sidecar.py`, with `--no-compile` and `--no-skip-first` to opt out. Through the sidecar in realtime mode a first hit dropped from 74.3 to 48.3 ms (max 51.6) and repeats stayed at 0.2 ms (`out_e2e_sidecar_rt_old.json`, `out_e2e_sidecar_rt_new.json`). The cost is startup: 36.6 s to READY against 18.5 s, almost all of it tracing, which the inductor cache under `.cache/inductor` does not save.
+
+Three levers lost on the judges. CFG 1 and CFG on the first step only lifted pistol, punch and stone steps but dropped dog barks to 0.20 to 0.25 and gravel steps to 0.72. Two Euler steps lost both gunshots (rifle 0.48) and let 3 static clips through the guard in 400. The CPU window search in `_extract` moved from `np.convolve` to a cumulative sum with the same argmax on 600 random clips, about 2.7 ms less CPU per clip.
+
 ### Constraints against switching (carried over)
 
 | Constraint | Why alternatives fail |

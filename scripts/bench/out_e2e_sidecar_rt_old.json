@@ -1,0 +1,128 @@
+{
+ "first": [
+  {
+   "key": "footstep|wood",
+   "ms": 76.06499997200444,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.06355240941047668
+  },
+  {
+   "key": "footstep|stone",
+   "ms": 74.16819996433333,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.045153338462114334
+  },
+  {
+   "key": "impact|glass",
+   "ms": 74.33769997442141,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.06938537210226059
+  },
+  {
+   "key": "impact|metal",
+   "ms": 73.5205999808386,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.054676603525877
+  },
+  {
+   "key": "footstep|grass",
+   "ms": 74.01370001025498,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.10000000149011612
+  },
+  {
+   "key": "land|stone",
+   "ms": 74.76420002058148,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.05626679211854935
+  },
+  {
+   "key": "footstep|gravel",
+   "ms": 74.57009999779984,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.05123637244105339
+  },
+  {
+   "key": "jump|wood",
+   "ms": 74.03010001871735,
+   "served": "realtime",
+   "n": 26460,
+   "rms": 0.07643640786409378
+  }
+ ],
+ "repeat": [
+  {
+   "key": "footstep|wood",
+   "ms": 0.20949996542185545,
+   "served": "cached"
+  },
+  {
+   "key": "footstep|stone",
+   "ms": 0.19120000069960952,
+   "served": "cached"
+  },
+  {
+   "key": "impact|glass",
+   "ms": 0.23549998877570033,
+   "served": "cached"
+  },
+  {
+   "key": "impact|metal",
+   "ms": 0.2416999777778983,
+   "served": "cached"
+  },
+  {
+   "key": "footstep|grass",
+   "ms": 0.16550003783777356,
+   "served": "cached"
+  },
+  {
+   "key": "land|stone",
+   "ms": 0.18209998961538076,
+   "served": "cached"
+  },
+  {
+   "key": "footstep|gravel",
+   "ms": 0.14990003546699882,
+   "served": "cached"
+  },
+  {
+   "key": "jump|wood",
+   "ms": 0.1762000028975308,
+   "served": "cached"
+  }
+ ],
+ "predicted": {
+  "ack": {
+   "type": "predict_ack",
+   "queued": 1,
+   "lead_gated": 0,
+   "cached_keys": 8
+  },
+  "ms": 0.36750000435858965,
+  "served": "cached"
+ },
+ "stats": {
+  "type": "stats_reply",
+  "stats": {
+   "spec_gen": 0,
+   "demand_gen": 1,
+   "realtime": 8,
+   "hits": 9,
+   "fallback": 0,
+   "silence": 0,
+   "evicted": 0,
+   "gpu_ms": 288.0,
+   "peak_bytes": 952560
+  },
+  "wasted": 0,
+  "cached_keys": 9
+ }
+}

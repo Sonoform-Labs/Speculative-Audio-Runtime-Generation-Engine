@@ -30,6 +30,8 @@ ARMS = {
     "full": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True},
     "full_skip1": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
                    "skip_first_step": True},
+    "full_skip1_cfgfirst": {"compile_mode": "default", "compile_decode": True, "graph_decode": True,
+                            "hoist_rope": True, "skip_first_step": True, "cfg_interval": (0.9, 1.0)},
 }
 
 
