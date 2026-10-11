@@ -1,0 +1,238 @@
+{
+ "device": "NVIDIA GeForce RTX 3060",
+ "torch": "2.6.0+cu124",
+ "keys": [
+  [
+   "footstep",
+   "wood"
+  ],
+  [
+   "shoot",
+   "rifle"
+  ],
+  [
+   "break",
+   "window"
+  ],
+  [
+   "slam",
+   "door"
+  ]
+ ],
+ "sdpa_backends": {
+  "flash": "RuntimeError('No available kernel. Aborting execution.')",
+  "efficient": "ok",
+  "cudnn": "ok",
+  "math": "ok"
+ },
+ "decode_ms": 8.607900002971292,
+ "arms": {
+  "base_cfg2_s3": {
+   "median_ms": 59.07094999565743,
+   "p10_ms": 58.32329998956993,
+   "p90_ms": 70.5415500269737,
+   "n": 24
+  },
+  "cfg1_s3": {
+   "median_ms": 42.94534999644384,
+   "p10_ms": 42.39752001594752,
+   "p90_ms": 44.298140006139874,
+   "n": 24
+  },
+  "cfg2_first2_s3": {
+   "median_ms": 54.94559998624027,
+   "p10_ms": 54.01482001179829,
+   "p90_ms": 55.99049999145791,
+   "n": 24
+  },
+  "cfg2_first1_s3": {
+   "median_ms": 49.36269999598153,
+   "p10_ms": 48.63143000402488,
+   "p90_ms": 49.923490022774786,
+   "n": 24
+  },
+  "cfg2_s2": {
+   "median_ms": 41.921299998648465,
+   "p10_ms": 41.68607998290099,
+   "p90_ms": 42.83232997986488,
+   "n": 24
+  },
+  "cfg1_s2": {
+   "median_ms": 31.397599959746003,
+   "p10_ms": 31.000259978463873,
+   "p90_ms": 32.44676000322215,
+   "n": 24
+  }
+ },
+ "fast_stats": {
+  "cond_hits": 152,
+  "cond_misses": 4,
+  "graphs": 0,
+  "replays": 0,
+  "eager": 0,
+  "capture_failures": 0,
+  "installed": true,
+  "enabled": true,
+  "reason": null,
+  "parts": [
+   "cond",
+   "kv",
+   "local"
+  ],
+  "hoisted": 416,
+  "plain": 0,
+  "fills": 8,
+  "fill_graphs": 2,
+  "eager_fills": 0,
+  "cache_hits": 200,
+  "cache_mismatch": 0,
+  "violations": 0,
+  "slots": 2,
+  "cached": 8,
+  "slot_failures": [],
+  "hoist_graphs": 2,
+  "hoist_replays": 416,
+  "hoist_eager": 0,
+  "hoist_capture_failures": [],
+  "errors": []
+ },
+ "profile": {
+  "eager_wall_ms": 163.08299999218434,
+  "kernel_ms_per_clip": 316.504,
+  "groups_ms": {
+   "gemm": 55.876000000000005,
+   "attention": 12.086666666666666,
+   "conv": 0.2893333333333333,
+   "norm": 9.012333333333332,
+   "elementwise": 143.381,
+   "other": 95.85866666666669
+  },
+  "top": [
+   {
+    "name": "aten::mul",
+    "ms": 49.46266666666667,
+    "calls": 2076
+   },
+   {
+    "name": "aten::mm",
+    "ms": 27.579333333333334,
+    "calls": 408
+   },
+   {
+    "name": "aten::copy_",
+    "ms": 22.72266666666667,
+    "calls": 1613
+   },
+   {
+    "name": "aten::add",
+    "ms": 21.799666666666667,
+    "calls": 880
+   },
+   {
+    "name": "aten::addmm",
+    "ms": 19.402,
+    "calls": 205
+   },
+   {
+    "name": "aten::cat",
+    "ms": 17.832333333333334,
+    "calls": 344
+   },
+   {
+    "name": "aten::rsqrt",
+    "ms": 12.429666666666668,
+    "calls": 469
+   },
+   {
+    "name": "aten::pow",
+    "ms": 10.693666666666667,
+    "calls": 469
+   },
+   {
+    "name": "aten::_efficient_attention_forward",
+    "ms": 10.097,
+    "calls": 144
+   },
+   {
+    "name": "aten::mean",
+    "ms": 9.618,
+    "calls": 469
+   },
+   {
+    "name": "aten::rms_norm",
+    "ms": 8.943,
+    "calls": 420
+   },
+   {
+    "name": "aten::to",
+    "ms": 8.567333333333334,
+    "calls": 3293
+   },
+   {
+    "name": "aten::_to_copy",
+    "ms": 8.342666666666666,
+    "calls": 1544
+   },
+   {
+    "name": "aten::t",
+    "ms": 8.328666666666667,
+    "calls": 680
+   },
+   {
+    "name": "aten::slice",
+    "ms": 8.056333333333333,
+    "calls": 1579
+   },
+   {
+    "name": "aten::as_strided",
+    "ms": 6.973,
+    "calls": 4202
+   },
+   {
+    "name": "aten::reshape",
+    "ms": 4.549666666666666,
+    "calls": 1414
+   },
+   {
+    "name": "aten::linear",
+    "ms": 4.2700000000000005,
+    "calls": 680
+   },
+   {
+    "name": "aten::transpose",
+    "ms": 4.145666666666666,
+    "calls": 1305
+   },
+   {
+    "name": "aten::matmul",
+    "ms": 3.6606666666666663,
+    "calls": 476
+   },
+   {
+    "name": "aten::fill_",
+    "ms": 3.448,
+    "calls": 98
+   },
+   {
+    "name": "aten::narrow",
+    "ms": 3.314,
+    "calls": 941
+   },
+   {
+    "name": "aten::sub",
+    "ms": 3.134,
+    "calls": 149
+   },
+   {
+    "name": "aten::add_",
+    "ms": 3.0103333333333335,
+    "calls": 482
+   },
+   {
+    "name": "aten::silu",
+    "ms": 2.8563333333333336,
+    "calls": 138
+   }
+  ]
+ }
+}
