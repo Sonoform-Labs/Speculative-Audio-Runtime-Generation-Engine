@@ -1,0 +1,7 @@
+{
+ "total_median_ms": 26.220900035696104,
+ "decode": 3.3899499976541847,
+ "model.generate (sampling + decode)": 24.916700029280037,
+ "_finish (to cpu, extract, loudness)": 0.3986500087194145,
+ "static guard": 0.678999989759177
+}
