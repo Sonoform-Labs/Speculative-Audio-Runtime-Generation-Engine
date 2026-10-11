@@ -60,7 +60,7 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
 
     tier = (args.tier or os.environ.get("SARGE_GEN_TIER") or "default").lower()
-    gen_kwargs = dict(TIERS.get(tier, TIERS["default"]))
+    gen_kwargs = dict(TIERS.get(tier, TIERS["default"]), fast_load=True)
     if args.sampler is not None:
         gen_kwargs["sampler_type"] = args.sampler
     if args.steps is not None:

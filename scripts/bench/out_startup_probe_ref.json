@@ -1,0 +1,38 @@
+{
+ "import_torch_s": 1.6491380999996181,
+ "import_sarge_s": 0.16956240000035905,
+ "ensure_ready_s": 6.181140700000469,
+ "from_pretrained_s": 6.149829400000272,
+ "first_generate_s": 17.55678699999953,
+ "first_dit_s": 12.378364299999703,
+ "first_decode_s": 4.547629200000301,
+ "dynamo_times": "TorchDynamo compilation metrics:\nFunction                                       Runtimes (s)\n-------------------------------------------  --------------\n_compile.compile_inner                              16.1738\ncompile_attempt_0                                   15.6239\nbytecode_tracing                                    14.1888\nget_fake_value                                       1.5429\ncreate_proxy                                         0.635\nwrap_to_fake_tensor_and_record                       0.1405\nvariable_builder_call                                0.7542\ninsert_deferred_runtime_asserts                      0.1365\nOutputGraph.call_user_compiler                       1.1294\ninductor_codecache_torch_key                         0.5171\nCacheBase.get_system.triton_key                      0.0858\nAOTAutogradCache.inductor_load                       0.175\nTritonBundler.read_and_emit                          0.019\nTritonBundler.load_cached_static_autotuners          0.019\nPyCodeCache.load_by_key_path                         0.1178\nStaticAutotunerFuture.warm_precompile                0.0634\nbuild_guards                                         0.4793\ngc                                                   0",
+ "counters": {
+  "frames": {
+   "total": 2,
+   "ok": 2
+  },
+  "stats": {
+   "calls_captured": 3148,
+   "unique_graphs": 2
+  },
+  "aot_autograd": {
+   "total": 2,
+   "autograd_cache_hit": 2,
+   "ok": 2
+  },
+  "inductor": {
+   "triton_bundler_load_static_autotuner": 63,
+   "async_compile_cache_miss": 126,
+   "async_compile_cache_hit": 63,
+   "pattern_matcher_count": 56,
+   "pattern_matcher_nodes": 57,
+   "pad_rewritten_as_cat": 23,
+   "extern_calls": 261,
+   "fxgraph_cache_hit": 2
+  }
+ },
+ "second_generate_s": 0.03577210000003106,
+ "total_s": 28.081127700000252,
+ "torch": "2.14.1+cu126"
+}

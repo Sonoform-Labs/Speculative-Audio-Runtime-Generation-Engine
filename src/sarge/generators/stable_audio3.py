@@ -27,6 +27,23 @@ def _skip_first_schedule():
     finally:
         smp.build_schedule = orig
 
+_RANDOM_INITS = ("uniform_", "normal_", "trunc_normal_", "kaiming_uniform_", "kaiming_normal_", "xavier_uniform_",
+                 "xavier_normal_", "orthogonal_")
+
+
+@contextlib.contextmanager
+def _skip_random_init():
+    import torch.nn.init as init
+    saved = {n: getattr(init, n) for n in _RANDOM_INITS if hasattr(init, n)}
+    for n in saved:
+        setattr(init, n, lambda tensor, *a, **k: tensor)
+    try:
+        yield
+    finally:
+        for n, f in saved.items():
+            setattr(init, n, f)
+
+
 STATIC_STATS = ("static_checks", "static_flagged", "static_retries", "static_rescued", "static_exhausted")
 
 
@@ -44,7 +61,7 @@ class StableAudio3Generator(Generator):
                  hoist_prompts: int | None = 8, static_guard: bool = True, max_static_retries: int = 2,
                  compile_mode: str | None = None, compile_decode: bool = False, cfg_interval=None,
                  graph_decode: bool = False, hoist_rope: bool = False, skip_first_step: bool = False,
-                 fp16_accumulation: bool = False, graph_text: bool = False, **_):
+                 fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -72,6 +89,7 @@ class StableAudio3Generator(Generator):
         self.skip_first_step = bool(skip_first_step)
         self.fp16_accumulation = bool(fp16_accumulation)
         self.graph_text = bool(graph_text)
+        self.fast_load = bool(fast_load)
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
@@ -83,14 +101,18 @@ class StableAudio3Generator(Generator):
     def _ensure_loaded(self):
         if self._model is not None:
             return
+        if self.fast_load:
+            from ..fastmeta import install
+            install()
         import torch
         from stable_audio_3 import StableAudioModel
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
         if self.fp16_accumulation and hasattr(torch.backends.cuda.matmul, "allow_fp16_accumulation"):
             torch.backends.cuda.matmul.allow_fp16_accumulation = True
-        self._model = StableAudioModel.from_pretrained(
-            self.model_name, device=self.device, model_half=self.model_half)
+        with _skip_random_init() if self.fast_load else contextlib.nullcontext():
+            self._model = StableAudioModel.from_pretrained(
+                self.model_name, device=self.device, model_half=self.model_half)
         sr = getattr(self._model, "sample_rate", None)
         if not sr:
             cfg = getattr(self._model, "model_config", None) or {}

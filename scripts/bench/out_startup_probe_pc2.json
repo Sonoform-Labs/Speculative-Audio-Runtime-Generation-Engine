@@ -1,0 +1,42 @@
+{
+ "import_torch_s": 1.6372788999997283,
+ "import_sarge_s": 0.16464770000129647,
+ "ensure_ready_s": 6.268224800000098,
+ "from_pretrained_s": 6.236419799999567,
+ "first_generate_s": 65.487745299999,
+ "first_dit_s": 56.82238829999915,
+ "first_decode_s": 8.031150400003753,
+ "dynamo_times": "TorchDynamo compilation metrics:\nFunction                                               Runtimes (s)\n---------------------------------------------------  --------------\n_compile.compile_inner                                      63.9329\ncompile_attempt_0                                           59.1263\nbytecode_tracing                                            38.8788\nget_fake_value                                               2.2304\ncreate_proxy                                                 1.3574\nwrap_to_fake_tensor_and_record                               0.4615\nvariable_builder_call                                        2.5313\ninsert_deferred_runtime_asserts                              0.4186\nOutputGraph.call_user_compiler                              19.2813\ninductor_codecache_torch_key                                 0.4971\nCacheBase.get_system.triton_key                              0.0899\n_recursive_pre_grad_passes                                   0.0928\npass.pre_grad_passes.group_batch_fusion_passes               0\npass.pre_grad_passes.efficient_conv_bn_eval_pass             0.0211\npass.pre_grad_passes.apply_gumbel_max_trick_pass             0\ncreate_aot_dispatcher_function                              17.7689\naot_collect_metadata                                         3.0601\ncompile_fx.<locals>.fw_compiler_base                         5.5237\n_recursive_joint_graph_passes                                3.4655\npass.joint_graph_passes.remove_noop_ops                      0.1561\npass.joint_graph_passes.constant_fold_uniform_value          0.3061\npass.joint_graph_passes.pass_pattern_0                       2.2032\npass.joint_graph_passes.pass_pattern_1                       0.003\ncompile_fx_inner                                             2.0424\nfx_codegen_and_compile                                       1.8363\nTritonBundler.read_and_emit                                  0.008\nTritonBundler.load_cached_static_autotuners                  0.006\nPyCodeCache.load_by_key_path                                 0.3551\nStaticAutotunerFuture.warm_precompile                        0.1607\nbuild_guards                                                 3.5685\ngc                                                           0.0333",
+ "counters": {
+  "dynamo_cache": {
+   "dynamo_cache_miss": 3
+  },
+  "frames": {
+   "total": 41,
+   "ok": 27
+  },
+  "stats": {
+   "calls_captured": 8152,
+   "unique_graphs": 30
+  },
+  "aot_autograd": {
+   "total": 30,
+   "autograd_cache_miss": 30,
+   "ok": 30,
+   "autograd_cache_saved": 13
+  },
+  "inductor": {
+   "pattern_matcher_count": 1926,
+   "pattern_matcher_nodes": 2252,
+   "triton_bundler_load_static_autotuner": 140,
+   "async_compile_cache_miss": 280,
+   "async_compile_cache_hit": 140,
+   "pad_rewritten_as_cat": 64,
+   "extern_calls": 691,
+   "fxgraph_cache_hit": 30
+  }
+ },
+ "second_generate_s": 0.03743119999853661,
+ "total_s": 76.07858979999946,
+ "torch": "2.14.1+cu126"
+}

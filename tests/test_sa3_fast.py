@@ -95,3 +95,21 @@ def test_text_graph_wraps_only_the_text_encoder_and_falls_back_off_gpu():
     mask = torch.tensor([[True, True, False]])
     out = g(input_ids=ids, attention_mask=mask)["last_hidden_state"]
     assert inner.calls == 1 and g.captured == 0 and out[0, :, 0].tolist() == [3.0, 4.0, 0.0]
+
+
+def test_fast_package_scan_matches_the_stdlib_mapping():
+    import importlib.metadata as md
+    from sarge import fastmeta
+    fast = fastmeta.packages_distributions()
+    slow = md.packages_distributions()
+    assert {k: sorted(v) for k, v in fast.items()} == {k: sorted(v) for k, v in slow.items()}
+
+
+def test_skip_random_init_restores_the_init_functions():
+    import torch.nn.init as init
+    from sarge.generators.stable_audio3 import _skip_random_init
+    before = init.kaiming_uniform_
+    with _skip_random_init():
+        t = torch.zeros(3)
+        assert init.kaiming_uniform_(t) is t and t.abs().sum() == 0
+    assert init.kaiming_uniform_ is before

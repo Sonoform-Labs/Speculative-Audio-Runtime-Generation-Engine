@@ -1,0 +1,59 @@
+{
+ "import_torch_s": 1.6483699000000342,
+ "import_sarge_s": 0.16452170000047772,
+ "ensure_ready_s": 6.183897900000375,
+ "from_pretrained_s": 6.152433599999313,
+ "first_generate_s": 118.58434739999939,
+ "first_dit_s": 110.73664530000133,
+ "first_decode_s": 7.2390961999990395,
+ "dynamo_times": "TorchDynamo compilation metrics:\nFunction                                                            Runtimes (s)\n----------------------------------------------------------------  --------------\n_compile.compile_inner                                                  116.561\ncompile_attempt_0                                                       111.733\nbytecode_tracing                                                         38.9019\nget_fake_value                                                            2.237\ncreate_proxy                                                              1.2887\nwrap_to_fake_tensor_and_record                                            1.8354\nvariable_builder_call                                                     4.2648\ninsert_deferred_runtime_asserts                                           0.3822\nOutputGraph.call_user_compiler                                           71.9394\ninductor_codecache_torch_key                                              0.5125\nCacheBase.get_system.triton_key                                           0.0734\n_recursive_pre_grad_passes                                                0.0755\npass.pre_grad_passes.group_batch_fusion_passes                            0\npass.pre_grad_passes.efficient_conv_bn_eval_pass                          0\npass.pre_grad_passes.apply_gumbel_max_trick_pass                          0\ncreate_aot_dispatcher_function                                           70.3041\naot_collect_metadata                                                      2.9791\ncompile_fx.<locals>.fw_compiler_base                                     57.1296\n_recursive_joint_graph_passes                                             3.6055\npass.joint_graph_passes.remove_noop_ops                                   0.112\npass.joint_graph_passes.constant_fold_uniform_value                       0.2964\npass.joint_graph_passes.pass_pattern_0                                    2.3802\npass.joint_graph_passes.pass_pattern_1                                    0\ncompile_fx_inner                                                         53.5133\nfx_codegen_and_compile                                                   53.326\nTritonBundler.read_and_emit                                               0.0156\nTritonBundler.load_cached_static_autotuners                               0\nPyCodeCache.load_by_key_path                                             16.7323\nStaticAutotunerFuture.warm_precompile                                     0.0469\nbuild_guards                                                              3.5955\ngc                                                                        0.002\nadditional_fake_tensor_prop                                               1.4705\n_recursive_post_grad_passes                                               1.2792\npass.post_grad_passes.reorder_for_locality                                0.0156\npass.post_grad_passes.remove_profiler_ops                                 0\npass.post_grad_passes.respecialize_current_device                         0\npass.post_grad_passes.post_grad_custom_pre_pass                           0\npass.post_grad_passes.remove_noop_ops                                     0.0727\npass.post_grad_passes.remove_assert_ops                                   0\npass.post_grad_passes.pass_pattern_0                                      0\npass.post_grad_passes.pass_pattern_1                                      0.471\npass.post_grad_passes.pass_pattern_2                                      0.0479\npass.post_grad_passes.stable_sort                                         0.0313\npass.post_grad_passes.move_constructors_to_cuda                           0.001\npass.post_grad_passes.reinplace_inplaceable_ops                           0.3145\npass.post_grad_passes.fix_auto_functionalized_dtype_views                 0\npass.post_grad_passes.decompose_triton_kernel_wrapper_functional          0.0156\npass.post_grad_passes.decompose_auto_functionalized                       0.0002\npass.post_grad_passes.decompose_scan_to_while_loop                        0\npass.post_grad_passes.decompose_map_to_while_loop                         0\nGraphLowering.run                                                         5.0923\nGraphLowering.compile_to_fn                                              43.1974\nGraphLowering.compile_to_module                                          43.1974\nGraphLowering.codegen                                                    26.5499\nScheduler.__init__                                                       15.3193\nScheduler.fused_nodes                                                    11.7334\nScheduler.simple_overlap                                                  0\nScheduler.codegen                                                        10.942\nPythonWrapperCodegen.generate                                             0.2395\nTritonBundler.collect                                                     0.53\nasync_compile.precompile                                                 16.3049\nCachingAutotuner.benchmark_all_configs                                    0.5854",
+ "counters": {
+  "dynamo_cache": {
+   "dynamo_cache_miss": 3
+  },
+  "frames": {
+   "total": 41,
+   "ok": 27
+  },
+  "stats": {
+   "calls_captured": 8152,
+   "unique_graphs": 30
+  },
+  "aot_autograd": {
+   "total": 30,
+   "autograd_cache_miss": 30,
+   "ok": 30,
+   "autograd_cache_saved": 27
+  },
+  "inductor": {
+   "pattern_matcher_count": 1926,
+   "pattern_matcher_nodes": 2252,
+   "triton_bundler_load_static_autotuner": 64,
+   "async_compile_cache_miss": 204,
+   "async_compile_cache_hit": 64,
+   "pad_rewritten_as_cat": 64,
+   "extern_calls": 691,
+   "fxgraph_cache_hit": 6,
+   "fxgraph_cache_miss": 24,
+   "triton_bundler_save_kernel": 1176,
+   "triton_bundler_save_static_autotuner": 14,
+   "benchmarking.InductorBenchmarker.benchmark": 12,
+   "benchmarking.InductorBenchmarker.benchmark_gpu": 15,
+   "pad_mm_bench": 3
+  },
+  "aten_mm_info": {
+   "aten.addmm_2_1024_1024": 2,
+   "aten.addmm_2_6144_1024": 2,
+   "aten.bmm_2_22_1024_256": 2,
+   "aten.mm_172_3072_1024": 42,
+   "aten.mm_172_1024_1024": 126,
+   "aten.addmm_176_8192_1024": 41,
+   "aten.addmm_172_1024_4096": 42,
+   "aten.bmm_2_22_256_1024": 2,
+   "aten.addmm_172_8192_1024": 1
+  }
+ },
+ "second_generate_s": 0.03584299999965879,
+ "total_s": 129.12485469999956,
+ "torch": "2.14.1+cu126"
+}

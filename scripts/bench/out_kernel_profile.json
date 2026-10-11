@@ -1,0 +1,162 @@
+{
+ "gpu_ms_per_clip": 19.502419299999996,
+ "groups_ms_per_clip": {
+  "matmul": 15.765793699999977,
+  "triton fused": 2.4757692000000704,
+  "other": 0.650633099999997,
+  "copy": 0.37757829999998466,
+  "attention": 0.23264499999997224
+ },
+ "top": [
+  {
+   "name": "ampere_h16816gemm_128x64_ldg8_relu_stages_64x3_tn",
+   "ms_per_clip": 6.978405899999989,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "ampere_h16816gemm_128x64_ldg8_stages_32x6_tn",
+   "ms_per_clip": 2.098673799999947,
+   "calls_per_clip": 122.0
+  },
+  {
+   "name": "ampere_h16816gemm_128x64_ldg8_relu_stages_32x6_tn",
+   "ms_per_clip": 1.775969900000014,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "ampere_h1688gemm_256x64_ldg8_stages_32x1_tn",
+   "ms_per_clip": 1.7442286999999956,
+   "calls_per_clip": 46.0
+  },
+  {
+   "name": "_Z39fmha_cutlassF_f16_aligned_64x64_rf_sm80N22PyTorchMemEffAttention15AttentionKernelIN7cutlass6half_tENS1_4arch4Sm80ELb1ELi64ELi64ELi64ELb1ELb1EE6ParamsE",
+   "ms_per_clip": 1.7024692000000365,
+   "calls_per_clip": 92.0
+  },
+  {
+   "name": "ampere_h1688gemm_128x128_ldg8_stages_32x1_tn",
+   "ms_per_clip": 0.48511450000000117,
+   "calls_per_clip": 6.0
+  },
+  {
+   "name": "triton_poi_fused_addmm_mul_silu_split_view_15",
+   "ms_per_clip": 0.4283653999999877,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "ampere_h16816gemm_128x128_ldg8_relu_stages_64x3_tn",
+   "ms_per_clip": 0.2657161000000127,
+   "calls_per_clip": 6.0
+  },
+  {
+   "name": "_ZN7cutlass7Kernel2I52cutlass_80_tensorop_h16816gemm_256x64_32x4_tn_align8EEvNT_6ParamsE",
+   "ms_per_clip": 0.26510509999998944,
+   "calls_per_clip": 3.0
+  },
+  {
+   "name": "Memcpy DtoD (Device -> Device)",
+   "ms_per_clip": 0.2451819000000143,
+   "calls_per_clip": 61.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__unsafe_view_permut_bef89b5e_4",
+   "ms_per_clip": 0.19617810000000954,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "ampere_h16816gemm_256x128_ldg8_relu_stages_32x3_tn",
+   "ms_per_clip": 0.1919777999999933,
+   "calls_per_clip": 3.0
+  },
+  {
+   "name": "_ZN2at6native18elementwise_kernelILi128ELi4EZNS0_22gpu_kernel_impl_nocastIZZZNS0_23direct_copy_kernel_cudaERNS_18TensorIteratorBaseEENKUlvE1_clEvENKUlvE8_clEvEU",
+   "ms_per_clip": 0.18992930000000197,
+   "calls_per_clip": 20.0
+  },
+  {
+   "name": "_ZN2at6native29vectorized_elementwise_kernelILi2ENS0_11FillFunctorIxEESt5arrayIPcLy1EELb0EEEviT0_T1_",
+   "ms_per_clip": 0.1610941999999906,
+   "calls_per_clip": 186.0
+  },
+  {
+   "name": "_ZN7cutlass7Kernel2I58cutlass_80_wmma_tensorop_h161616gemm_16x16_128x2_tn_align8EEvNT_6ParamsE",
+   "ms_per_clip": 0.13473009999999538,
+   "calls_per_clip": 8.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__scaled_dot_product_503dd829_9",
+   "ms_per_clip": 0.13148630000001557,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_9b32dfbc_18",
+   "ms_per_clip": 0.12425819999999294,
+   "calls_per_clip": 20.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__scaled_dot_product_503dd829_7",
+   "ms_per_clip": 0.12329510000001229,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_751e1796_16",
+   "ms_per_clip": 0.1225487000000101,
+   "calls_per_clip": 20.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__to_copy__unsafe_vi_4e2bf002_8",
+   "ms_per_clip": 0.11373009999997376,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "Memset (Unknown)",
+   "ms_per_clip": 0.10684769999997552,
+   "calls_per_clip": 174.0
+  },
+  {
+   "name": "triton_poi_fused_add_arange_cat_cos_div_mul_neg_perm_4bf8afe7_24",
+   "ms_per_clip": 0.09991429999999199,
+   "calls_per_clip": 6.0
+  },
+  {
+   "name": "triton_poi_fused_add_arange_cat_cos_div_mul_neg_perm_4bf8afe7_5",
+   "ms_per_clip": 0.09489480000001894,
+   "calls_per_clip": 6.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_751e1796_22",
+   "ms_per_clip": 0.09239250000000175,
+   "calls_per_clip": 18.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_9e807873_13",
+   "ms_per_clip": 0.08987420000000149,
+   "calls_per_clip": 20.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__to_copy__unsafe_vi_4e2bf002_6",
+   "ms_per_clip": 0.08792340000001514,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "_ZN5cudnn19engines_precompiled16nchwToNhwcKernelI6__halfS2_fLb0ELb1EL21cudnnKernelDataType_t0EEEvNS0_18nchw2nhwc_params_tIT1_EEPKT_PT0_",
+   "ms_per_clip": 0.08574669999999932,
+   "calls_per_clip": 2.0
+  },
+  {
+   "name": "triton_poi_fused__scaled_dot_product_efficient_atten_a6d2fe8d_10",
+   "ms_per_clip": 0.0759141999999816,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__scaled_dot_product_cafa21c5_12",
+   "ms_per_clip": 0.07162560000000448,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_9b32dfbc_17",
+   "ms_per_clip": 0.07010370000000767,
+   "calls_per_clip": 20.0
+  }
+ ]
+}

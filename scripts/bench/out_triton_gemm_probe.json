@@ -1,0 +1,60 @@
+{
+ "qkv": {
+  "cublas_us": 45.2,
+  "triton_us": 59.7,
+  "cfg": [
+   32,
+   128,
+   32,
+   8,
+   4
+  ],
+  "maxerr_vs_fp32_triton": 0.011361360549926758,
+  "maxerr_vs_fp32_cublas": 0.004911303520202637,
+  "tflops_triton": 18.1
+ },
+ "attn_out": {
+  "cublas_us": 239.5,
+  "triton_us": 18.3,
+  "cfg": [
+   64,
+   128,
+   32,
+   4,
+   4
+  ],
+  "maxerr_vs_fp32_triton": 0.012259364128112793,
+  "maxerr_vs_fp32_cublas": 0.006043672561645508,
+  "tflops_triton": 19.7
+ },
+ "ff_in": {
+  "cublas_us": 116.9,
+  "triton_us": 88.5,
+  "cfg": [
+   64,
+   256,
+   32,
+   4,
+   3
+  ],
+  "maxerr_vs_fp32_triton": 0.012514114379882812,
+  "maxerr_vs_fp32_cublas": 0.006719827651977539,
+  "tflops_triton": 32.6
+ },
+ "ff_out": {
+  "cublas_us": 55.1,
+  "triton_us": 46.4,
+  "cfg": [
+   64,
+   128,
+   32,
+   4,
+   4
+  ],
+  "maxerr_vs_fp32_triton": 0.04345273971557617,
+  "maxerr_vs_fp32_cublas": 0.025432586669921875,
+  "tflops_triton": 31.1
+ },
+ "clip_ms_cublas": 37.42003135681152,
+ "clip_ms_best_of_both": 9.405708837509156
+}
