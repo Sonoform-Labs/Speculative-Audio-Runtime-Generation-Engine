@@ -106,7 +106,7 @@ class CondCache:
 
 
 class Accelerator:
-    def __init__(self, sam, graph: bool = True, max_prompts: int = 256):
+    def __init__(self, sam, graph: bool = True, max_prompts: int = 256, compile_mode: str | None = None):
         import stable_audio_3.models.dit as dit_mod
         self.sam = sam
         self.dit = sam.dit.model
@@ -114,10 +114,16 @@ class Accelerator:
         self.lora_free = not bool(dit_mod.has_lora(self.dit))
         if self.lora_free:
             dit_mod.has_lora = lambda model: False
+        self.compile_mode = compile_mode
+        fwd = self.dit._forward
+        if compile_mode:
+            fwd = torch.compile(fwd, mode=compile_mode, dynamic=False)
         self.graph = None
         if graph and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
-            self.graph = GraphedForward(self.dit._forward)
+            self.graph = GraphedForward(fwd)
             self.dit._forward = self.graph
+        elif compile_mode:
+            self.dit._forward = fwd
 
     def kwargs(self, prompts, seconds, negative_prompt=None):
         kw = {"disable_tqdm": True, "use_checkpointing": False}

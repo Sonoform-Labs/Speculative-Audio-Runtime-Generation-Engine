@@ -24,7 +24,8 @@ class StableAudio3Generator(Generator):
                  model_half: bool = True, sampler_type: str = "euler",
                  detail_steps: int = 8, detail_keys=None, fast: bool = True,
                  duration_padding_s: float = 1.0, mid_noise: float | None = None,
-                 hoist_prompts: int | None = 8, static_guard: bool = True, max_static_retries: int = 2, **_):
+                 hoist_prompts: int | None = 8, static_guard: bool = True, max_static_retries: int = 2,
+                 compile_mode: str | None = None, compile_decode: bool = False, cfg_interval=None, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -45,6 +46,9 @@ class StableAudio3Generator(Generator):
         self._model = None
         self._fast = None
         self.hoist_prompts = hoist_prompts
+        self.compile_mode = compile_mode or None
+        self.compile_decode = bool(compile_decode)
+        self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
         self.static_guard = bool(static_guard)
@@ -70,7 +74,7 @@ class StableAudio3Generator(Generator):
         if self.fast:
             try:
                 from .sa3_fast import Accelerator
-                self._fast = Accelerator(self._model)
+                self._fast = Accelerator(self._model, compile_mode=self.compile_mode)
             except Exception:
                 self._fast = None
         if self._fast is not None and self.hoist_prompts is not None:
@@ -79,6 +83,10 @@ class StableAudio3Generator(Generator):
                 self._hoist = install_hoist(self._model, self._fast, cache_prompts=int(self.hoist_prompts))
             except Exception:
                 self._hoist = None
+        if self.compile_decode and self.fast:
+            pt = getattr(self._model.model, "pretransform", None)
+            if pt is not None:
+                pt.decode = torch.compile(pt.decode, mode=self.compile_mode or "default", dynamic=False)
 
     def ensure_ready(self):
         self._ensure_loaded()
@@ -90,6 +98,9 @@ class StableAudio3Generator(Generator):
         if self.prompt_template:
             return self.prompt_template.format(intensity=key.intensity, material=key.material, event=key.event_type)
         return build_prompt(key.event_type, key.material, key.intensity)
+
+    def _extra(self) -> dict:
+        return {"cfg_interval": self.cfg_interval} if self.cfg_interval is not None else {}
 
     def _inputs(self, prompts: list) -> dict:
         if self._fast is not None:
@@ -150,7 +161,7 @@ class StableAudio3Generator(Generator):
             with self._lock, torch.no_grad():
                 audio = self._model.generate(
                     duration=self.gen_duration_s, steps=steps, cfg_scale=self.cfg_scale,
-                    seed=retry_seed(base, attempt), batch_size=1, **self._inputs([prompt]))
+                    seed=retry_seed(base, attempt), batch_size=1, **self._inputs([prompt]), **self._extra())
             cand = self._finish(self._numpy(audio), key)
             bad, m = is_static(cand, self.sample_rate)
             self._count("static_checks")
@@ -179,6 +190,7 @@ class StableAudio3Generator(Generator):
                 cfg_scale=self.cfg_scale,
                 seed=_seed(key, variant),
                 **self._inputs([self._prompt(key)]),
+                **self._extra(),
             )
         mono = self._finish(self._numpy(audio), key)
         if self.static_guard:
@@ -200,7 +212,7 @@ class StableAudio3Generator(Generator):
                 audio = self._model.generate(
                     duration=self.gen_duration_s, steps=steps,
                     cfg_scale=self.cfg_scale, seed=_seed(sub[0][0], sub[0][1]),
-                    batch_size=len(sub), **self._inputs([self._prompt(key) for key, _v in sub]))
+                    batch_size=len(sub), **self._inputs([self._prompt(key) for key, _v in sub]), **self._extra())
             a = self._numpy(audio)
             for j, (key, variant) in enumerate(sub):
                 mono = self._finish(a[j], key)

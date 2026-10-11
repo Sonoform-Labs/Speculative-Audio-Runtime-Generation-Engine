@@ -1,0 +1,5 @@
+c_default          45.2 ms  first  40.5 s  max|diff| med 0.0187 max 1.9400  log-mel 0.186 dB  ratio to a new seed 0.044
+c_default_dec      42.4 ms  first  46.6 s  max|diff| med 0.0588 max 1.9346  log-mel 0.451 dB  ratio to a new seed 0.107
+c_maxat            44.8 ms  first  50.8 s  max|diff| med 0.0196 max 1.9394  log-mel 0.191 dB  ratio to a new seed 0.045
+c_maxat_dec        42.3 ms  first  75.7 s  max|diff| med 0.0604 max 1.9337  log-mel 0.458 dB  ratio to a new seed 0.108
+base               62.3 ms  seed-to-seed log-mel 4.230 dB
