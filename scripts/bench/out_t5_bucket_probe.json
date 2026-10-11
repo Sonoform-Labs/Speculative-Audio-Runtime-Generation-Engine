@@ -1,0 +1,22 @@
+{
+ "prompts": 60,
+ "token_len_max": 19,
+ "token_len_median": 11,
+ "bucket_32": {
+  "identical": 0,
+  "max_diff": 0.9375,
+  "eager_ms": 14.512135000040871
+ },
+ "bucket_48": {
+  "identical": 60,
+  "max_diff": 0.0,
+  "eager_ms": 14.614799999981187
+ },
+ "bucket_64": {
+  "identical": 0,
+  "max_diff": 1.125,
+  "eager_ms": 14.580220000061672
+ },
+ "bucket_128_eager_ms": 14.400525000019115,
+ "ref_absmax": 52.0
+}

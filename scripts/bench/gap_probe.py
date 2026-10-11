@@ -19,7 +19,7 @@ from sarge.types import CacheKey
 
 CFG = {"sampler_type": "euler", "steps": 3, "compile_mode": "default", "compile_decode": True, "graph_decode": True,
        "hoist_rope": True, "skip_first_step": True, "fp16_accumulation": True, "graph_text": True, "fast_load": True,
-       "unfuse_bias": True, "triton_gemm": True}
+       "unfuse_bias": True, "triton_gemm": True, "decode_prefix": True}
 
 
 def main():
