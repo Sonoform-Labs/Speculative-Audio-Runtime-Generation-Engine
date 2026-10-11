@@ -129,8 +129,8 @@ def main():
         t_cub = bench(lambda: torch.nn.functional.linear(x, w, bias))
         out = torch.empty(M, n, device="cuda", dtype=torch.float16)
         plain = []
-        for cfg in itertools.product((32, 64, 128), (32, 64, 128, 256), (32, 64, 128), (2, 4, 8), (2, 3, 4, 5)):
-            if cfg[0] * cfg[1] > 128 * 256 or cfg[1] * cfg[2] > 256 * 128 or cfg[0] * cfg[2] > 128 * 128:
+        for cfg in itertools.product((32, 64, 128), (64, 128, 256), (32, 64), (4, 8), (3, 4, 5)):
+            if cfg[0] * cfg[1] > 128 * 128:
                 continue
             try:
                 run_plain(x, w, bias, out, cfg)
@@ -140,7 +140,7 @@ def main():
         plain.sort()
         part = torch.empty(8, M, n, device="cuda", dtype=torch.float16)
         split = []
-        for cfg in itertools.product((32, 64, 128), (32, 64, 128), (32, 64, 128), (4, 8), (2, 3, 4), (2, 4, 8)):
+        for cfg in itertools.product((32, 64), (64, 128), (32, 64), (4,), (3, 4), (2, 4)):
             if k % (cfg[5] * cfg[2]):
                 continue
             try:

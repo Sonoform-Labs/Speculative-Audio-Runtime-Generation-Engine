@@ -1,0 +1,54 @@
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xEFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+No module named 'flash_attn'
+flash_attn not installed, disabling Flash Attention
+No module named 'flash_attn'
+flash_attn varlen/bert_padding not available, disabling varlen attention
+deflt214_tg  median 22.2 ms  p10 21.6  p90 23.2  first calls 19.1 s  load 17.6 s  vram 2.28 GB  dynamo {"stats": {"calls_captured": 3268, "unique_graphs": 2}}
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xEFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+No module named 'flash_attn'
+flash_attn not installed, disabling Flash Attention
+No module named 'flash_attn'
+flash_attn varlen/bert_padding not available, disabling varlen attention
+deflt214_pre  median 21.1 ms  p10 20.7  p90 22.1  first calls 19.2 s  load 17.5 s  vram 2.28 GB  dynamo {"stats": {"calls_captured": 3270, "unique_graphs": 2}}
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xEFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+No module named 'flash_attn'
+flash_attn not installed, disabling Flash Attention
+No module named 'flash_attn'
+flash_attn varlen/bert_padding not available, disabling varlen attention
+deflt214_tgp  median 21.1 ms  p10 20.7  p90 22.2  first calls 19.5 s  load 17.6 s  vram 2.28 GB  dynamo {"stats": {"calls_captured": 3394, "unique_graphs": 2}}
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xEFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+No module named 'flash_attn'
+flash_attn not installed, disabling Flash Attention
+No module named 'flash_attn'
+flash_attn varlen/bert_padding not available, disabling varlen attention
+deflt214_tg  median 22.6 ms  p10 21.7  p90 23.5  first calls 18.8 s  load 17.7 s  vram 2.28 GB  dynamo {"stats": {"calls_captured": 3268, "unique_graphs": 2}}
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xEFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+No module named 'flash_attn'
+flash_attn not installed, disabling Flash Attention
+No module named 'flash_attn'
+flash_attn varlen/bert_padding not available, disabling varlen attention
+deflt214_pre  median 20.9 ms  p10 20.6  p90 21.8  first calls 19.0 s  load 17.5 s  vram 2.28 GB  dynamo {"stats": {"calls_captured": 3270, "unique_graphs": 2}}
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xEFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+No module named 'flash_attn'
+flash_attn not installed, disabling Flash Attention
+No module named 'flash_attn'
+flash_attn varlen/bert_padding not available, disabling varlen attention
+deflt214_tgp  median 21.4 ms  p10 20.9  p90 22.5  first calls 19.7 s  load 17.5 s  vram 2.28 GB  dynamo {"stats": {"calls_captured": 3394, "unique_graphs": 2}}

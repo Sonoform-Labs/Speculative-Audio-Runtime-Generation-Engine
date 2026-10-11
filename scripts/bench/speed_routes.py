@@ -40,6 +40,15 @@ ARMS = {
                      "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True},
     "deflt214_tg": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True},
+    "deflt214_pre": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True,
+                     "decode_prefix": True},
+    "deflt214_tgp": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True,
+                     "triton_proj": True},
+    "deflt214_both": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                      "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True,
+                      "triton_proj": True, "decode_prefix": True},
 }
 
 

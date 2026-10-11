@@ -62,7 +62,8 @@ class StableAudio3Generator(Generator):
                  compile_mode: str | None = None, compile_decode: bool = False, cfg_interval=None,
                  graph_decode: bool = False, hoist_rope: bool = False, skip_first_step: bool = False,
                  fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False,
-                 unfuse_bias: bool = False, triton_gemm: bool = False, **_):
+                 unfuse_bias: bool = False, triton_gemm: bool = False, decode_prefix: bool = False,
+                 decode_margin_frames: int = 2, triton_proj: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -93,6 +94,9 @@ class StableAudio3Generator(Generator):
         self.fast_load = bool(fast_load)
         self.unfuse_bias = bool(unfuse_bias)
         self.triton_gemm = bool(triton_gemm)
+        self.decode_prefix = bool(decode_prefix)
+        self.decode_margin_frames = max(0, int(decode_margin_frames))
+        self.triton_proj = bool(triton_proj)
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
@@ -127,12 +131,18 @@ class StableAudio3Generator(Generator):
             sr = cfg.get("sample_rate")
         if sr:
             self.sample_rate = int(sr)
+        keep = None
+        if self.decode_prefix:
+            ratio = getattr(getattr(self._model.model, "pretransform", None), "downsampling_ratio", None)
+            if ratio:
+                keep = int(np.ceil(self.gen_duration_s * self.sample_rate / ratio)) + self.decode_margin_frames
         if self.fast:
             try:
                 from .sa3_fast import Accelerator
                 self._fast = Accelerator(self._model, compile_mode=self.compile_mode,
                                          compile_decode=self.compile_decode, graph_decode=self.graph_decode,
-                                         graph_text=self.graph_text, triton_gemm=self.triton_gemm and acc16)
+                                         graph_text=self.graph_text, triton_gemm=self.triton_gemm and acc16,
+                                         decode_keep_frames=keep, triton_proj=self.triton_proj)
             except Exception:
                 self._fast = None
         if self._fast is not None and self.hoist_prompts is not None:

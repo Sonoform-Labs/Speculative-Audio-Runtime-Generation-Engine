@@ -4,7 +4,9 @@ from typing import Optional
 
 import torch
 
-CONFIGS = {(1024, 8192): (64, 256, 32, 4, 3), (1024, 3072): (64, 128, 32, 4, 3), (4096, 1024): (64, 128, 64, 4, 4)}
+CONFIGS = {(1024, 8192): (64, 256, 32, 4, 3), (1024, 3072): (64, 128, 32, 4, 3), (4096, 1024): (64, 128, 64, 4, 4),
+           (1024, 1024): (64, 128, 64, 8, 4)}
+DEFAULT_SHAPES = ((1024, 8192), (1024, 3072), (4096, 1024))
 
 _OP = None
 
@@ -76,7 +78,7 @@ class TritonLinear:
         return y.reshape(*x.shape[:-1], m.out_features)
 
 
-def install_triton_gemm(root) -> list:
+def install_triton_gemm(root, shapes=DEFAULT_SHAPES) -> list:
     if not torch.cuda.is_available():
         return []
     try:
@@ -85,7 +87,7 @@ def install_triton_gemm(root) -> list:
         return []
     out = []
     for mod in root.modules():
-        if not isinstance(mod, torch.nn.Linear) or (mod.in_features, mod.out_features) not in CONFIGS:
+        if not isinstance(mod, torch.nn.Linear) or (mod.in_features, mod.out_features) not in shapes:
             continue
         if isinstance(mod.forward, TritonLinear):
             continue

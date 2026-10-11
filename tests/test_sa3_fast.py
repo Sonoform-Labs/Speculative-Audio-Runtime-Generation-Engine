@@ -129,3 +129,19 @@ def test_triton_linear_falls_back_for_cpu_and_other_shapes():
     lin.half()
     xh = x.half()
     assert torch.equal(t(xh), torch.nn.functional.linear(xh, lin.weight, lin.bias))
+
+
+def test_prefix_decode_keeps_the_shape_and_zeroes_the_padding():
+    from sarge.generators.sa3_fast import PrefixDecode
+
+    def dec(z, chunked=None):
+        return z.mean(1, keepdim=True).repeat_interleave(4, dim=-1).repeat(1, 2, 1)
+
+    p = PrefixDecode(dec, keep_frames=3, ratio=4)
+    z = torch.randn(1, 8, 5)
+    y = p(z, chunked=True)
+    full = dec(z)
+    assert y.shape == full.shape and p.cut == 1
+    assert torch.allclose(y[..., :12], full[..., :12]) and torch.count_nonzero(y[..., 12:]) == 0
+    short = torch.randn(1, 8, 3)
+    assert torch.equal(p(short), dec(short)) and p.cut == 1

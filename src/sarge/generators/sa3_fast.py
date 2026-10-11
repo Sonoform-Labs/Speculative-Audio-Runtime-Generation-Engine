@@ -149,6 +149,22 @@ class CondCache:
         return cond, merged
 
 
+class PrefixDecode:
+    def __init__(self, orig, keep_frames: int, ratio: int):
+        self.orig = orig
+        self.keep = int(keep_frames)
+        self.ratio = int(ratio)
+        self.cut = 0
+
+    def __call__(self, z, chunked=None, **kw):
+        if kw or not torch.is_tensor(z) or z.dim() != 3 or z.shape[-1] <= self.keep:
+            return self.orig(z, chunked=chunked, **kw)
+        n = z.shape[-1]
+        y = self.orig(z[..., :self.keep].contiguous(), chunked=chunked)
+        self.cut += 1
+        return torch.nn.functional.pad(y, (0, n * self.ratio - y.shape[-1]))
+
+
 class GraphedText:
     def __init__(self, orig):
         self.orig = orig
@@ -217,7 +233,7 @@ def install_text_graph(cdm) -> list:
 class Accelerator:
     def __init__(self, sam, graph: bool = True, max_prompts: int = 256, compile_mode: str | None = None,
                  compile_decode: bool = False, graph_decode: bool = False, graph_text: bool = False,
-                 triton_gemm: bool = False):
+                 triton_gemm: bool = False, decode_keep_frames: int | None = None, triton_proj: bool = False):
         import stable_audio_3.models.dit as dit_mod
         self.sam = sam
         self.dit = sam.dit.model
@@ -228,8 +244,9 @@ class Accelerator:
         self.compile_mode = compile_mode
         self.triton_linears = []
         if triton_gemm and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
-            from .sa3_gemm import install_triton_gemm
-            self.triton_linears = install_triton_gemm(self.dit)
+            from .sa3_gemm import CONFIGS, DEFAULT_SHAPES, install_triton_gemm
+            shapes = tuple(CONFIGS) if triton_proj else DEFAULT_SHAPES
+            self.triton_linears = install_triton_gemm(self.dit, shapes)
         fwd = self.dit._forward
         if compile_mode:
             fwd = torch.compile(fwd, mode=compile_mode, dynamic=False)
@@ -241,13 +258,18 @@ class Accelerator:
             self.dit._forward = fwd
         self.decode_graph = None
         pt = getattr(sam.model, "pretransform", None)
-        if pt is not None and (compile_decode or graph_decode):
+        self.prefix = None
+        if pt is not None and (compile_decode or graph_decode or decode_keep_frames):
             dec = pt.decode
             if compile_decode:
                 dec = torch.compile(dec, mode=compile_mode or "default", dynamic=False)
             if graph_decode and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
                 self.decode_graph = GraphedDecode(dec)
                 dec = self.decode_graph
+            ratio = getattr(pt, "downsampling_ratio", None)
+            if decode_keep_frames and ratio:
+                self.prefix = PrefixDecode(dec, decode_keep_frames, ratio)
+                dec = self.prefix
             pt.decode = dec
         self.text_graphs = []
         if graph_text and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
@@ -280,4 +302,5 @@ class Accelerator:
                 "text_graphs": sum(t.captured for t in self.text_graphs),
                 "text_replays": sum(t.replays for t in self.text_graphs),
                 "text_failures": sum(len(t.failed) for t in self.text_graphs),
-                "triton_linears": len(self.triton_linears)}
+                "triton_linears": len(self.triton_linears),
+                "prefix_decodes": self.prefix.cut if self.prefix else 0}

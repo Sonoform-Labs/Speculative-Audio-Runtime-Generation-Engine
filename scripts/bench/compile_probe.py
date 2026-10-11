@@ -40,9 +40,15 @@ ARMS = {
                      "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True},
     "deflt214_tg": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True},
+    "deflt214_pre": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True,
+                     "decode_prefix": True},
+    "deflt214_tgp": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True,
+                     "triton_proj": True},
 }
 COMPARE = ["c_default", "c_default_dec", "c_maxat", "c_maxat_dec", "gdec", "rope", "skip1", "comp_full",
-           "comp_full_skip1", "deflt26", "deflt214", "deflt214_acc", "deflt214_unf", "deflt214_tg"]
+           "comp_full_skip1", "deflt26", "deflt214", "deflt214_acc", "deflt214_unf", "deflt214_tg", "deflt214_pre", "deflt214_tgp"]
 
 
 def parse(argv):
