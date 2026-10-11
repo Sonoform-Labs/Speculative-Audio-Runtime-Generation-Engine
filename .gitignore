@@ -7,7 +7,6 @@ dist/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
-.venv/
 venv/
 env/
 .env
@@ -28,3 +27,6 @@ scripts/train/*.log
 scripts/train/*.err
 scripts/bench/*.err
 scripts/train/*_progress.txt
+.venv*/
+scripts/bench/*_progress.txt
+scripts/bench/*.bak

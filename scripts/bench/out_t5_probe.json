@@ -1,0 +1,39 @@
+{
+ "conditioners": {
+  "prompt": "T5GemmaConditioner",
+  "seconds_total": "NumberConditioner"
+ },
+ "t5_dtype": "torch.bfloat16",
+ "t5_params_m": 281.580288,
+ "proj_out": "Identity()",
+ "torch": "2.14.1+cu126",
+ "transformers": "5.8.1",
+ "tokens": [
+  18,
+  18,
+  18,
+  18,
+  18,
+  18,
+  18,
+  18,
+  18,
+  18,
+  19,
+  19
+ ],
+ "eager_ms": 14.824380000027304,
+ "tokenize_ms": 0.21055500001239125,
+ "conditioner_ms": 16.05653999995411,
+ "graph_ms": 4.585900000029142,
+ "graph_maxdiff": 0.0,
+ "compile_default_first_s": 12.47644500000024,
+ "compile_default_ms": 3.286709999974846,
+ "compile_default_maxdiff": 1.0390625,
+ "compile_reduce-overhead_first_s": 8.182686099999955,
+ "compile_reduce-overhead_ms": 14.763205000008384,
+ "compile_reduce-overhead_maxdiff": 1.0390625,
+ "half_ms": 16.223709999940183,
+ "half_maxdiff": 65.25,
+ "ref_absmax": 51.5
+}

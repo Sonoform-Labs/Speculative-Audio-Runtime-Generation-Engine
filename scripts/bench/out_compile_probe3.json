@@ -1,0 +1,30 @@
+{
+ "base_ms": 52.53685000002406,
+ "seed_logmel_db": 4.229673938166037,
+ "arms": {
+  "deflt26": {
+   "median_ms": 25.422050000088348,
+   "first_call_total_s": 24.90344039999991,
+   "max_abs_median": 0.18411815911531448,
+   "max_abs_max": 1.8928800821304321,
+   "logmel_db_median": 1.0419132952112773,
+   "ratio_to_seed": 0.24633418803508172
+  },
+  "deflt214": {
+   "median_ms": 25.49579999981688,
+   "first_call_total_s": 75.17869349999955,
+   "max_abs_median": 0.5542161166667938,
+   "max_abs_max": 1.9371623992919922,
+   "logmel_db_median": 1.090063931374763,
+   "ratio_to_seed": 0.2577181946671305
+  },
+  "deflt214_acc": {
+   "median_ms": 22.491700000045967,
+   "first_call_total_s": 18.017995600000177,
+   "max_abs_median": 0.5702688694000244,
+   "max_abs_max": 1.8935209512710571,
+   "logmel_db_median": 1.159450250331712,
+   "ratio_to_seed": 0.2741228442858276
+  }
+ }
+}

@@ -32,6 +32,10 @@ ARMS = {
                    "skip_first_step": True},
     "full_skip1_cfgfirst": {"compile_mode": "default", "compile_decode": True, "graph_decode": True,
                             "hoist_rope": True, "skip_first_step": True, "cfg_interval": (0.9, 1.0)},
+    "medium_s3": {"model_name": "medium"},
+    "medium_s8": {"model_name": "medium", "steps": 8, "detail_steps": 8},
+    "deflt214_acc": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                     "skip_first_step": True, "fp16_accumulation": True},
 }
 
 

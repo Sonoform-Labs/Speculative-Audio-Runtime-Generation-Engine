@@ -149,9 +149,74 @@ class CondCache:
         return cond, merged
 
 
+class GraphedText:
+    def __init__(self, orig):
+        self.orig = orig
+        self.pool = torch.cuda.graph_pool_handle() if torch.cuda.is_available() else None
+        self.entries = {}
+        self.failed = {}
+        self.captured = 0
+        self.replays = 0
+
+    def __getattr__(self, name):
+        return getattr(self.orig, name)
+
+    def _capture(self, ids, mask):
+        sids = ids.clone()
+        smask = mask.clone()
+        side = torch.cuda.Stream()
+        side.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(side):
+            for _ in range(2):
+                self.orig(input_ids=sids, attention_mask=smask)
+        torch.cuda.current_stream().wait_stream(side)
+        graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(graph, pool=self.pool, capture_error_mode="thread_local"):
+            out = self.orig(input_ids=sids, attention_mask=smask)["last_hidden_state"]
+        return {"graph": graph, "ids": sids, "mask": smask, "out": out}
+
+    def __call__(self, input_ids=None, attention_mask=None, **kw):
+        if (kw or not torch.is_tensor(input_ids) or not torch.is_tensor(attention_mask) or not input_ids.is_cuda
+                or self.pool is None):
+            return self.orig(input_ids=input_ids, attention_mask=attention_mask, **kw)
+        key = (tuple(input_ids.shape), str(input_ids.dtype), tuple(attention_mask.shape), str(attention_mask.dtype))
+        if key in self.failed:
+            return self.orig(input_ids=input_ids, attention_mask=attention_mask)
+        ent = self.entries.get(key)
+        if ent is None:
+            if bool(attention_mask.all()):
+                return self.orig(input_ids=input_ids, attention_mask=attention_mask)
+            try:
+                ent = self._capture(input_ids, attention_mask)
+            except Exception as e:
+                self.failed[key] = repr(e)[:400]
+                torch.cuda.synchronize()
+                return self.orig(input_ids=input_ids, attention_mask=attention_mask)
+            self.entries[key] = ent
+            self.captured += 1
+        ent["ids"].copy_(input_ids)
+        ent["mask"].copy_(attention_mask)
+        ent["graph"].replay()
+        self.replays += 1
+        return {"last_hidden_state": ent["out"].clone()}
+
+
+def install_text_graph(cdm) -> list:
+    out = []
+    conds = getattr(getattr(cdm, "conditioner", None), "conditioners", None) or {}
+    for c in conds.values():
+        inner = vars(c).get("model")
+        if inner is None or isinstance(inner, GraphedText) or not hasattr(c, "tokenizer"):
+            continue
+        g = GraphedText(inner)
+        c.__dict__["model"] = g
+        out.append(g)
+    return out
+
+
 class Accelerator:
     def __init__(self, sam, graph: bool = True, max_prompts: int = 256, compile_mode: str | None = None,
-                 compile_decode: bool = False, graph_decode: bool = False):
+                 compile_decode: bool = False, graph_decode: bool = False, graph_text: bool = False):
         import stable_audio_3.models.dit as dit_mod
         self.sam = sam
         self.dit = sam.dit.model
@@ -179,6 +244,9 @@ class Accelerator:
                 self.decode_graph = GraphedDecode(dec)
                 dec = self.decode_graph
             pt.decode = dec
+        self.text_graphs = []
+        if graph_text and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
+            self.text_graphs = install_text_graph(sam.model)
 
     def kwargs(self, prompts, seconds, negative_prompt=None):
         kw = {"disable_tqdm": True, "use_checkpointing": False}
@@ -203,4 +271,7 @@ class Accelerator:
                 "eager": g.eager if g else 0, "capture_failures": len(g.failed) if g else 0,
                 "decode_graphs": self.decode_graph.captured if self.decode_graph else 0,
                 "decode_replays": self.decode_graph.replays if self.decode_graph else 0,
-                "decode_failures": len(self.decode_graph.failed) if self.decode_graph else 0}
+                "decode_failures": len(self.decode_graph.failed) if self.decode_graph else 0,
+                "text_graphs": sum(t.captured for t in self.text_graphs),
+                "text_replays": sum(t.replays for t in self.text_graphs),
+                "text_failures": sum(len(t.failed) for t in self.text_graphs)}

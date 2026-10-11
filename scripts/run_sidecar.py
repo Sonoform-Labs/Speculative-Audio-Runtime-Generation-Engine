@@ -1,15 +1,22 @@
 import _bootstrap
 
 import argparse
+import importlib.metadata
 import os
 import threading
 
-os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR",
-                      os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cache", "inductor"))
+_CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cache")
+try:
+    _TORCH = importlib.metadata.version("torch").split("+")[0]
+except importlib.metadata.PackageNotFoundError:
+    _TORCH = "none"
+os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", os.path.join(_CACHE, "inductor" if _TORCH.startswith("2.6") else "inductor-" + _TORCH))
+os.environ.setdefault("TRITON_CACHE_DIR", os.path.join(_CACHE, "triton-" + _TORCH))
 
 from sarge.sidecar import serve
 
-COMPILED = {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True}
+COMPILED = {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+            "fp16_accumulation": True, "graph_text": True}
 TIERS = {
     "quality": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
     "default": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},

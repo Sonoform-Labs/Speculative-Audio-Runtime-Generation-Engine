@@ -1,0 +1,292 @@
+{
+ "warm_ms": 19237.360800000715,
+ "miss_median_ms": 41.15170000022772,
+ "hit_median_ms": 23.261299999830953,
+ "encode_median_ms": 14.581799999632494,
+ "rows": [
+  {
+   "key": "shoot|pistol|normal|default",
+   "miss_ms": 42.628700000022945,
+   "hit_ms": 23.88909999990574,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "reload|rifle|normal|default",
+   "miss_ms": 41.4269000002605,
+   "hit_ms": 23.78430000044318,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "equip|rifle|normal|default",
+   "miss_ms": 41.53610000048502,
+   "hit_ms": 23.755399999572546,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "empty_click|pistol|normal|default",
+   "miss_ms": 41.30929999973887,
+   "hit_ms": 24.093799999718613,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "explosion|grenade|normal|default",
+   "miss_ms": 43.21600000002945,
+   "hit_ms": 23.539700000583252,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "swing|sword|normal|default",
+   "miss_ms": 41.55369999989489,
+   "hit_ms": 23.220799999762676,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "open|door|normal|default",
+   "miss_ms": 41.181600000527396,
+   "hit_ms": 23.227600000609527,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "slam|door|normal|default",
+   "miss_ms": 41.15170000022772,
+   "hit_ms": 23.13300000059826,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "break|window|normal|default",
+   "miss_ms": 40.769299999737996,
+   "hit_ms": 23.22970000022906,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "click|button|normal|default",
+   "miss_ms": 40.92630000013742,
+   "hit_ms": 23.25970000038069,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "cast|fire_spell|normal|default",
+   "miss_ms": 41.00349999953323,
+   "hit_ms": 23.341400000390422,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "punch|body|normal|default",
+   "miss_ms": 42.43570000016916,
+   "hit_ms": 23.664300000746152,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "horn|truck|normal|default",
+   "miss_ms": 41.326000000481145,
+   "hit_ms": 23.344100000031176,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "bark|dog|normal|default",
+   "miss_ms": 40.94290000011824,
+   "hit_ms": 23.261299999830953,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|wood|normal|default",
+   "miss_ms": 40.94699999950535,
+   "hit_ms": 23.24769999995624,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|stone|normal|default",
+   "miss_ms": 40.81930000029388,
+   "hit_ms": 23.2653000002756,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|grass|normal|default",
+   "miss_ms": 40.832399999999325,
+   "hit_ms": 23.203100000500854,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|metal|normal|default",
+   "miss_ms": 40.864800000235846,
+   "hit_ms": 23.188900000604917,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|gravel|normal|default",
+   "miss_ms": 40.75399999965157,
+   "hit_ms": 23.218199999973876,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  }
+ ],
+ "config": {
+  "sampler_type": "euler",
+  "steps": 3,
+  "compile_mode": "default",
+  "compile_decode": true,
+  "graph_decode": true,
+  "hoist_rope": true,
+  "skip_first_step": true,
+  "fp16_accumulation": true
+ },
+ "torch": "2.14.1+cu126"
+}

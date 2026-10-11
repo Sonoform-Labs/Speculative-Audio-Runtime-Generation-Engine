@@ -1,0 +1,8 @@
+[affinity] system mask 0xFFFFFF (24 cores)
+[affinity] before      0xEFF
+[affinity] after       0xEFF -> cores [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11]
+[affinity] core 8 excluded OK
+deflt26            25.4 ms  first  24.9 s  max|diff| med 0.1841 max 1.8929  log-mel 1.042 dB  ratio to a new seed 0.246
+deflt214           25.5 ms  first  75.2 s  max|diff| med 0.5542 max 1.9372  log-mel 1.090 dB  ratio to a new seed 0.258
+deflt214_acc       22.5 ms  first  18.0 s  max|diff| med 0.5703 max 1.8935  log-mel 1.159 dB  ratio to a new seed 0.274
+base               52.5 ms  seed-to-seed log-mel 4.230 dB

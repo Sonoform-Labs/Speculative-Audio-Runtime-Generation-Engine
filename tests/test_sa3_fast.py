@@ -50,3 +50,48 @@ def test_batches_bypass_the_cache_so_they_stay_bit_exact():
     kw1 = acc.kwargs(["a"], 1.0)
     assert "prompt" not in kw1 and kw1["conditioning"] == [{"prompt": "a", "seconds_total": 1.0}]
     assert kw1["use_checkpointing"] is False and kw1["disable_tqdm"] is True
+
+
+class FakeT5:
+    def __init__(self):
+        self.calls = 0
+        self.dtype = torch.bfloat16
+
+    def __call__(self, input_ids=None, attention_mask=None):
+        self.calls += 1
+        return {"last_hidden_state": input_ids.float().unsqueeze(-1) * attention_mask.unsqueeze(-1)}
+
+
+class FakeTextConditioner:
+    def __init__(self):
+        self.tokenizer = object()
+        self.__dict__["model"] = FakeT5()
+
+
+class FakeNumberConditioner:
+    pass
+
+
+class FakeMulti:
+    def __init__(self):
+        self.conditioners = {"prompt": FakeTextConditioner(), "seconds_total": FakeNumberConditioner()}
+
+
+class FakeModel:
+    def __init__(self):
+        self.conditioner = FakeMulti()
+
+
+def test_text_graph_wraps_only_the_text_encoder_and_falls_back_off_gpu():
+    from sarge.generators.sa3_fast import GraphedText, install_text_graph
+    m = FakeModel()
+    inner = m.conditioner.conditioners["prompt"].model
+    wrapped = install_text_graph(m)
+    assert len(wrapped) == 1 and isinstance(m.conditioner.conditioners["prompt"].model, GraphedText)
+    assert install_text_graph(m) == []
+    g = m.conditioner.conditioners["prompt"].model
+    assert g.dtype == torch.bfloat16
+    ids = torch.tensor([[3, 4, 0]])
+    mask = torch.tensor([[True, True, False]])
+    out = g(input_ids=ids, attention_mask=mask)["last_hidden_state"]
+    assert inner.calls == 1 and g.captured == 0 and out[0, :, 0].tolist() == [3.0, 4.0, 0.0]

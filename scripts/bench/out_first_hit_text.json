@@ -1,0 +1,319 @@
+{
+ "warm_ms": 17760.644899999534,
+ "miss_median_ms": 31.654899999921327,
+ "hit_median_ms": 23.310099999434897,
+ "encode_median_ms": 5.395299999690906,
+ "rows": [
+  {
+   "key": "shoot|pistol|normal|default",
+   "miss_ms": 191.48549999954412,
+   "hit_ms": 25.203199999850767,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "reload|rifle|normal|default",
+   "miss_ms": 32.87010000076407,
+   "hit_ms": 23.92729999974108,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "equip|rifle|normal|default",
+   "miss_ms": 32.534400000258756,
+   "hit_ms": 23.80749999974796,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "empty_click|pistol|normal|default",
+   "miss_ms": 32.275900000058755,
+   "hit_ms": 23.691299999882176,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "explosion|grenade|normal|default",
+   "miss_ms": 31.77170000071783,
+   "hit_ms": 23.207299999739917,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "swing|sword|normal|default",
+   "miss_ms": 62.426399999822024,
+   "hit_ms": 23.674799999753304,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "open|door|normal|default",
+   "miss_ms": 32.693099999960396,
+   "hit_ms": 23.420500000611355,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "cached": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "slam|door|normal|default",
+   "miss_ms": 31.83519999947748,
+   "hit_ms": 23.28540000053181,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "break|window|normal|default",
+   "miss_ms": 31.654899999921327,
+   "hit_ms": 23.230400000102236,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "click|button|normal|default",
+   "miss_ms": 31.58779999921535,
+   "hit_ms": 23.23400000022957,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "cast|fire_spell|normal|default",
+   "miss_ms": 31.516600000031758,
+   "hit_ms": 23.25509999991482,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "punch|body|normal|default",
+   "miss_ms": 31.60660000048665,
+   "hit_ms": 23.299999999835563,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "horn|truck|normal|default",
+   "miss_ms": 31.534100000499166,
+   "hit_ms": 23.24179999959597,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "bark|dog|normal|default",
+   "miss_ms": 31.474399999751768,
+   "hit_ms": 23.29749999989872,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|wood|normal|default",
+   "miss_ms": 31.59140000025218,
+   "hit_ms": 23.32280000064202,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|stone|normal|default",
+   "miss_ms": 32.24389999923005,
+   "hit_ms": 23.53789999961009,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|grass|normal|default",
+   "miss_ms": 31.613799999831826,
+   "hit_ms": 23.2932000008077,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|metal|normal|default",
+   "miss_ms": 31.559099999867612,
+   "hit_ms": 23.317999999562744,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  },
+  {
+   "key": "footstep|gravel|normal|default",
+   "miss_ms": 31.577499999912106,
+   "hit_ms": 23.310099999434897,
+   "cond_miss": 1,
+   "moved": {
+    "cond_misses": 1,
+    "decode_replays": 1,
+    "text_replays": 1,
+    "hoisted": 2,
+    "fills": 1,
+    "hoist_replays": 2,
+    "static_checks": 1
+   }
+  }
+ ],
+ "config": {
+  "sampler_type": "euler",
+  "steps": 3,
+  "compile_mode": "default",
+  "compile_decode": true,
+  "graph_decode": true,
+  "hoist_rope": true,
+  "skip_first_step": true,
+  "fp16_accumulation": true,
+  "graph_text": true
+ },
+ "torch": "2.14.1+cu126",
+ "identical_clips": 6,
+ "max_abs_diff": 0.0,
+ "stats": {
+  "text_graphs": 1,
+  "text_replays": 30,
+  "text_failures": 0
+ }
+}
