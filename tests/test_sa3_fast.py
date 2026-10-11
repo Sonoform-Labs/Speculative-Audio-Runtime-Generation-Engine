@@ -113,3 +113,19 @@ def test_skip_random_init_restores_the_init_functions():
         t = torch.zeros(3)
         assert init.kaiming_uniform_(t) is t and t.abs().sum() == 0
     assert init.kaiming_uniform_ is before
+
+
+def test_triton_linear_falls_back_for_cpu_and_other_shapes():
+    from sarge.generators.sa3_gemm import CONFIGS, TritonLinear
+
+    def op(*a):
+        raise AssertionError("the triton op ran on a cpu tensor")
+
+    lin = torch.nn.Linear(1024, 3072)
+    assert (1024, 3072) in CONFIGS
+    t = TritonLinear(lin, op)
+    x = torch.randn(2, 5, 1024)
+    assert torch.equal(t(x), lin(x))
+    lin.half()
+    xh = x.half()
+    assert torch.equal(t(xh), torch.nn.functional.linear(xh, lin.weight, lin.bias))

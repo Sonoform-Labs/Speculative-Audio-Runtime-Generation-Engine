@@ -36,6 +36,10 @@ ARMS = {
     "medium_s8": {"model_name": "medium", "steps": 8, "detail_steps": 8},
     "deflt214_acc": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
                      "skip_first_step": True, "fp16_accumulation": True},
+    "deflt214_unf": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True},
+    "deflt214_tg": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                    "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True},
 }
 
 

@@ -216,7 +216,8 @@ def install_text_graph(cdm) -> list:
 
 class Accelerator:
     def __init__(self, sam, graph: bool = True, max_prompts: int = 256, compile_mode: str | None = None,
-                 compile_decode: bool = False, graph_decode: bool = False, graph_text: bool = False):
+                 compile_decode: bool = False, graph_decode: bool = False, graph_text: bool = False,
+                 triton_gemm: bool = False):
         import stable_audio_3.models.dit as dit_mod
         self.sam = sam
         self.dit = sam.dit.model
@@ -225,6 +226,10 @@ class Accelerator:
         if self.lora_free:
             dit_mod.has_lora = lambda model: False
         self.compile_mode = compile_mode
+        self.triton_linears = []
+        if triton_gemm and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
+            from .sa3_gemm import install_triton_gemm
+            self.triton_linears = install_triton_gemm(self.dit)
         fwd = self.dit._forward
         if compile_mode:
             fwd = torch.compile(fwd, mode=compile_mode, dynamic=False)
@@ -274,4 +279,5 @@ class Accelerator:
                 "decode_failures": len(self.decode_graph.failed) if self.decode_graph else 0,
                 "text_graphs": sum(t.captured for t in self.text_graphs),
                 "text_replays": sum(t.replays for t in self.text_graphs),
-                "text_failures": sum(len(t.failed) for t in self.text_graphs)}
+                "text_failures": sum(len(t.failed) for t in self.text_graphs),
+                "triton_linears": len(self.triton_linears)}

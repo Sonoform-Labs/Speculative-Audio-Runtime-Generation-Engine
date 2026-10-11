@@ -7,13 +7,14 @@ import triton
 import triton.language as tl
 
 BENCH = os.path.dirname(os.path.abspath(__file__))
-SHAPES = {"qkv": (1024, 3072), "attn_out": (1024, 1024), "ff_in": (1024, 8192), "ff_out": (4096, 1024)}
+SHAPES = {"attn_out": (1024, 1024), "ff_in": (1024, 8192), "ff_out": (4096, 1024), "qkv": (1024, 3072)}
 PER_CLIP = {"qkv": 40, "attn_out": 120, "ff_in": 40, "ff_out": 40}
 
 
 @triton.jit
-def mm_kernel(a_ptr, b_ptr, c_ptr, M, N, K, sam, sak, sbk, sbn, scm, scn,
-              BM: tl.constexpr, BN: tl.constexpr, BK: tl.constexpr, GROUP: tl.constexpr, ACC16: tl.constexpr):
+def mm_kernel(a_ptr, b_ptr, c_ptr, bias_ptr, M, N, K, sam, sak, sbk, sbn, scm, scn,
+              BM: tl.constexpr, BN: tl.constexpr, BK: tl.constexpr, GROUP: tl.constexpr, ACC16: tl.constexpr,
+              HAS_BIAS: tl.constexpr):
     pid = tl.program_id(0)
     num_m = tl.cdiv(M, BM)
     num_n = tl.cdiv(N, BN)
@@ -41,29 +42,37 @@ def mm_kernel(a_ptr, b_ptr, c_ptr, M, N, K, sam, sak, sbk, sbn, scm, scn,
             acc = tl.dot(x, y, acc)
         a += BK * sak
         b += BK * sbk
+    out = acc.to(tl.float16)
+    if HAS_BIAS:
+        out += tl.load(bias_ptr + rn, mask=rn < N, other=0.0)[None, :]
     c = c_ptr + rm[:, None] * scm + rn[None, :] * scn
-    tl.store(c, acc.to(tl.float16), mask=(rm[:, None] < M) & (rn[None, :] < N))
+    tl.store(c, out, mask=(rm[:, None] < M) & (rn[None, :] < N))
 
 
-def tmm(x, wt, out, cfg, acc16=True):
+def tmm(x, w, out, cfg, acc16=True, bias=None):
     M, K = x.shape
-    N = wt.shape[1]
+    N = w.shape[0]
     bm, bn, bk, warps, stages = cfg
     grid = (triton.cdiv(M, bm) * triton.cdiv(N, bn),)
-    mm_kernel[grid](x, wt, out, M, N, K, x.stride(0), x.stride(1), wt.stride(0), wt.stride(1),
-                    out.stride(0), out.stride(1), BM=bm, BN=bn, BK=bk, GROUP=8, ACC16=acc16,
-                    num_warps=warps, num_stages=stages)
+    mm_kernel[grid](x, w, out, bias if bias is not None else out, M, N, K, x.stride(0), x.stride(1),
+                    w.stride(1), w.stride(0), out.stride(0), out.stride(1), BM=bm, BN=bn, BK=bk, GROUP=8,
+                    ACC16=acc16, HAS_BIAS=bias is not None, num_warps=warps, num_stages=stages)
     return out
 
 
-def bench(fn, n=200):
-    for _ in range(10):
+def bench(fn, n=100):
+    for _ in range(5):
         fn()
     torch.cuda.synchronize()
+    g = torch.cuda.CUDAGraph()
+    with torch.cuda.graph(g):
+        for _ in range(n):
+            fn()
     s, e = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+    g.replay()
+    torch.cuda.synchronize()
     s.record()
-    for _ in range(n):
-        fn()
+    g.replay()
     e.record()
     torch.cuda.synchronize()
     return s.elapsed_time(e) * 1000.0 / n
@@ -72,28 +81,28 @@ def bench(fn, n=200):
 def main():
     torch.backends.cuda.matmul.allow_fp16_accumulation = True
     M = 172
-    configs = [c for c in itertools.product((32, 64, 128), (64, 128, 256), (32, 64), (4, 8), (3, 4))
-               if not (c[0] == 128 and c[1] == 256)]
+    configs = [c for c in itertools.product((32, 48, 64, 128), (32, 64, 128, 256), (32, 64, 128), (2, 4, 8), (2, 3, 4, 5))
+               if c[0] * c[1] <= 128 * 128 and c[1] * c[2] <= 256 * 64 and not (c[0] == 48)]
     rep = {}
     total_cublas = total_triton = 0.0
     for name, (k, n) in SHAPES.items():
         x = torch.randn(M, k, device="cuda", dtype=torch.float16)
         w = torch.randn(n, k, device="cuda", dtype=torch.float16) * 0.02
-        wt = w.t().contiguous()
-        ref32 = (x.float() @ w.float().t())
-        cub = torch.nn.functional.linear(x, w)
-        t_cub = bench(lambda: torch.nn.functional.linear(x, w))
+        bias = torch.randn(n, device="cuda", dtype=torch.float16) * 0.1
+        ref32 = (x.float() @ w.float().t()) + bias.float()
+        cub = torch.nn.functional.linear(x, w, bias)
+        t_cub = bench(lambda: torch.nn.functional.linear(x, w, bias))
         out = torch.empty(M, n, device="cuda", dtype=torch.float16)
         best = None
         for cfg in configs:
             try:
-                tmm(x, wt, out, cfg)
-                us = bench(lambda: tmm(x, wt, out, cfg), 100)
+                tmm(x, w, out, cfg, bias=bias)
+                us = bench(lambda: tmm(x, w, out, cfg, bias=bias), 50)
             except Exception:
                 continue
             if best is None or us < best[0]:
                 best = (us, cfg)
-        tmm(x, wt, out, best[1])
+        tmm(x, w, out, best[1], bias=bias)
         err_t = float((out.float() - ref32).abs().max())
         err_c = float((cub.float() - ref32).abs().max())
         rep[name] = {"cublas_us": round(t_cub, 1), "triton_us": round(best[0], 1), "cfg": best[1],

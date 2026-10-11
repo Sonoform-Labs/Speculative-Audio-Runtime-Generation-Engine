@@ -1,0 +1,162 @@
+{
+ "gpu_ms_per_clip": 16.19923559999983,
+ "groups_ms_per_clip": {
+  "other": 7.415393399999953,
+  "matmul": 5.712063799999946,
+  "triton fused": 2.4293997000000025,
+  "copy": 0.3706622999998983,
+  "attention": 0.27171640000003455
+ },
+ "top": [
+  {
+   "name": "mm16",
+   "ms_per_clip": 6.753638099999994,
+   "calls_per_clip": 120.0
+  },
+  {
+   "name": "ampere_h16816gemm_128x64_ldg8_stages_32x6_tn",
+   "ms_per_clip": 2.171674299999954,
+   "calls_per_clip": 124.0
+  },
+  {
+   "name": "_Z39fmha_cutlassF_f16_aligned_64x64_rf_sm80N22PyTorchMemEffAttention15AttentionKernelIN7cutlass6half_tENS1_4arch4Sm80ELb1ELi64ELi64ELi64ELb1ELb1EE6ParamsE",
+   "ms_per_clip": 1.7914045000000054,
+   "calls_per_clip": 92.0
+  },
+  {
+   "name": "ampere_h1688gemm_128x128_ldg8_stages_32x1_tn",
+   "ms_per_clip": 1.079935399999989,
+   "calls_per_clip": 12.0
+  },
+  {
+   "name": "triton_poi_fused_mul_silu_split_view_15",
+   "ms_per_clip": 0.4265991999999961,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "ampere_h1688gemm_256x64_ldg8_stages_32x1_tn",
+   "ms_per_clip": 0.41700119999999696,
+   "calls_per_clip": 12.0
+  },
+  {
+   "name": "Memcpy DtoD (Device -> Device)",
+   "ms_per_clip": 0.2460516999999487,
+   "calls_per_clip": 61.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_e057e813_16",
+   "ms_per_clip": 0.23100740000000825,
+   "calls_per_clip": 38.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm_permute_split_view_5",
+   "ms_per_clip": 0.2020556000000258,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_da2f9d77_14",
+   "ms_per_clip": 0.1944250999999741,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "_ZN2at6native18elementwise_kernelILi128ELi4EZNS0_22gpu_kernel_impl_nocastIZZZNS0_23direct_copy_kernel_cudaERNS_18TensorIteratorBaseEENKUlvE1_clEvENKUlvE8_clEvEU",
+   "ms_per_clip": 0.1909335999999953,
+   "calls_per_clip": 20.0
+  },
+  {
+   "name": "_ZN2at6native29vectorized_elementwise_kernelILi2ENS0_11FillFunctorIxEESt5arrayIPcLy1EELb0EEEviT0_T1_",
+   "ms_per_clip": 0.16492489999997734,
+   "calls_per_clip": 186.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__to_copy__unsafe_vi_cf404415_17",
+   "ms_per_clip": 0.15099679999999596,
+   "calls_per_clip": 38.0
+  },
+  {
+   "name": "_ZN7cutlass7Kernel2I58cutlass_80_wmma_tensorop_h161616gemm_16x16_128x2_tn_align8EEvNT_6ParamsE",
+   "ms_per_clip": 0.1349608000000024,
+   "calls_per_clip": 8.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__scaled_dot_product_e745ba14_10",
+   "ms_per_clip": 0.1322548000000029,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__scaled_dot_product_e745ba14_8",
+   "ms_per_clip": 0.12655790000004716,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_poi_fused__scaled_dot_product_efficient_atten_84242371_11",
+   "ms_per_clip": 0.11420960000002188,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__to_copy_cat_neg_pe_84949767_9",
+   "ms_per_clip": 0.10866879999998619,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_poi_fused_add_arange_cat_cos_div_mul_neg_perm_4bf8afe7_23",
+   "ms_per_clip": 0.10084570000000204,
+   "calls_per_clip": 6.0
+  },
+  {
+   "name": "Memset (Unknown)",
+   "ms_per_clip": 0.09885949999994936,
+   "calls_per_clip": 148.0
+  },
+  {
+   "name": "triton_poi_fused_add_arange_cat_cos_div_mul_neg_perm_4bf8afe7_5",
+   "ms_per_clip": 0.09619310000001824,
+   "calls_per_clip": 6.0
+  },
+  {
+   "name": "triton_poi_fused__fused_rms_norm__to_copy_cat_neg_pe_84949767_7",
+   "ms_per_clip": 0.09181899999998132,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "_ZN5cudnn19engines_precompiled16nchwToNhwcKernelI6__halfS2_fLb0ELb1EL21cudnnKernelDataType_t0EEEvNS0_18nchw2nhwc_params_tIT1_EEPKT_PT0_",
+   "ms_per_clip": 0.08728540000000029,
+   "calls_per_clip": 2.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm__scaled_dot_product_cafa21c5_13",
+   "ms_per_clip": 0.07310970000001854,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "sm80_xmma_fprop_implicit_gemm_f16f16_f16f32_f32_nhwckrsc_nhwc_tilesize64x32x64_stage5_warpsize2x2x1_g1_tensor16x8x16_execute_kernel__5x_cudnn",
+   "ms_per_clip": 0.0604171999999955,
+   "calls_per_clip": 1.0
+  },
+  {
+   "name": "triton_per_fused__fused_rms_norm_permute_split_view_6",
+   "ms_per_clip": 0.05985109999998567,
+   "calls_per_clip": 40.0
+  },
+  {
+   "name": "triton_poi_fused_addmm_mul_silu_split_view_29",
+   "ms_per_clip": 0.04854630000000252,
+   "calls_per_clip": 3.0
+  },
+  {
+   "name": "triton_poi_fused_addmm_mul_silu_split_view_13",
+   "ms_per_clip": 0.04242830000000722,
+   "calls_per_clip": 3.0
+  },
+  {
+   "name": "triton_poi_fused__scaled_dot_product_efficient_atten_6572969b_24",
+   "ms_per_clip": 0.042239599999998975,
+   "calls_per_clip": 6.0
+  },
+  {
+   "name": "triton_poi_fused__scaled_dot_product_efficient_atten_6572969b_25",
+   "ms_per_clip": 0.04013120000000163,
+   "calls_per_clip": 6.0
+  }
+ ]
+}

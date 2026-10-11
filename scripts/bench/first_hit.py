@@ -20,7 +20,7 @@ from sarge.types import CacheKey
 
 ROOT = os.path.dirname(os.path.dirname(BENCH))
 CFG = {"sampler_type": "euler", "steps": 3, "compile_mode": "default", "compile_decode": True,
-       "graph_decode": True, "hoist_rope": True, "skip_first_step": True, "fp16_accumulation": True}
+       "graph_decode": True, "hoist_rope": True, "skip_first_step": True, "fp16_accumulation": True, "fast_load": True, "unfuse_bias": "--tg" in sys.argv, "triton_gemm": "--tg" in sys.argv}
 
 
 def timed(fn):
@@ -74,7 +74,7 @@ def main(argv=None):
         rep["stats"] = {k: v for k, v in g.fast_stats().items() if k.startswith("text")}
         print("graph on vs off: %d of 6 clips identical, max diff %.3g, %s" % (
             rep["identical_clips"], rep["max_abs_diff"], rep["stats"]), flush=True)
-    name = "out_first_hit_text.json" if cfg["graph_text"] else "out_first_hit.json"
+    name = "out_first_hit%s%s.json" % ("_text" if cfg["graph_text"] else "", "_tg" if cfg["triton_gemm"] else "")
     json.dump(rep, open(os.path.join(BENCH, name), "w"), indent=1)
     return 0
 

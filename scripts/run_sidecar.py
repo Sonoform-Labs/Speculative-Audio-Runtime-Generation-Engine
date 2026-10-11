@@ -16,13 +16,13 @@ os.environ.setdefault("TRITON_CACHE_DIR", os.path.join(_CACHE, "triton-" + _TORC
 from sarge.sidecar import serve
 
 COMPILED = {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
-            "fp16_accumulation": True, "graph_text": True}
+            "fp16_accumulation": True, "graph_text": True, "unfuse_bias": True, "triton_gemm": True}
 TIERS = {
     "quality": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
     "default": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
     "fast":    {"sampler_type": "euler", "steps": 3, "skip_first_step": True, "cfg_interval": (0.9, 1.0), **COMPILED},
 }
-TIER_COST_MS = {"quality": 32.0, "default": 32.0, "fast": 28.0}
+TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
 
 
 def main(argv=None) -> int:
@@ -53,6 +53,9 @@ def main(argv=None) -> int:
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
+    ap.add_argument("--no-triton-gemm", action="store_true",
+                    help="keep cublas with the bias fused for every DiT linear; the default swaps three shapes to an "
+                         "fp16-accumulating triton gemm on pytorch 2.7+, judged equal, about 3.5 ms a clip faster")
     ap.add_argument("--no-skip-first", action="store_true",
                     help="run all 3 euler steps from t=1.0; the default drops the t=1.0 step, judged equal on held-out refs")
     ap.add_argument("--realtime", action="store_true",
@@ -69,6 +72,9 @@ def main(argv=None) -> int:
     if args.no_compile:
         for k in COMPILED:
             gen_kwargs.pop(k, None)
+    if args.no_triton_gemm:
+        gen_kwargs.pop("unfuse_bias", None)
+        gen_kwargs.pop("triton_gemm", None)
     if args.no_skip_first:
         gen_kwargs.pop("skip_first_step", None)
     sampler, steps = gen_kwargs["sampler_type"], gen_kwargs["steps"]

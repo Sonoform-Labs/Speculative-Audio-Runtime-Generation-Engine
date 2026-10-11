@@ -61,7 +61,8 @@ class StableAudio3Generator(Generator):
                  hoist_prompts: int | None = 8, static_guard: bool = True, max_static_retries: int = 2,
                  compile_mode: str | None = None, compile_decode: bool = False, cfg_interval=None,
                  graph_decode: bool = False, hoist_rope: bool = False, skip_first_step: bool = False,
-                 fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False, **_):
+                 fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False,
+                 unfuse_bias: bool = False, triton_gemm: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -90,6 +91,8 @@ class StableAudio3Generator(Generator):
         self.fp16_accumulation = bool(fp16_accumulation)
         self.graph_text = bool(graph_text)
         self.fast_load = bool(fast_load)
+        self.unfuse_bias = bool(unfuse_bias)
+        self.triton_gemm = bool(triton_gemm)
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
@@ -108,8 +111,13 @@ class StableAudio3Generator(Generator):
         from stable_audio_3 import StableAudioModel
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        if self.fp16_accumulation and hasattr(torch.backends.cuda.matmul, "allow_fp16_accumulation"):
+        acc16 = self.fp16_accumulation and hasattr(torch.backends.cuda.matmul, "allow_fp16_accumulation")
+        if acc16:
             torch.backends.cuda.matmul.allow_fp16_accumulation = True
+        if self.unfuse_bias and self.compile_mode:
+            import torch._inductor.config as icfg
+            if hasattr(icfg, "keep_addmm_fused_for_half_dtypes"):
+                icfg.keep_addmm_fused_for_half_dtypes = False
         with _skip_random_init() if self.fast_load else contextlib.nullcontext():
             self._model = StableAudioModel.from_pretrained(
                 self.model_name, device=self.device, model_half=self.model_half)
@@ -124,7 +132,7 @@ class StableAudio3Generator(Generator):
                 from .sa3_fast import Accelerator
                 self._fast = Accelerator(self._model, compile_mode=self.compile_mode,
                                          compile_decode=self.compile_decode, graph_decode=self.graph_decode,
-                                         graph_text=self.graph_text)
+                                         graph_text=self.graph_text, triton_gemm=self.triton_gemm and acc16)
             except Exception:
                 self._fast = None
         if self._fast is not None and self.hoist_prompts is not None:

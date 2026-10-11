@@ -36,9 +36,13 @@ ARMS = {
                  "skip_first_step": True},
     "deflt214_acc": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
                      "skip_first_step": True, "fp16_accumulation": True},
+    "deflt214_unf": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                     "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True},
+    "deflt214_tg": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                    "skip_first_step": True, "fp16_accumulation": True, "unfuse_bias": True, "triton_gemm": True},
 }
 COMPARE = ["c_default", "c_default_dec", "c_maxat", "c_maxat_dec", "gdec", "rope", "skip1", "comp_full",
-           "comp_full_skip1", "deflt26", "deflt214", "deflt214_acc"]
+           "comp_full_skip1", "deflt26", "deflt214", "deflt214_acc", "deflt214_unf", "deflt214_tg"]
 
 
 def parse(argv):
