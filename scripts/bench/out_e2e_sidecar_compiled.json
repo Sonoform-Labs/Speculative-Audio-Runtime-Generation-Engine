@@ -1,0 +1,128 @@
+{
+ "first": [
+  {
+   "key": "footstep|wood",
+   "ms": 0.7037000032141805,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.10000000149011612
+  },
+  {
+   "key": "footstep|stone",
+   "ms": 0.5085999728180468,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.09169565141201019
+  },
+  {
+   "key": "impact|glass",
+   "ms": 0.6066999631002545,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.08846141397953033
+  },
+  {
+   "key": "impact|metal",
+   "ms": 0.9317999938502908,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.10000000149011612
+  },
+  {
+   "key": "footstep|grass",
+   "ms": 0.4678000113926828,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.0813533216714859
+  },
+  {
+   "key": "land|stone",
+   "ms": 0.5744000081904233,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.09811821579933167
+  },
+  {
+   "key": "footstep|gravel",
+   "ms": 0.5870999884791672,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.10000000149011612
+  },
+  {
+   "key": "jump|wood",
+   "ms": 0.5700999754481018,
+   "served": "fallback",
+   "n": 7938,
+   "rms": 0.10000000149011612
+  }
+ ],
+ "repeat": [
+  {
+   "key": "footstep|wood",
+   "ms": 131.43260002834722,
+   "served": "cached"
+  },
+  {
+   "key": "footstep|stone",
+   "ms": 127.48070002999157,
+   "served": "cached"
+  },
+  {
+   "key": "impact|glass",
+   "ms": 0.6576000014320016,
+   "served": "fallback"
+  },
+  {
+   "key": "impact|metal",
+   "ms": 0.8741000201553106,
+   "served": "fallback"
+  },
+  {
+   "key": "footstep|grass",
+   "ms": 0.5948999896645546,
+   "served": "fallback"
+  },
+  {
+   "key": "land|stone",
+   "ms": 0.5584000027738512,
+   "served": "fallback"
+  },
+  {
+   "key": "footstep|gravel",
+   "ms": 0.761799979954958,
+   "served": "fallback"
+  },
+  {
+   "key": "jump|wood",
+   "ms": 0.5851000314578414,
+   "served": "fallback"
+  }
+ ],
+ "predicted": {
+  "ack": {
+   "type": "predict_ack",
+   "queued": 1,
+   "lead_gated": 0,
+   "cached_keys": 2
+  },
+  "ms": 0.6631000433117151,
+  "served": "fallback"
+ },
+ "stats": {
+  "type": "stats_reply",
+  "stats": {
+   "spec_gen": 0,
+   "demand_gen": 6,
+   "realtime": 0,
+   "hits": 2,
+   "fallback": 15,
+   "silence": 0,
+   "evicted": 0,
+   "gpu_ms": 270.0,
+   "peak_bytes": 635040
+  },
+  "wasted": 0,
+  "cached_keys": 6
+ }
+}

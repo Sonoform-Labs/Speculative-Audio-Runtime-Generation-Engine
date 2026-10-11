@@ -11,11 +11,11 @@ from sarge.sidecar import serve
 
 COMPILED = {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True}
 TIERS = {
-    "quality": {"sampler_type": "euler", "steps": 3, **COMPILED},
-    "default": {"sampler_type": "euler", "steps": 3, **COMPILED},
+    "quality": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
+    "default": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
     "fast":    {"sampler_type": "euler", "steps": 2, "mid_noise": 0.68, **COMPILED},
 }
-TIER_COST_MS = {"quality": 45.0, "default": 45.0, "fast": 35.0}
+TIER_COST_MS = {"quality": 32.0, "default": 32.0, "fast": 35.0}
 
 
 def main(argv=None) -> int:
@@ -46,6 +46,8 @@ def main(argv=None) -> int:
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
+    ap.add_argument("--no-skip-first", action="store_true",
+                    help="run all 3 euler steps from t=1.0; the default drops the t=1.0 step, judged equal on held-out refs")
     ap.add_argument("--realtime", action="store_true",
                     help="generate each sound on-demand at fire time and cache it; nothing pre-generated at startup")
     args = ap.parse_args(argv)
@@ -60,6 +62,8 @@ def main(argv=None) -> int:
     if args.no_compile:
         for k in COMPILED:
             gen_kwargs.pop(k, None)
+    if args.no_skip_first:
+        gen_kwargs.pop("skip_first_step", None)
     sampler, steps = gen_kwargs["sampler_type"], gen_kwargs["steps"]
     gen_cost = args.gen_cost_ms if args.gen_cost_ms is not None else TIER_COST_MS.get(tier, 200.0)
 
