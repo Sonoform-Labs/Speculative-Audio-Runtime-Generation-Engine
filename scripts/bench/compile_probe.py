@@ -24,8 +24,15 @@ ARMS = {
     "c_default_dec": {"compile_mode": "default", "compile_decode": True},
     "c_maxat": {"compile_mode": "max-autotune-no-cudagraphs"},
     "c_maxat_dec": {"compile_mode": "max-autotune-no-cudagraphs", "compile_decode": True},
+    "gdec": {"graph_decode": True},
+    "rope": {"hoist_rope": True},
+    "skip1": {"skip_first_step": True},
+    "comp_full": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True},
+    "comp_full_skip1": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                        "skip_first_step": True},
 }
-COMPARE = ["c_default", "c_default_dec", "c_maxat", "c_maxat_dec"]
+COMPARE = ["c_default", "c_default_dec", "c_maxat", "c_maxat_dec", "gdec", "rope", "skip1", "comp_full",
+           "comp_full_skip1"]
 
 
 def parse(argv):
@@ -129,7 +136,7 @@ def compare(args):
     b = json.load(open(os.path.join(base, "result.json"), encoding="utf-8"))
     print("base             %6.1f ms  seed-to-seed log-mel %.3f dB" % (b["median_ms"], seed_med))
     json.dump({"base_ms": b["median_ms"], "seed_logmel_db": seed_med, "arms": out},
-              open(os.path.join(ROOT, "scripts", "bench", "out_compile_probe.json"), "w", encoding="utf-8"), indent=1)
+              open(os.path.join(ROOT, "scripts", "bench", "out_%s.json" % os.path.basename(os.path.normpath(args.out_dir))), "w", encoding="utf-8"), indent=1)
     return 0
 
 

@@ -51,13 +51,29 @@ def _seed(key: CacheKey, variant: int) -> int:
     return seed_for(key, variant)
 
 
+def _loudest(mono: np.ndarray, win: int) -> int:
+    n = mono.shape[0]
+    c = np.empty(n + 1)
+    c[0] = 0.0
+    np.cumsum(mono.astype(np.float64) ** 2, out=c[1:])
+    lo = win - 1 - (win - 1) // 2
+    hi = (win - 1) // 2 + 1
+    up = np.empty(n)
+    m = n + 1 - hi
+    up[:m] = c[hi:]
+    up[m:] = c[n]
+    low = np.empty(n)
+    low[:lo] = 0.0
+    low[lo:] = c[:n - lo]
+    return int(np.argmax(up - low))
+
+
 def _extract(mono: np.ndarray, sr: int, duration_s: float, preroll_s: float = 0.03) -> np.ndarray:
     n = int(duration_s * sr)
     if n <= 0 or mono.shape[0] <= n:
         return mono
     win = max(1, int(0.005 * sr))
-    energy = np.convolve(mono.astype(np.float64) ** 2, np.ones(win) / win, mode="same")
-    center = int(np.argmax(energy))
+    center = _loudest(mono, win)
     start = max(0, center - int(preroll_s * sr))
     end = min(mono.shape[0], start + n)
     start = max(0, end - n)

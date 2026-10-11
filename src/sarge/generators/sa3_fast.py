@@ -69,6 +69,50 @@ class GraphedForward:
         return ent["out"].clone()
 
 
+class GraphedDecode:
+    def __init__(self, orig):
+        self.orig = orig
+        self.pool = torch.cuda.graph_pool_handle()
+        self.entries = {}
+        self.failed = {}
+        self.captured = 0
+        self.replays = 0
+
+    def _capture(self, z, chunked):
+        sz = z.clone()
+        side = torch.cuda.Stream()
+        side.wait_stream(torch.cuda.current_stream())
+        with torch.cuda.stream(side):
+            for _ in range(2):
+                self.orig(sz, chunked=chunked)
+        torch.cuda.current_stream().wait_stream(side)
+        graph = torch.cuda.CUDAGraph()
+        with torch.cuda.graph(graph, pool=self.pool, capture_error_mode="thread_local"):
+            out = self.orig(sz, chunked=chunked)
+        return {"graph": graph, "z": sz, "out": out}
+
+    def __call__(self, z, chunked=None, **kw):
+        if kw or not torch.is_tensor(z) or not z.is_cuda:
+            return self.orig(z, chunked=chunked, **kw)
+        key = (tuple(z.shape), str(z.dtype), chunked)
+        if key in self.failed:
+            return self.orig(z, chunked=chunked)
+        ent = self.entries.get(key)
+        if ent is None:
+            try:
+                ent = self._capture(z, chunked)
+            except Exception as e:
+                self.failed[key] = repr(e)[:400]
+                torch.cuda.synchronize()
+                return self.orig(z, chunked=chunked)
+            self.entries[key] = ent
+            self.captured += 1
+        ent["z"].copy_(z)
+        ent["graph"].replay()
+        self.replays += 1
+        return ent["out"].clone()
+
+
 class CondCache:
     def __init__(self, cdm, device, max_prompts: int = 256):
         self.cdm = cdm
@@ -106,7 +150,8 @@ class CondCache:
 
 
 class Accelerator:
-    def __init__(self, sam, graph: bool = True, max_prompts: int = 256, compile_mode: str | None = None):
+    def __init__(self, sam, graph: bool = True, max_prompts: int = 256, compile_mode: str | None = None,
+                 compile_decode: bool = False, graph_decode: bool = False):
         import stable_audio_3.models.dit as dit_mod
         self.sam = sam
         self.dit = sam.dit.model
@@ -124,6 +169,16 @@ class Accelerator:
             self.dit._forward = self.graph
         elif compile_mode:
             self.dit._forward = fwd
+        self.decode_graph = None
+        pt = getattr(sam.model, "pretransform", None)
+        if pt is not None and (compile_decode or graph_decode):
+            dec = pt.decode
+            if compile_decode:
+                dec = torch.compile(dec, mode=compile_mode or "default", dynamic=False)
+            if graph_decode and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
+                self.decode_graph = GraphedDecode(dec)
+                dec = self.decode_graph
+            pt.decode = dec
 
     def kwargs(self, prompts, seconds, negative_prompt=None):
         kw = {"disable_tqdm": True, "use_checkpointing": False}
@@ -145,4 +200,7 @@ class Accelerator:
         g = self.graph
         return {"cond_hits": self.cache.hits, "cond_misses": self.cache.misses,
                 "graphs": g.captured if g else 0, "replays": g.replays if g else 0,
-                "eager": g.eager if g else 0, "capture_failures": len(g.failed) if g else 0}
+                "eager": g.eager if g else 0, "capture_failures": len(g.failed) if g else 0,
+                "decode_graphs": self.decode_graph.captured if self.decode_graph else 0,
+                "decode_replays": self.decode_graph.replays if self.decode_graph else 0,
+                "decode_failures": len(self.decode_graph.failed) if self.decode_graph else 0}

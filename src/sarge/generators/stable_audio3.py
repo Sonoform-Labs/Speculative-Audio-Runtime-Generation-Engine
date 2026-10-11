@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import threading
 
 import numpy as np
@@ -9,6 +10,22 @@ from ..loudness import normalize_loudness, target_for
 from ..static_guard import is_static, retry_seed
 from ..types import AudioClip, CacheKey
 from .stable_audio import _extract, _seed, build_prompt
+
+
+@contextlib.contextmanager
+def _skip_first_schedule():
+    import stable_audio_3.inference.sampling as smp
+    orig = smp.build_schedule
+
+    def patched(*a, **k):
+        t = orig(*a, **k)
+        return t[1:] if t.dim() == 1 else t[..., 1:]
+
+    smp.build_schedule = patched
+    try:
+        yield
+    finally:
+        smp.build_schedule = orig
 
 STATIC_STATS = ("static_checks", "static_flagged", "static_retries", "static_rescued", "static_exhausted")
 
@@ -25,7 +42,8 @@ class StableAudio3Generator(Generator):
                  detail_steps: int = 8, detail_keys=None, fast: bool = True,
                  duration_padding_s: float = 1.0, mid_noise: float | None = None,
                  hoist_prompts: int | None = 8, static_guard: bool = True, max_static_retries: int = 2,
-                 compile_mode: str | None = None, compile_decode: bool = False, cfg_interval=None, **_):
+                 compile_mode: str | None = None, compile_decode: bool = False, cfg_interval=None,
+                 graph_decode: bool = False, hoist_rope: bool = False, skip_first_step: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -48,6 +66,9 @@ class StableAudio3Generator(Generator):
         self.hoist_prompts = hoist_prompts
         self.compile_mode = compile_mode or None
         self.compile_decode = bool(compile_decode)
+        self.graph_decode = bool(graph_decode)
+        self.hoist_rope = bool(hoist_rope)
+        self.skip_first_step = bool(skip_first_step)
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
@@ -74,19 +95,17 @@ class StableAudio3Generator(Generator):
         if self.fast:
             try:
                 from .sa3_fast import Accelerator
-                self._fast = Accelerator(self._model, compile_mode=self.compile_mode)
+                self._fast = Accelerator(self._model, compile_mode=self.compile_mode,
+                                         compile_decode=self.compile_decode, graph_decode=self.graph_decode)
             except Exception:
                 self._fast = None
         if self._fast is not None and self.hoist_prompts is not None:
             try:
-                from .sa3_hoist import install_hoist
-                self._hoist = install_hoist(self._model, self._fast, cache_prompts=int(self.hoist_prompts))
+                from .sa3_hoist import ALL_PARTS, DEFAULT_PARTS, install_hoist
+                self._hoist = install_hoist(self._model, self._fast, cache_prompts=int(self.hoist_prompts),
+                                            parts=ALL_PARTS if self.hoist_rope else DEFAULT_PARTS)
             except Exception:
                 self._hoist = None
-        if self.compile_decode and self.fast:
-            pt = getattr(self._model.model, "pretransform", None)
-            if pt is not None:
-                pt.decode = torch.compile(pt.decode, mode=self.compile_mode or "default", dynamic=False)
 
     def ensure_ready(self):
         self._ensure_loaded()
@@ -98,6 +117,11 @@ class StableAudio3Generator(Generator):
         if self.prompt_template:
             return self.prompt_template.format(intensity=key.intensity, material=key.material, event=key.event_type)
         return build_prompt(key.event_type, key.material, key.intensity)
+
+    def _schedule(self):
+        if not self.skip_first_step:
+            return contextlib.nullcontext()
+        return _skip_first_schedule()
 
     def _extra(self) -> dict:
         return {"cfg_interval": self.cfg_interval} if self.cfg_interval is not None else {}
@@ -158,7 +182,7 @@ class StableAudio3Generator(Generator):
         prompt = self._prompt(key)
         for attempt in range(1, self.max_static_retries + 1):
             self._count("static_retries")
-            with self._lock, torch.no_grad():
+            with self._lock, torch.no_grad(), self._schedule():
                 audio = self._model.generate(
                     duration=self.gen_duration_s, steps=steps, cfg_scale=self.cfg_scale,
                     seed=retry_seed(base, attempt), batch_size=1, **self._inputs([prompt]), **self._extra())
@@ -183,7 +207,7 @@ class StableAudio3Generator(Generator):
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         self._ensure_loaded()
         import torch
-        with self._lock, torch.no_grad():
+        with self._lock, torch.no_grad(), self._schedule():
             audio = self._model.generate(
                 duration=self.gen_duration_s,
                 steps=self._steps_for(key),
@@ -208,7 +232,7 @@ class StableAudio3Generator(Generator):
         out = [None] * len(items)
         for steps, idx in groups.items():
             sub = [items[i] for i in idx]
-            with self._lock, torch.no_grad():
+            with self._lock, torch.no_grad(), self._schedule():
                 audio = self._model.generate(
                     duration=self.gen_duration_s, steps=steps,
                     cfg_scale=self.cfg_scale, seed=_seed(sub[0][0], sub[0][1]),
