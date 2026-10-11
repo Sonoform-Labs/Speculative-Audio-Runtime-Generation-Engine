@@ -16,7 +16,8 @@ os.environ.setdefault("TRITON_CACHE_DIR", os.path.join(_CACHE, "triton-" + _TORC
 from sarge.sidecar import serve
 
 COMPILED = {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
-            "fp16_accumulation": True, "graph_text": True, "unfuse_bias": True, "triton_gemm": True}
+            "fp16_accumulation": True, "graph_text": True, "unfuse_bias": True, "triton_gemm": True,
+            "decode_prefix": True}
 TIERS = {
     "quality": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
     "default": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
