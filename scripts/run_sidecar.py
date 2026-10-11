@@ -4,14 +4,18 @@ import argparse
 import os
 import threading
 
+os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR",
+                      os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cache", "inductor"))
+
 from sarge.sidecar import serve
 
+COMPILED = {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True}
 TIERS = {
-    "quality": {"sampler_type": "euler", "steps": 3},
-    "default": {"sampler_type": "euler", "steps": 3},
-    "fast":    {"sampler_type": "euler", "steps": 2, "mid_noise": 0.68},
+    "quality": {"sampler_type": "euler", "steps": 3, **COMPILED},
+    "default": {"sampler_type": "euler", "steps": 3, **COMPILED},
+    "fast":    {"sampler_type": "euler", "steps": 2, "mid_noise": 0.68, **COMPILED},
 }
-TIER_COST_MS = {"quality": 60.0, "default": 60.0, "fast": 45.0}
+TIER_COST_MS = {"quality": 45.0, "default": 45.0, "fast": 35.0}
 
 
 def main(argv=None) -> int:
@@ -40,6 +44,8 @@ def main(argv=None) -> int:
                          "and holds the gpu twice as long, so 1 is the default")
     ap.add_argument("--learn", action="store_true",
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
+    ap.add_argument("--no-compile", action="store_true",
+                    help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
     ap.add_argument("--realtime", action="store_true",
                     help="generate each sound on-demand at fire time and cache it; nothing pre-generated at startup")
     args = ap.parse_args(argv)
@@ -51,6 +57,9 @@ def main(argv=None) -> int:
     if args.steps is not None:
         gen_kwargs["steps"] = args.steps
         gen_kwargs.pop("mid_noise", None)
+    if args.no_compile:
+        for k in COMPILED:
+            gen_kwargs.pop(k, None)
     sampler, steps = gen_kwargs["sampler_type"], gen_kwargs["steps"]
     gen_cost = args.gen_cost_ms if args.gen_cost_ms is not None else TIER_COST_MS.get(tier, 200.0)
 

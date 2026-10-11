@@ -27,6 +27,9 @@ ARMS = {
     "comp_s2": {"compile_mode": "default", "compile_decode": True, "steps": 2, "detail_steps": 2},
     "comp_cfg1_s2": {"compile_mode": "default", "compile_decode": True, "cfg_scale": 1.0, "steps": 2,
                      "detail_steps": 2},
+    "full": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True},
+    "full_skip1": {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
+                   "skip_first_step": True},
 }
 
 

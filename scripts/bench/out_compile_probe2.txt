@@ -1,0 +1,6 @@
+gdec               61.2 ms  first   2.2 s  max|diff| med 0.0000 max 0.0000  log-mel 0.000 dB  ratio to a new seed 0.000
+rope               61.5 ms  first   1.9 s  max|diff| med 0.0000 max 0.0000  log-mel 0.000 dB  ratio to a new seed 0.000
+skip1              44.2 ms  first   1.8 s  max|diff| med 0.5838 max 1.9168  log-mel 0.978 dB  ratio to a new seed 0.231
+comp_full          41.5 ms  first  32.0 s  max|diff| med 0.0588 max 1.9346  log-mel 0.451 dB  ratio to a new seed 0.107
+comp_full_skip1    30.2 ms  first  20.7 s  max|diff| med 0.2485 max 1.8889  log-mel 1.049 dB  ratio to a new seed 0.248
+base               61.8 ms  seed-to-seed log-mel 4.230 dB
