@@ -64,7 +64,7 @@ class StableAudio3Generator(Generator):
                  fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False,
                  unfuse_bias: bool = False, triton_gemm: bool = False, decode_prefix: bool = False,
                  decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
-                 level: str = "rms", **_):
+                 level: str = "rms", decoder_ckpt: str | None = None, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -100,6 +100,8 @@ class StableAudio3Generator(Generator):
         self.triton_proj = bool(triton_proj)
         self.trim = str(trim)
         self.level = str(level)
+        self.decoder_ckpt = str(decoder_ckpt) if decoder_ckpt else None
+        self._load_error = None
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
@@ -111,6 +113,8 @@ class StableAudio3Generator(Generator):
     def _ensure_loaded(self):
         if self._model is not None:
             return
+        if self._load_error is not None:
+            raise self._load_error
         if self.fast_load:
             from ..fastmeta import install
             install()
@@ -125,9 +129,25 @@ class StableAudio3Generator(Generator):
             import torch._inductor.config as icfg
             if hasattr(icfg, "keep_addmm_fused_for_half_dtypes"):
                 icfg.keep_addmm_fused_for_half_dtypes = False
+        dec_sd = None
+        if self.decoder_ckpt:
+            from safetensors.torch import load_file
+            try:
+                dec_sd = load_file(self.decoder_ckpt)
+            except Exception as e:
+                self._load_error = e
+                raise
         with _skip_random_init() if self.fast_load else contextlib.nullcontext():
-            self._model = StableAudioModel.from_pretrained(
+            model = StableAudioModel.from_pretrained(
                 self.model_name, device=self.device, model_half=self.model_half)
+        if dec_sd is not None:
+            try:
+                model.same.model.decoder.load_state_dict(dec_sd, strict=True)
+            except Exception as e:
+                self._load_error = e
+                del model
+                raise
+        self._model = model
         sr = getattr(self._model, "sample_rate", None)
         if not sr:
             cfg = getattr(self._model, "model_config", None) or {}

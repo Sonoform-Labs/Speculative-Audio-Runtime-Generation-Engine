@@ -66,6 +66,10 @@ def main(argv=None) -> int:
                     help="run all 3 euler steps from t=1.0; the default drops the t=1.0 step, judged equal on held-out refs")
     ap.add_argument("--realtime", action="store_true",
                     help="generate each sound on-demand at fire time and cache it; nothing pre-generated at startup")
+    ap.add_argument("--decoder-ckpt", default=None,
+                    help="safetensors state_dict for the SAME-S decoder (scripts/train/dec_train.py export), loaded "
+                         "strict before the decoder graph is captured; relative paths resolve against the repo root. "
+                         "Falls back to SARGE_DECODER_CKPT")
     args = ap.parse_args(argv)
 
     tier = (args.tier or os.environ.get("SARGE_GEN_TIER") or "default").lower()
@@ -86,6 +90,12 @@ def main(argv=None) -> int:
         gen_kwargs.pop("triton_gemm", None)
     if args.no_skip_first:
         gen_kwargs.pop("skip_first_step", None)
+    ckpt = args.decoder_ckpt or os.environ.get("SARGE_DECODER_CKPT")
+    if ckpt:
+        ckpt = ckpt if os.path.isabs(ckpt) else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ckpt)
+        if not os.path.isfile(ckpt):
+            raise SystemExit("decoder checkpoint not found: %s" % ckpt)
+        gen_kwargs["decoder_ckpt"] = ckpt
     sampler, steps = gen_kwargs["sampler_type"], gen_kwargs["steps"]
     gen_cost = args.gen_cost_ms if args.gen_cost_ms is not None else TIER_COST_MS.get(tier, 200.0)
 
@@ -110,7 +120,9 @@ def main(argv=None) -> int:
     mode = "realtime-on-demand" if args.realtime else "predict+prewarm"
     print(f"sidecar READY on {host}:{port}  generator={args.generator}  tier={tier} "
           f"sampler={sampler} steps={steps}  gen_cost_ms={gen_cost:.0f}  mode={mode}  "
-          f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'} (cleared {cleared})", flush=True)
+          f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'} (cleared {cleared})  "
+          f"decoder={os.path.basename(gen_kwargs['decoder_ckpt']) if gen_kwargs.get('decoder_ckpt') else 'base'}",
+          flush=True)
     print("ctrl-c to stop", flush=True)
 
     stop = threading.Event()
