@@ -44,6 +44,8 @@ def parse(argv):
     ap.add_argument("--d-warmup-acc", type=float, default=0.75)
     ap.add_argument("--chirps", type=int, default=1)
     ap.add_argument("--short-prob", type=float, default=0.15)
+    ap.add_argument("--lat-compress-prob", type=float, default=0.0)
+    ap.add_argument("--lat-compress", default="0.4,0.6")
     ap.add_argument("--d-micro", type=int, default=4)
     ap.add_argument("--g-micro", type=int, default=4)
     ap.add_argument("--lr", type=float, default=3e-5)
@@ -643,6 +645,14 @@ class Trainer:
         T = dc.SHORT_SEG if short else dc.SEG
         with torch.no_grad():
             z = self.ae.encode(x)
+            if a.lat_compress_prob > 0:
+                lo, hi = (float(v) for v in a.lat_compress.split(","))
+                pick = self.step_rng.uniform(size=z.shape[0]) < a.lat_compress_prob
+                if pick.any():
+                    sc = np.where(pick, self.step_rng.uniform(lo, hi, size=z.shape[0]), 1.0)
+                    sc = torch.from_numpy(sc).to(z.device, z.dtype).view(-1, 1, 1)
+                    m = z.mean(-1, keepdim=True)
+                    z = m + sc * (z - m)
         zin = z[..., :dc.SHORT_FRAMES] if short else z
         xt, mt = x[..., :T], mask[:, :T]
         masked = bool((mt < 0.5).any())

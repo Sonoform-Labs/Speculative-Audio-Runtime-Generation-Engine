@@ -50,7 +50,7 @@ def clip_audio(split, ents):
 
 def write_wav(path, x):
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    wavfile.write(path, dc.SR, np.asarray(x, np.float32))
+    wavfile.write(path, dc.SR, np.round(np.clip(np.asarray(x, np.float64), -1.0, 1.0) * 32767.0).astype(np.int16))
 
 
 def gen_kwargs(tier="default", ckpt=None, compile_=True):
