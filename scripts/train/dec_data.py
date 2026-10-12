@@ -584,6 +584,11 @@ def assign(items, fps, args):
                 near[r["id"]]["other_pool"], NCC_DUP)
     print("near-dup pass %.1f s, dropped %d" % (time.perf_counter() - t0, len(near)), flush=True)
     held = [r for r in items if r["pool"] == "heldout"]
+    side_md5 = {r["md5"] for r in items if r["dataset"] == "foleyset" and r["user"] not in held_users}
+    md5_subs = defaultdict(set)
+    for r in items:
+        if r["dataset"] == "foleyset":
+            md5_subs[r["md5"]].add(r.get("sub"))
     dec_eval = []
     seen = set()
     for b in sorted({r["bucket"] for r in held if r["dataset"] == "foleyset"}):
@@ -592,7 +597,8 @@ def assign(items, fps, args):
         per = Counter()
         n = 0
         for r in rs:
-            if n >= EVAL_Q or r["md5"] in seen or per[r["user"]] >= CAP_EVAL_UP:
+            if (n >= EVAL_Q or r["md5"] in seen or per[r["user"]] >= CAP_EVAL_UP or r["md5"] in side_md5
+                    or len(md5_subs[r["md5"]]) > 1):
                 continue
             seen.add(r["md5"])
             per[r["user"]] += 1
