@@ -64,7 +64,8 @@ class StableAudio3Generator(Generator):
                  fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False,
                  unfuse_bias: bool = False, triton_gemm: bool = False, decode_prefix: bool = False,
                  decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
-                 level: str = "rms", decoder_ckpt: str | None = None, amp: bool = False, **_):
+                 level: str = "rms", decoder_ckpt: str | None = None, amp: bool = False,
+                 prompt_style: str = "v1", **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -102,6 +103,7 @@ class StableAudio3Generator(Generator):
         self.level = str(level)
         self.decoder_ckpt = str(decoder_ckpt) if decoder_ckpt else None
         self.amp = bool(amp)
+        self.prompt_style = str(prompt_style)
         self._load_error = None
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
@@ -186,6 +188,9 @@ class StableAudio3Generator(Generator):
             return override
         if self.prompt_template:
             return self.prompt_template.format(intensity=key.intensity, material=key.material, event=key.event_type)
+        if self.prompt_style == "detailed":
+            from ..prompts import build
+            return build(key.event_type, key.material, key.intensity, key.context)
         return build_prompt(key.event_type, key.material, key.intensity)
 
     def _schedule(self):

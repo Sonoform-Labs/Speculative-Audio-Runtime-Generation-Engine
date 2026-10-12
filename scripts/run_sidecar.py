@@ -56,6 +56,9 @@ def main(argv=None) -> int:
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
+    ap.add_argument("--detailed-prompts", action="store_true",
+                    help="the searched prompt grammar: detailed source, action and acoustic wording plus the space from "
+                         "the request context (outdoor_open, indoor_small, indoor_large, tunnel; default is outdoor_open)")
     ap.add_argument("--amp", action="store_true",
                     help="amplifier stage after generation: attack emphasis and saturation by sound type, strongest on "
                          "gunshots (about +4 to 5 dB of density at the same peak), light on footsteps")
@@ -85,6 +88,8 @@ def main(argv=None) -> int:
     if args.no_compile:
         for k in COMPILED:
             gen_kwargs.pop(k, None)
+    if args.detailed_prompts:
+        gen_kwargs["prompt_style"] = "detailed"
     if args.amp:
         gen_kwargs["amp"] = True
     if args.short_clips:
