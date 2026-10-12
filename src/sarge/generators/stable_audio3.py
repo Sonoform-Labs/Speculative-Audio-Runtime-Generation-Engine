@@ -64,7 +64,7 @@ class StableAudio3Generator(Generator):
                  fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False,
                  unfuse_bias: bool = False, triton_gemm: bool = False, decode_prefix: bool = False,
                  decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
-                 level: str = "rms", decoder_ckpt: str | None = None, **_):
+                 level: str = "rms", decoder_ckpt: str | None = None, amp: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -101,6 +101,7 @@ class StableAudio3Generator(Generator):
         self.trim = str(trim)
         self.level = str(level)
         self.decoder_ckpt = str(decoder_ckpt) if decoder_ckpt else None
+        self.amp = bool(amp)
         self._load_error = None
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
@@ -231,6 +232,9 @@ class StableAudio3Generator(Generator):
             mono = _natural(mono, self.sample_rate)
         else:
             mono = _extract(mono, self.sample_rate, self.duration_s)
+        if self.amp:
+            from ..amp import amplify
+            mono = amplify(mono, self.sample_rate, key.event_type, key.intensity)
         if self.level == "peak":
             mono = normalize_peak(mono, peak_for(key.intensity))
         else:

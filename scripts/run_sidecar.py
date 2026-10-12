@@ -56,6 +56,9 @@ def main(argv=None) -> int:
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
+    ap.add_argument("--amp", action="store_true",
+                    help="amplifier stage after generation: attack emphasis and saturation by sound type, strongest on "
+                         "gunshots (about +4 to 5 dB of density at the same peak), light on footsteps")
     ap.add_argument("--short-clips", action="store_true",
                     help="the old presentation: a 0.6 s window around the loudest point at one rms per intensity; the "
                          "default keeps each sound until it dies away (up to 1.5 s) and sets its peak per intensity")
@@ -82,6 +85,8 @@ def main(argv=None) -> int:
     if args.no_compile:
         for k in COMPILED:
             gen_kwargs.pop(k, None)
+    if args.amp:
+        gen_kwargs["amp"] = True
     if args.short_clips:
         for k in PRESENT:
             gen_kwargs.pop(k, None)

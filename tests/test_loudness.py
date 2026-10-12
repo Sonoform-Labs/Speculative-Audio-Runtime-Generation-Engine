@@ -58,3 +58,18 @@ def test_peak_normalize_keeps_the_crest():
     y = normalize_peak(x, peak_for("normal"))
     assert abs(float(np.max(np.abs(y))) - 10 ** (-1 / 20)) < 1e-5
     assert abs(float(y[500] / y[10]) - 0.02) < 1e-6
+
+
+def test_amplifier_adds_density_by_family_and_stays_finite():
+    import numpy as np
+    from sarge.amp import amplify, family_for
+    from sarge.loudness import normalize_peak
+    sr = 44100
+    t = np.arange(int(0.5 * sr))
+    x = (np.exp(-t / (0.05 * sr)) * np.sin(t * 0.21) * 0.5).astype(np.float32)
+    rms = lambda y: float(np.sqrt(np.mean(normalize_peak(y) ** 2)))
+    gun = amplify(x, sr, "shoot", "normal")
+    step = amplify(x, sr, "footstep", "normal")
+    assert np.all(np.isfinite(gun)) and np.all(np.isfinite(step))
+    assert rms(gun) > rms(step) > rms(x) * 0.99
+    assert family_for("bullet impact") == "impact" and family_for("shoot") == "blast" and family_for("splash") is None
