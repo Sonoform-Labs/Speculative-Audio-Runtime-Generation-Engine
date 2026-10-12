@@ -33,6 +33,9 @@ _SPLASHY = {"water", "liquid", "mud"}
 
 def build_prompt(event: str, material: str, intensity: str = "normal") -> str:
     lead = "" if intensity in (None, "", "normal") else f"{intensity} "
+    if event == "footstep" and material in _SPLASHY:
+        return (f"a {intensity or 'normal'} footstep splashing through shallow {material}, a clear distinct wet step, "
+                f"dry, isolated sound effect")
     if event in ("splash", "drip", "pour") or material in _SPLASHY:
         return f"a {lead}{event} in {material}, wet splashing water with droplets and bubbling, dry, isolated sound effect"
     if event == "footstep":

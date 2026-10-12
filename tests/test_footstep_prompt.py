@@ -26,3 +26,9 @@ def test_grass_footsteps_skip_the_adjective():
 
 def test_other_grass_events_keep_their_prompt():
     assert "grassy" in build_prompt("land", "grass", "heavy")
+
+
+def test_water_footsteps_and_splashes_get_different_prompts():
+    step = build_prompt("footstep", "water", "normal")
+    splash = build_prompt("splash", "water", "normal")
+    assert step != splash and "footstep" in step and "splashing water" in splash
