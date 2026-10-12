@@ -93,7 +93,7 @@ def main(argv=None) -> int:
                 cleared += 1
 
     if args.generator != "mock":
-        print(f"loading + warming {args.generator} model (first time can take ~30s)...")
+        print(f"loading + warming {args.generator} model (first time can take ~30s)...", flush=True)
     server = serve(generator=args.generator, host=args.host, port=args.port, pcm=args.pcm,
                    cache_dir=cache_dir, deepen=not args.no_deepen,
                    gen_kwargs=gen_kwargs,
@@ -102,8 +102,8 @@ def main(argv=None) -> int:
     mode = "realtime-on-demand" if args.realtime else "predict+prewarm"
     print(f"sidecar READY on {host}:{port}  generator={args.generator}  tier={tier} "
           f"sampler={sampler} steps={steps}  gen_cost_ms={gen_cost:.0f}  mode={mode}  "
-          f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'} (cleared {cleared})")
-    print("ctrl-c to stop")
+          f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'} (cleared {cleared})", flush=True)
+    print("ctrl-c to stop", flush=True)
 
     stop = threading.Event()
     try:
