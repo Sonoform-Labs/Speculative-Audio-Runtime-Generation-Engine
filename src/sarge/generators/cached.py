@@ -63,7 +63,7 @@ class CachedGenerator(Generator):
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         path = self._path(key, variant)
         if os.path.exists(path):
-            clip = AudioClip.from_wav(path)
+            clip = AudioClip.from_wav(path, keep_channels=True)
             clip.variant_id = variant
             return clip
         clip = self.inner.generate(key, variant=variant)
@@ -76,7 +76,7 @@ class CachedGenerator(Generator):
         for i, (key, variant) in enumerate(items):
             path = self._path(key, variant)
             if os.path.exists(path):
-                clip = AudioClip.from_wav(path)
+                clip = AudioClip.from_wav(path, keep_channels=True)
                 clip.variant_id = variant
                 results[i] = clip
             else:

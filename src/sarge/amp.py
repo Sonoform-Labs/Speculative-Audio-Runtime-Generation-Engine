@@ -36,12 +36,12 @@ def amplify(x, sr: int, event: str = "", intensity: str = "normal") -> np.ndarra
     fam = FAMILIES.get(family_for(event), DEFAULT)
     k = INTENSITY_SCALE.get(intensity, 1.0)
     gmax = 10.0 ** (fam["punch_db"] * k / 20.0)
-    a = np.abs(y)
+    a = np.abs(y) if y.ndim == 1 else np.abs(y).mean(axis=1)
     fast = _smooth(a, sr, 0.001)
     slow = _smooth(a, sr, 0.03)
     gain = np.clip(fast / (slow + 1e-9), 1.0, gmax)
     gain = _smooth(gain, sr, 0.002)
-    y = y * gain
+    y = y * (gain if y.ndim == 1 else gain[:, None])
     drive = 1.0 + (fam["drive"] - 1.0) * k
     if drive > 1.0:
         peak = float(np.max(np.abs(y))) or 1.0

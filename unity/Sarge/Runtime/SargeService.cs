@@ -53,7 +53,7 @@ namespace Sarge
             public bool ok;
             public WorkItem item;
             public float[] samples;
-            public int sampleRate, variantId;
+            public int sampleRate, variantId, channels;
             public string served;
             public string intent;
             public int learned;
@@ -180,7 +180,8 @@ namespace Sarge
                 _lru.Remove(node);
                 _clipCache.Remove(key);
             }
-            var clip = AudioClip.Create(key, res.samples.Length, 1, res.sampleRate, false);
+            int ch = Math.Max(1, res.channels);
+            var clip = AudioClip.Create(key, res.samples.Length / ch, ch, res.sampleRate, false);
             clip.SetData(res.samples, 0);
             _clipCache[key] = _lru.AddLast(new KeyValuePair<string, AudioClip>(key, clip));
             if (_clipCache.Count > Math.Max(1, maxCachedClips))
@@ -225,7 +226,7 @@ namespace Sarge
                     else
                     {
                         var r = client.Event(item.eventType, item.material, item.intensity, item.context);
-                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned });
+                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, channels = r.meta.channels, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned });
                     }
                 }
                 catch (SfxProtocolException pe)

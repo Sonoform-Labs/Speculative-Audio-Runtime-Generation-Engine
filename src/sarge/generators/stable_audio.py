@@ -71,32 +71,35 @@ def _loudest(mono: np.ndarray, win: int) -> int:
     return int(np.argmax(up - low))
 
 
-def _extract(mono: np.ndarray, sr: int, duration_s: float, preroll_s: float = 0.03) -> np.ndarray:
+def _extract(audio: np.ndarray, sr: int, duration_s: float, preroll_s: float = 0.03) -> np.ndarray:
     n = int(duration_s * sr)
-    if n <= 0 or mono.shape[0] <= n:
-        return mono
+    if n <= 0 or audio.shape[0] <= n:
+        return audio
+    mono = audio if audio.ndim == 1 else audio.mean(axis=1)
     win = max(1, int(0.005 * sr))
     center = _loudest(mono, win)
     start = max(0, center - int(preroll_s * sr))
     end = min(mono.shape[0], start + n)
     start = max(0, end - n)
-    seg = mono[start:end].copy()
+    seg = audio[start:end].copy()
+    shape = (-1,) if seg.ndim == 1 else (-1, 1)
     fi = min(int(0.005 * sr), len(seg) // 2)
     fo = min(int(0.05 * sr), len(seg) // 2)
     if fi > 0:
-        seg[:fi] *= np.linspace(0.0, 1.0, fi, dtype=seg.dtype)
+        seg[:fi] *= np.linspace(0.0, 1.0, fi, dtype=seg.dtype).reshape(shape)
     if fo > 0:
-        seg[-fo:] *= np.linspace(1.0, 0.0, fo, dtype=seg.dtype)
+        seg[-fo:] *= np.linspace(1.0, 0.0, fo, dtype=seg.dtype).reshape(shape)
     return seg
 
 
-def _natural(mono: np.ndarray, sr: int, floor_db: float = -55.0, onset_db: float = -30.0, preroll_s: float = 0.02,
+def _natural(audio: np.ndarray, sr: int, floor_db: float = -55.0, onset_db: float = -30.0, preroll_s: float = 0.02,
              fade_s: float = 0.03) -> np.ndarray:
-    x = np.asarray(mono, dtype=np.float32)
+    a = np.asarray(audio, dtype=np.float32)
+    x = a if a.ndim == 1 else a.mean(axis=1)
     n = x.shape[0]
     win = max(1, int(0.01 * sr))
     if n <= win or not np.any(x):
-        return x
+        return a
     c = np.empty(n + 1)
     c[0] = 0.0
     np.cumsum(x.astype(np.float64) ** 2, out=c[1:])
@@ -106,13 +109,15 @@ def _natural(mono: np.ndarray, sr: int, floor_db: float = -55.0, onset_db: float
     start = max(0, int(on[0]) - int(preroll_s * sr))
     alive = np.flatnonzero(env >= top * 10.0 ** (floor_db / 20.0))
     end = min(n, int(alive[-1]) + win + int(fade_s * sr))
-    seg = x[start:end].copy()
-    fi = min(int(0.002 * sr), len(seg) // 2)
-    fo = min(int(fade_s * sr), len(seg) // 2)
+    seg = a[start:end].copy()
+    m = seg.shape[0]
+    fi = min(int(0.002 * sr), m // 2)
+    fo = min(int(fade_s * sr), m // 2)
+    shape = (-1,) if seg.ndim == 1 else (-1, 1)
     if fi > 0:
-        seg[:fi] *= np.linspace(0.0, 1.0, fi, dtype=seg.dtype)
+        seg[:fi] *= np.linspace(0.0, 1.0, fi, dtype=seg.dtype).reshape(shape)
     if fo > 0:
-        seg[-fo:] *= np.linspace(1.0, 0.0, fo, dtype=seg.dtype)
+        seg[-fo:] *= np.linspace(1.0, 0.0, fo, dtype=seg.dtype).reshape(shape)
     return seg
 
 

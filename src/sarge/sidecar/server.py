@@ -183,13 +183,14 @@ class _Handler(socketserver.BaseRequestHandler):
             learned = len(lrn.event_count) if lrn is not None else 0
         pcm = wire.encode_pcm(samples, self.pcm)
         n = int(samples.shape[0])
+        ch = 1 if samples.ndim == 1 else int(samples.shape[1])
         self._send(MsgType.AUDIO, {
             "type": "audio",
             "served": served,
             "variant_id": variant_id,
             "format": self.pcm,
             "sample_rate": sr,
-            "channels": 1,
+            "channels": ch,
             "n_samples": n,
             "byte_len": len(pcm),
             "duration_s": (n / sr) if sr else 0.0,

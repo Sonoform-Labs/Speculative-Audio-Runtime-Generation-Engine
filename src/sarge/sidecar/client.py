@@ -70,6 +70,9 @@ class SfxClient:
             "type": "event", "event_type": event_type, "material": material,
             "intensity": intensity, "context": context})
         samples = wire.decode_pcm(pcm, body.get("format", self.pcm))
+        ch = int(body.get("channels", 1) or 1)
+        if ch > 1:
+            samples = samples.reshape(-1, ch)
         return body, samples
 
     def prebake(self, contexts) -> dict:

@@ -65,7 +65,7 @@ class StableAudio3Generator(Generator):
                  unfuse_bias: bool = False, triton_gemm: bool = False, decode_prefix: bool = False,
                  decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
                  level: str = "rms", decoder_ckpt: str | None = None, amp: bool = False,
-                 prompt_style: str = "v1", **_):
+                 prompt_style: str = "v1", stereo: bool = False, width: float = 1.0, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -104,6 +104,8 @@ class StableAudio3Generator(Generator):
         self.decoder_ckpt = str(decoder_ckpt) if decoder_ckpt else None
         self.amp = bool(amp)
         self.prompt_style = str(prompt_style)
+        self.stereo = bool(stereo)
+        self.width = float(width)
         self._load_error = None
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
@@ -232,7 +234,10 @@ class StableAudio3Generator(Generator):
     def _finish(self, a, key: CacheKey) -> np.ndarray:
         while a.ndim > 2:
             a = a[0]
-        mono = a.mean(axis=0) if a.ndim == 2 else a
+        if self.stereo and a.ndim == 2 and a.shape[0] == 2:
+            mono = np.ascontiguousarray(a.T)
+        else:
+            mono = a.mean(axis=0) if a.ndim == 2 else a
         if self.trim == "natural":
             mono = _natural(mono, self.sample_rate)
         else:
@@ -240,6 +245,9 @@ class StableAudio3Generator(Generator):
         if self.amp:
             from ..amp import amplify
             mono = amplify(mono, self.sample_rate, key.event_type, key.intensity)
+        if self.stereo:
+            from ..stereo import widen
+            mono = widen(mono, self.sample_rate, key.event_type, self.width)
         if self.level == "peak":
             mono = normalize_peak(mono, peak_for(key.intensity))
         else:
@@ -254,7 +262,7 @@ class StableAudio3Generator(Generator):
         return np.asarray(audio, dtype=np.float32)
 
     def _guard(self, key: CacheKey, variant: int, mono: np.ndarray) -> np.ndarray:
-        bad, m = is_static(mono, self.sample_rate)
+        bad, m = is_static(mono if mono.ndim == 1 else mono.mean(axis=1), self.sample_rate)
         self._count("static_checks")
         if not bad:
             return mono
@@ -271,7 +279,7 @@ class StableAudio3Generator(Generator):
                     duration=self.gen_duration_s, steps=steps, cfg_scale=self.cfg_scale,
                     seed=retry_seed(base, attempt), batch_size=1, **self._inputs([prompt]), **self._extra())
             cand = self._finish(self._numpy(audio), key)
-            bad, m = is_static(cand, self.sample_rate)
+            bad, m = is_static(cand if cand.ndim == 1 else cand.mean(axis=1), self.sample_rate)
             self._count("static_checks")
             if not bad:
                 self._count("static_rescued")

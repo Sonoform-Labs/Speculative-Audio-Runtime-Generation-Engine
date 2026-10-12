@@ -56,6 +56,9 @@ def main(argv=None) -> int:
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
+    ap.add_argument("--stereo", action="store_true",
+                    help="send stereo clips: the model's two channels plus a decorrelated width stage by sound type "
+                         "(bass stays centred); Unity builds two-channel clips from the reply metadata")
     ap.add_argument("--detailed-prompts", action="store_true",
                     help="the searched prompt grammar: detailed source, action and acoustic wording plus the space from "
                          "the request context (outdoor_open, indoor_small, indoor_large, tunnel; default is outdoor_open)")
@@ -88,6 +91,8 @@ def main(argv=None) -> int:
     if args.no_compile:
         for k in COMPILED:
             gen_kwargs.pop(k, None)
+    if args.stereo:
+        gen_kwargs["stereo"] = True
     if args.detailed_prompts:
         gen_kwargs["prompt_style"] = "detailed"
     if args.amp:

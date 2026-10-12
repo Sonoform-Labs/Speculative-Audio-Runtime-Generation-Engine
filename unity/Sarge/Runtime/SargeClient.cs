@@ -137,13 +137,14 @@ namespace Sarge
             WriteFrame(EVENT, json);
             var f = ReadFrame();
             var meta = JsonUtility.FromJson<AudioMeta>(f.json);
-            return new AudioResult { meta = meta, samples = DecodePcm(f.pcm, meta.format, meta.n_samples) };
+            return new AudioResult { meta = meta, samples = DecodePcm(f.pcm, meta.format, meta.n_samples * Math.Max(1, meta.channels)) };
         }
 
         public AudioClip EventClip(string eventType, string material, string intensity = "normal", string context = "default")
         {
             var r = Event(eventType, material, intensity, context);
-            var clip = AudioClip.Create(eventType + "_" + material, r.samples.Length, 1, r.meta.sample_rate, false);
+            int ch = Math.Max(1, r.meta.channels);
+            var clip = AudioClip.Create(eventType + "_" + material, r.samples.Length / ch, ch, r.meta.sample_rate, false);
             clip.SetData(r.samples, 0);
             return clip;
         }

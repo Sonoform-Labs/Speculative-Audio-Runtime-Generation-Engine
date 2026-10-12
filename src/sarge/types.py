@@ -81,8 +81,20 @@ class AudioClip:
     variant_id: int = 0
 
     @property
+    def channels(self) -> int:
+        return 1 if self.samples.ndim == 1 else int(self.samples.shape[1])
+
+    @property
+    def frames(self) -> int:
+        return int(self.samples.shape[0])
+
+    @property
+    def mono(self) -> np.ndarray:
+        return self.samples if self.samples.ndim == 1 else self.samples.mean(axis=1)
+
+    @property
     def duration_s(self) -> float:
-        return len(self.samples) / self.sample_rate
+        return self.frames / self.sample_rate
 
     @property
     def nbytes(self) -> int:
@@ -94,20 +106,22 @@ class AudioClip:
         os.makedirs(parent, exist_ok=True)
         pcm16 = np.round(np.clip(self.samples, -1.0, 1.0) * 32767.0).astype("<i2")
         with wave.open(path, "wb") as w:
-            w.setnchannels(1)
+            w.setnchannels(self.channels)
             w.setsampwidth(2)
             w.setframerate(self.sample_rate)
             w.writeframes(pcm16.tobytes())
 
     @classmethod
-    def from_wav(cls, path: str | os.PathLike) -> "AudioClip":
+    def from_wav(cls, path: str | os.PathLike, keep_channels: bool = False) -> "AudioClip":
         with wave.open(os.fspath(path), "rb") as w:
             sr = w.getframerate()
             ch = w.getnchannels()
             raw = w.readframes(w.getnframes())
         a = np.frombuffer(raw, dtype="<i2").astype(np.float32) / 32767.0
         if ch > 1:
-            a = a.reshape(-1, ch).mean(axis=1)
+            a = a.reshape(-1, ch)
+            if not keep_channels:
+                a = a.mean(axis=1)
         return cls(np.ascontiguousarray(a, dtype=np.float32), sr)
 
     @classmethod
