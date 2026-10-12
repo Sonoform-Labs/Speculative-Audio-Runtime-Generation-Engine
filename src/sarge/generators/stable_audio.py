@@ -90,6 +90,32 @@ def _extract(mono: np.ndarray, sr: int, duration_s: float, preroll_s: float = 0.
     return seg
 
 
+def _natural(mono: np.ndarray, sr: int, floor_db: float = -55.0, onset_db: float = -30.0, preroll_s: float = 0.02,
+             fade_s: float = 0.03) -> np.ndarray:
+    x = np.asarray(mono, dtype=np.float32)
+    n = x.shape[0]
+    win = max(1, int(0.01 * sr))
+    if n <= win or not np.any(x):
+        return x
+    c = np.empty(n + 1)
+    c[0] = 0.0
+    np.cumsum(x.astype(np.float64) ** 2, out=c[1:])
+    env = np.sqrt(np.maximum(c[win:] - c[:-win], 0.0) / win)
+    top = float(env.max())
+    on = np.flatnonzero(np.abs(x) >= float(np.max(np.abs(x))) * 10.0 ** (onset_db / 20.0))
+    start = max(0, int(on[0]) - int(preroll_s * sr))
+    alive = np.flatnonzero(env >= top * 10.0 ** (floor_db / 20.0))
+    end = min(n, int(alive[-1]) + win + int(fade_s * sr))
+    seg = x[start:end].copy()
+    fi = min(int(0.002 * sr), len(seg) // 2)
+    fo = min(int(fade_s * sr), len(seg) // 2)
+    if fi > 0:
+        seg[:fi] *= np.linspace(0.0, 1.0, fi, dtype=seg.dtype)
+    if fo > 0:
+        seg[-fo:] *= np.linspace(1.0, 0.0, fo, dtype=seg.dtype)
+    return seg
+
+
 class StableAudioGenerator(Generator):
     name = "stableaudio"
     latency_ms = 300.0

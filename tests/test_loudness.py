@@ -47,3 +47,14 @@ def test_mock_intensity_affects_loudness():
     soft = MockGenerator().generate(CacheKey("footstep", "wood", "soft"), variant=0)
     hard = MockGenerator().generate(CacheKey("footstep", "wood", "hard"), variant=0)
     assert rms(soft.samples) < rms(hard.samples)
+
+
+def test_peak_normalize_keeps_the_crest():
+    import numpy as np
+    from sarge.loudness import normalize_peak, peak_for
+    x = np.zeros(1000, dtype=np.float32)
+    x[10] = 0.5
+    x[20:] = 0.01
+    y = normalize_peak(x, peak_for("normal"))
+    assert abs(float(np.max(np.abs(y))) - 10 ** (-1 / 20)) < 1e-5
+    assert abs(float(y[500] / y[10]) - 0.02) < 1e-6

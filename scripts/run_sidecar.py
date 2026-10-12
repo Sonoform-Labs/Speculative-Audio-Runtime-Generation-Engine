@@ -18,10 +18,12 @@ from sarge.sidecar import serve
 COMPILED = {"compile_mode": "default", "compile_decode": True, "graph_decode": True, "hoist_rope": True,
             "fp16_accumulation": True, "graph_text": True, "unfuse_bias": True, "triton_gemm": True,
             "decode_prefix": True}
+PRESENT = {"trim": "natural", "level": "peak"}
 TIERS = {
-    "quality": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
-    "default": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED},
-    "fast":    {"sampler_type": "euler", "steps": 3, "skip_first_step": True, "cfg_interval": (0.9, 1.0), **COMPILED},
+    "quality": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED, **PRESENT},
+    "default": {"sampler_type": "euler", "steps": 3, "skip_first_step": True, **COMPILED, **PRESENT},
+    "fast":    {"sampler_type": "euler", "steps": 3, "skip_first_step": True, "cfg_interval": (0.9, 1.0), **COMPILED,
+                **PRESENT},
 }
 TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
 
@@ -54,6 +56,9 @@ def main(argv=None) -> int:
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
+    ap.add_argument("--short-clips", action="store_true",
+                    help="the old presentation: a 0.6 s window around the loudest point at one rms per intensity; the "
+                         "default keeps each sound until it dies away (up to 1.5 s) and sets its peak per intensity")
     ap.add_argument("--no-triton-gemm", action="store_true",
                     help="keep cublas with the bias fused for every DiT linear; the default swaps three shapes to an "
                          "fp16-accumulating triton gemm on pytorch 2.7+, judged equal, about 3.5 ms a clip faster")
@@ -72,6 +77,9 @@ def main(argv=None) -> int:
         gen_kwargs.pop("mid_noise", None)
     if args.no_compile:
         for k in COMPILED:
+            gen_kwargs.pop(k, None)
+    if args.short_clips:
+        for k in PRESENT:
             gen_kwargs.pop(k, None)
     if args.no_triton_gemm:
         gen_kwargs.pop("unfuse_bias", None)

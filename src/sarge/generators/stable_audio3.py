@@ -6,10 +6,10 @@ import threading
 import numpy as np
 
 from .base import Generator
-from ..loudness import normalize_loudness, target_for
+from ..loudness import normalize_loudness, normalize_peak, peak_for, target_for
 from ..static_guard import is_static, retry_seed
 from ..types import AudioClip, CacheKey
-from .stable_audio import _extract, _seed, build_prompt
+from .stable_audio import _extract, _natural, _seed, build_prompt
 
 
 @contextlib.contextmanager
@@ -63,7 +63,8 @@ class StableAudio3Generator(Generator):
                  graph_decode: bool = False, hoist_rope: bool = False, skip_first_step: bool = False,
                  fp16_accumulation: bool = False, graph_text: bool = False, fast_load: bool = False,
                  unfuse_bias: bool = False, triton_gemm: bool = False, decode_prefix: bool = False,
-                 decode_margin_frames: int = 2, triton_proj: bool = False, **_):
+                 decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
+                 level: str = "rms", **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -97,6 +98,8 @@ class StableAudio3Generator(Generator):
         self.decode_prefix = bool(decode_prefix)
         self.decode_margin_frames = max(0, int(decode_margin_frames))
         self.triton_proj = bool(triton_proj)
+        self.trim = str(trim)
+        self.level = str(level)
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
         self._lock = threading.Lock()
@@ -204,8 +207,14 @@ class StableAudio3Generator(Generator):
         while a.ndim > 2:
             a = a[0]
         mono = a.mean(axis=0) if a.ndim == 2 else a
-        mono = _extract(mono, self.sample_rate, self.duration_s)
-        mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
+        if self.trim == "natural":
+            mono = _natural(mono, self.sample_rate)
+        else:
+            mono = _extract(mono, self.sample_rate, self.duration_s)
+        if self.level == "peak":
+            mono = normalize_peak(mono, peak_for(key.intensity))
+        else:
+            mono = normalize_loudness(mono, target_rms=target_for(key.intensity))
         return mono.astype(np.float32)
 
     @staticmethod
