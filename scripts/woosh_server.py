@@ -42,7 +42,13 @@ def load(kind):
     return torch, ldm.eval().to("cuda"), cfg
 
 
-def make_gen(kind, frames):
+def renoise_for(steps):
+    if steps == 4:
+        return [0, 0.5, 0.5, 0.3]
+    return [0.0] + [float(v) for v in np.linspace(0.5, 0.3, max(1, steps - 1))]
+
+
+def make_gen(kind, frames, steps=4, solver="dopri5"):
     torch, ldm, cfg = load(kind)
     if kind == "flow":
         from woosh.inference.flowmatching_sampler import flowmatching_integrate
@@ -54,11 +60,15 @@ def make_gen(kind, frames):
         noise = torch.randn(1, 128, int(frames)).to("cuda")
         cond = ldm.get_cond({"audio": None, "description": [prompt]}, no_dropout=True, device="cuda")
         with torch.inference_mode():
-            if kind == "flow":
+            if kind == "flow" and solver == "dopri5":
                 x = flowmatching_integrate(ldm, noise=noise, cond=cond, cfg=cfg, atol=0.001, rtol=0.001,
                                            device="cuda", dtype=torch.float64)
+            elif kind == "flow":
+                x = flowmatching_integrate(ldm, noise=noise, cond=cond, cfg=cfg, method=solver, device="cuda",
+                                           step_size=1.0 / max(1, int(steps)))
             else:
-                x = sample_euler(model=ldm, noise=noise, cond=cond, num_steps=4, renoise=[0, 0.5, 0.5, 0.3], cfg=cfg)
+                x = sample_euler(model=ldm, noise=noise, cond=cond, num_steps=int(steps), renoise=renoise_for(int(steps)),
+                                 cfg=cfg)
             audio = ldm.autoencoder.inverse(x)
         return audio[0].detach().to(torch.float32).cpu().numpy().T
 
@@ -83,6 +93,8 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", choices=sorted(MODELS), default="dflow")
     ap.add_argument("--frames", type=int, default=101)
+    ap.add_argument("--steps", type=int, default=4)
+    ap.add_argument("--solver", default="dopri5")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8771)
     ap.add_argument("--amp", action="store_true")
@@ -91,7 +103,7 @@ def main():
     from sarge.prompts import build
     from sarge.types import CacheKey, seed_for
 
-    gen = make_gen(args.model, args.frames)
+    gen = make_gen(args.model, args.frames, args.steps, args.solver)
     lock = threading.Lock()
     t0 = time.perf_counter()
     gen("warmup, a soft thud", 0)
