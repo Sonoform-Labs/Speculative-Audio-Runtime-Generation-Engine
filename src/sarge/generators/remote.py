@@ -78,6 +78,9 @@ class RemoteGenerator(Generator):
                     raise
         sr = int(body.get("sample_rate", self.sample_rate))
         samples = np.frombuffer(pcm, dtype="<f4").astype(np.float32)
+        ch = int(body.get("channels", 1) or 1)
+        if ch > 1:
+            samples = samples.reshape(-1, ch)
         return AudioClip(np.ascontiguousarray(samples), sr, variant_id=variant)
 
     def close(self):

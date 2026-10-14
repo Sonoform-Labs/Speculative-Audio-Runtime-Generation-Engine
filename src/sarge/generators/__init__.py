@@ -14,7 +14,10 @@ def get_generator(name: str, **kwargs) -> Generator:
     if name in ("stableaudio3", "sa3", "stable-audio-3", "stable_audio_3"):
         from .stable_audio3 import StableAudio3Generator
         return StableAudio3Generator(**kwargs)
+    if name in ("hybrid", "routed"):
+        from .routed import RoutedGenerator
+        return RoutedGenerator(**kwargs)
     if name in ("remote", "remotegen"):
         from .remote import RemoteGenerator
         return RemoteGenerator(**kwargs)
-    raise ValueError(f"unknown generator {name!r} (choose: mock, stableaudio, stableaudio3, remote)")
+    raise ValueError(f"unknown generator {name!r} (choose: mock, stableaudio, stableaudio3, hybrid, remote)")

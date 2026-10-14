@@ -1,9 +1,12 @@
 import _bootstrap
 
 import argparse
+import atexit
 import importlib.metadata
 import os
+import subprocess
 import threading
+import time
 
 _CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".cache")
 try:
@@ -25,7 +28,33 @@ TIERS = {
     "fast":    {"sampler_type": "euler", "steps": 3, "skip_first_step": True, "cfg_interval": (0.9, 1.0), **COMPILED,
                 **PRESENT},
 }
+HYBRID_GUNS = {"model_name": "medium", "sampler_type": "pingpong", "steps": 8, "detail_steps": 8, "skip_first_step": False,
+               "cfg_scale": 1.0, "duration_padding_s": 6.0, "gen_duration_s": 3.0, "prompt_style": "detailed"}
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
+
+
+def start_woosh(args):
+    if not os.path.isfile(args.woosh_python):
+        raise SystemExit("woosh python not found: %s" % args.woosh_python)
+    pin = os.path.join(os.path.dirname(REPO), "sarge-research", "modal", "runpinned.py")
+    cmd = [args.woosh_python, "-u"] + ([pin] if os.path.isfile(pin) else []) + [
+        os.path.join(REPO, "scripts", "woosh_server.py"), "--model", args.woosh_model, "--frames", str(args.woosh_frames),
+        "--port", str(args.woosh_port)] + (["--amp"] if args.amp else []) + (["--stereo"] if args.stereo else [])
+    env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
+    env.setdefault("HF_HOME", r"D:\hf_cache")
+    env.setdefault("HF_HUB_OFFLINE", "1")
+    proc = subprocess.Popen(cmd, cwd=REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                            encoding="utf-8", errors="replace")
+    atexit.register(lambda: proc.poll() is None and proc.kill())
+    t0 = time.time()
+    for line in proc.stdout:
+        print("[woosh] " + line.rstrip(), flush=True)
+        if "listening on" in line:
+            threading.Thread(target=lambda: [None for _ in proc.stdout], daemon=True).start()
+            print("woosh %s up in %.1f s" % (args.woosh_model, time.time() - t0), flush=True)
+            return proc
+    raise SystemExit("woosh server exited before listening (code %s)" % proc.poll())
 
 
 def main(argv=None) -> int:
@@ -56,6 +85,12 @@ def main(argv=None) -> int:
                     help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
+    ap.add_argument("--woosh-model", choices=["dflow", "flow"], default="dflow",
+                    help="--generator hybrid: the Woosh model for everything except guns (dflow 4 steps, flow slower and finer)")
+    ap.add_argument("--woosh-frames", type=int, default=101,
+                    help="--generator hybrid: Woosh latent frames per request (50 per second of audio)")
+    ap.add_argument("--woosh-port", type=int, default=8771)
+    ap.add_argument("--woosh-python", default=os.path.join(REPO, ".venv_woosh", "Scripts", "python.exe"))
     ap.add_argument("--stereo", action="store_true",
                     help="send stereo clips: the model's two channels plus a decorrelated width stage by sound type "
                          "(bass stays centred); Unity builds two-channel clips from the reply metadata")
@@ -105,6 +140,9 @@ def main(argv=None) -> int:
         gen_kwargs.pop("triton_gemm", None)
     if args.no_skip_first:
         gen_kwargs.pop("skip_first_step", None)
+    if args.generator == "hybrid":
+        gen_kwargs.update(HYBRID_GUNS, woosh_port=args.woosh_port)
+        start_woosh(args)
     ckpt = args.decoder_ckpt or os.environ.get("SARGE_DECODER_CKPT")
     if ckpt:
         ckpt = ckpt if os.path.isabs(ckpt) else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ckpt)
