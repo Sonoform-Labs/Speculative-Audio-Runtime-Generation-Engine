@@ -173,7 +173,10 @@ class _Handler(socketserver.BaseRequestHandler):
         key = CacheKey(event_type, material, str(body.get("intensity", "normal")), str(body.get("context", "default")))
         self._await_inflight(key)
         with engine_lock:
-            served = self.server.engine.on_event(key)
+            try:
+                served = self.server.engine.on_event(key)
+            except OSError as e:
+                raise FrameError("internal", "generation failed: %s" % e, fatal=False)
             clip = self.server.engine.last_served
             samples = clip.samples
             variant_id = int(clip.variant_id)
@@ -244,7 +247,10 @@ class _Handler(socketserver.BaseRequestHandler):
                 if isinstance(k.get("prompt"), str) and k["prompt"]:
                     prompts[str(ck)] = k["prompt"]
             with engine_lock:
-                self.server.engine.prewarm(keys, prompts or None)
+                try:
+                    self.server.engine.prewarm(keys, prompts or None)
+                except OSError as e:
+                    raise FrameError("internal", "generation failed: %s" % e, fatal=False)
                 stats = dict(self.server.engine.stats)
                 cached = len(self.server.engine.cache)
             self._send(MsgType.PREBAKE_ACK, {"type": "prebake_ack", "spec_gen": int(stats["spec_gen"]),

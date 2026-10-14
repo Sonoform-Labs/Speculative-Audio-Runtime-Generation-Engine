@@ -18,6 +18,37 @@ class Fake:
         return [self.generate(k, variant=v) for k, v in items]
 
 
+class Ordered(Fake):
+    def __init__(self, tag, log):
+        super().__init__(tag)
+        self.log = log
+
+    def ensure_ready(self):
+        self.log.append(self.tag + " ready")
+
+    def generate(self, key, *, variant=0):
+        self.log.append(self.tag + " gen")
+        return super().generate(key, variant=variant)
+
+
+def test_start_rest_loads_and_warms_the_guns_before_the_other_model_starts():
+    log = []
+    g, r = Ordered("guns", log), Ordered("rest", log)
+    gen = RoutedGenerator(guns=g, rest=r, start_rest=lambda: log.append("start rest"))
+    gen.ensure_ready()
+    assert log == ["guns ready", "guns gen", "start rest", "rest ready", "guns gen"]
+    log.clear()
+    gen.ensure_ready()
+    assert log == ["guns ready", "rest ready", "guns gen"]
+
+
+def test_without_start_rest_the_old_order_holds():
+    log = []
+    g, r = Ordered("guns", log), Ordered("rest", log)
+    RoutedGenerator(guns=g, rest=r).ensure_ready()
+    assert log == ["guns ready", "rest ready", "guns gen"]
+
+
 def test_guns_go_to_one_model_and_everything_else_to_the_other():
     g, r = Fake("guns"), Fake("rest")
     gen = RoutedGenerator(guns=g, rest=r, warm_guns=False)
@@ -28,3 +59,14 @@ def test_guns_go_to_one_model_and_everything_else_to_the_other():
     assert [float(c.samples[0]) for c in clips] == [np.float32(0.1)] * 2 + [np.float32(0.2)] * 3
     batch = gen.generate_batch([(k, 1) for k in keys])
     assert [b.variant_id for b in batch] == [1] * 5 and gen.fast_stats()["routed_guns"] == 4
+
+
+def test_engine_charges_each_route_its_own_cost_and_lead_gates_guns_on_it():
+    from sarge.affordance import AffordanceEngine
+    from sarge.fusion import FusedProposal
+    gen = RoutedGenerator(guns=Fake("guns"), rest=Fake("rest"), warm_guns=False, gun_cost_ms=150.0, rest_cost_ms=40.0)
+    eng = AffordanceEngine(gen, realtime=True, gen_cost_ms=28.0)
+    gun, glass = CacheKey("shoot", "pistol", "normal"), CacheKey("break", "window", "normal")
+    assert eng.cost_ms(gun) == 150.0 and eng.cost_ms(glass) == 40.0
+    out = eng.register_predictions([FusedProposal(gun, 0.1, 0.9, ("motion",)), FusedProposal(glass, 0.1, 0.9, ("motion",))])
+    assert out == {"queued": 1, "lead_gated": 1}

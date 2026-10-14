@@ -29,9 +29,25 @@ TIERS = {
                 **PRESENT},
 }
 HYBRID_GUNS = {"model_name": "medium", "sampler_type": "pingpong", "steps": 8, "detail_steps": 8, "skip_first_step": False,
-               "cfg_scale": 1.0, "duration_padding_s": 6.0, "gen_duration_s": 3.0, "prompt_style": "detailed"}
+               "cfg_scale": 1.0, "duration_padding_s": 1.0, "noise_span": (3.0, 6.0), "gen_duration_s": 3.0,
+               "prompt_style": "detailed", "hoist_diff": True}
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
+WOOSH_COST_MS = {"dflow": 50.0, "flow": 1010.0}
+
+
+def check_weights(model_name):
+    try:
+        from huggingface_hub import constants, try_to_load_from_cache
+        from stable_audio_3.model_configs import models
+    except Exception:
+        return
+    cfg = models.get(model_name)
+    if cfg is None or not constants.HF_HUB_OFFLINE:
+        return
+    if not all(isinstance(try_to_load_from_cache(cfg.repo_id, f), str) for f in (cfg.config_path, cfg.ckpt_path)):
+        raise SystemExit("%s weights (%s) are not in the offline HF cache %s; point HF_HOME or HF_HUB_CACHE at the "
+                         "cache that holds them" % (model_name, cfg.repo_id, constants.HF_HUB_CACHE))
 
 
 def start_woosh(args):
@@ -40,10 +56,11 @@ def start_woosh(args):
     pin = os.path.join(os.path.dirname(REPO), "sarge-research", "modal", "runpinned.py")
     cmd = [args.woosh_python, "-u"] + ([pin] if os.path.isfile(pin) else []) + [
         os.path.join(REPO, "scripts", "woosh_server.py"), "--model", args.woosh_model, "--frames", str(args.woosh_frames),
-        "--port", str(args.woosh_port)] + (["--amp"] if args.amp else []) + (["--stereo"] if args.stereo else [])
+        "--port", str(args.woosh_port), "--parent-pid", str(os.getpid())] + (["--amp"] if args.amp else []) + (
+        ["--stereo"] if args.stereo else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
-    env.setdefault("HF_HOME", r"D:\hf_cache")
-    env.setdefault("HF_HUB_OFFLINE", "1")
+    env.pop("TRANSFORMERS_CACHE", None)
+    env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1")
     proc = subprocess.Popen(cmd, cwd=REPO, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                             encoding="utf-8", errors="replace")
     atexit.register(lambda: proc.poll() is None and proc.kill())
@@ -88,8 +105,10 @@ def main(argv=None) -> int:
     ap.add_argument("--woosh-model", choices=["dflow", "flow"], default="dflow",
                     help="--generator hybrid: the Woosh model for everything except guns (dflow 4 steps, flow slower and finer)")
     ap.add_argument("--woosh-frames", type=int, default=101,
-                    help="--generator hybrid: Woosh latent frames per request (50 per second of audio)")
+                    help="--generator hybrid: Woosh latent frames per request (100 per second of audio, 101 = 1.0 s)")
     ap.add_argument("--woosh-port", type=int, default=8771)
+    ap.add_argument("--woosh-hf-cache", default=r"D:\hf_cache",
+                    help="--generator hybrid: the HF cache that holds roberta-large for the Woosh text encoder")
     ap.add_argument("--woosh-python", default=os.path.join(REPO, ".venv_woosh", "Scripts", "python.exe"))
     ap.add_argument("--stereo", action="store_true",
                     help="send stereo clips: the model's two channels plus a decorrelated width stage by sound type "
@@ -140,9 +159,14 @@ def main(argv=None) -> int:
         gen_kwargs.pop("triton_gemm", None)
     if args.no_skip_first:
         gen_kwargs.pop("skip_first_step", None)
+    if args.generator in ("sa3", "hybrid"):
+        check_weights(HYBRID_GUNS["model_name"] if args.generator == "hybrid" else gen_kwargs.get("model_name",
+                                                                                                    "small-sfx"))
     if args.generator == "hybrid":
-        gen_kwargs.update(HYBRID_GUNS, woosh_port=args.woosh_port)
-        start_woosh(args)
+        if not os.path.isfile(args.woosh_python):
+            raise SystemExit("woosh python not found: %s" % args.woosh_python)
+        gen_kwargs.update(HYBRID_GUNS, woosh_port=args.woosh_port, start_rest=lambda: start_woosh(args),
+                          rest_cost_ms=WOOSH_COST_MS[args.woosh_model])
     ckpt = args.decoder_ckpt or os.environ.get("SARGE_DECODER_CKPT")
     if ckpt:
         ckpt = ckpt if os.path.isabs(ckpt) else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ckpt)
@@ -150,7 +174,8 @@ def main(argv=None) -> int:
             raise SystemExit("decoder checkpoint not found: %s" % ckpt)
         gen_kwargs["decoder_ckpt"] = ckpt
     sampler, steps = gen_kwargs["sampler_type"], gen_kwargs["steps"]
-    gen_cost = args.gen_cost_ms if args.gen_cost_ms is not None else TIER_COST_MS.get(tier, 200.0)
+    gen_cost = args.gen_cost_ms if args.gen_cost_ms is not None else (
+        WOOSH_COST_MS[args.woosh_model] if args.generator == "hybrid" else TIER_COST_MS.get(tier, 200.0))
 
     kwargs = dict(vram_budget_kb=args.vram_kb, gpu_ms_budget=args.gpu_ms_budget,
                   variants_per_key=args.variants, target_variants=args.target_variants,

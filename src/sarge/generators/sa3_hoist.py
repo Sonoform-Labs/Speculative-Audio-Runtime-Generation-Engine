@@ -31,6 +31,26 @@ def _kn(attn, k):
     return k
 
 
+def _kv(attn, e):
+    if attn.differential:
+        k, k_diff, v = attn.to_kv(e).chunk(3, dim=-1)
+        k, k_diff, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=attn.kv_heads), (k, k_diff, v))
+        return _kn(attn, torch.stack([k, k_diff], dim=1)), v
+    k, v = attn.to_kv(e).chunk(2, dim=-1)
+    k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=attn.kv_heads), (k, v))
+    return _kn(attn, k), v
+
+
+def _kv_layers(tr, diff: bool = False) -> list:
+    out = []
+    for i, layer in enumerate(tr.layers):
+        a = getattr(layer, "cross_attn", None) if getattr(layer, "cross_attend", False) else None
+        if (a is not None and hasattr(a, "to_q") and hasattr(a, "to_kv") and (diff or not a.differential)
+                and not a.feat_scale and a.qk_norm in _NORMS):
+            out.append((i, a))
+    return out
+
+
 def _rot(tm, t, cos, sin):
     with torch.autocast("cuda", enabled=False):
         out_dtype = t.dtype
@@ -97,9 +117,10 @@ class _Slot:
 
 class Hoist:
     def __init__(self, sam, accelerator, parts=DEFAULT_PARTS, graph_fill: bool = True,
-                 verify: bool = False, cache_prompts: int = 0):
+                 verify: bool = False, cache_prompts: int = 0, diff: bool = False):
         self.sam = sam
         self.acc = accelerator
+        self.diff = bool(diff)
         self.graph_fill = bool(graph_fill)
         self.verify = bool(verify)
         self.cache_size = max(0, int(cache_prompts))
@@ -162,11 +183,7 @@ class Hoist:
         if "cond" in want and getattr(dit, "to_cond_embed", None) is None:
             want -= {"cond", "kv"}
         if "kv" in want and getattr(tr, "cross_attn_rotary_pos_emb", None) is None:
-            for i, layer in enumerate(tr.layers):
-                a = getattr(layer, "cross_attn", None) if getattr(layer, "cross_attend", False) else None
-                if (a is not None and hasattr(a, "to_q") and hasattr(a, "to_kv") and not a.differential
-                        and not a.feat_scale and a.qk_norm in _NORMS):
-                    self.kv_layers.append((i, a))
+            self.kv_layers = _kv_layers(tr, self.diff)
         if not self.kv_layers:
             want.discard("kv")
         if "local" in want:
@@ -313,8 +330,14 @@ class Hoist:
                             flash_attn_sliding_window=flash_attn_sliding_window, padding_mask=padding_mask,
                             varlen_metadata=varlen_metadata)
             k, v = ent
-            q = rearrange(a.to_q(x), "b n (h d) -> b h n d", h=a.num_heads)
-            q = _qn(a, q)
+            if a.differential:
+                q, q_diff = a.to_q(x).chunk(2, dim=-1)
+                q, q_diff = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=a.num_heads), (q, q_diff))
+                q, q_diff = _qn(a, torch.stack([q, q_diff], dim=1)).unbind(dim=1)
+                k, k_diff = k.unbind(dim=1)
+            else:
+                q = rearrange(a.to_q(x), "b n (h d) -> b h n d", h=a.num_heads)
+                q = _qn(a, q)
             causal = a.causal if causal is None else causal
             if q.shape[-2] == 1 and causal:
                 causal = False
@@ -322,6 +345,12 @@ class Hoist:
                                flex_attention_score_mod=flex_attention_score_mod,
                                flash_attn_sliding_window=flash_attn_sliding_window, padding_mask=padding_mask,
                                varlen_metadata=varlen_metadata)
+            if a.differential:
+                out = out - a.apply_attn(q_diff, k_diff, v, causal=causal,
+                                         flex_attention_block_mask=flex_attention_block_mask,
+                                         flex_attention_score_mod=flex_attention_score_mod,
+                                         flash_attn_sliding_window=flash_attn_sliding_window,
+                                         padding_mask=padding_mask, varlen_metadata=varlen_metadata)
             return a.to_out(rearrange(out, "b h n d -> b n (h d)"))
         return forward
 
@@ -390,9 +419,7 @@ class Hoist:
             out["E"] = e
             if "kv" in self.parts:
                 for i, a in self.kv_layers:
-                    k, v = a.to_kv(e).chunk(2, dim=-1)
-                    k, v = map(lambda t: rearrange(t, "b n (h d) -> b h n d", h=a.kv_heads), (k, v))
-                    out["kv"][i] = (_kn(a, k), v)
+                    out["kv"][i] = _kv(a, e)
         if lc is not None and "local" in self.parts:
             lt = rearrange(lc, "b c t -> b t c")
             for i, layer in self.local_layers:
@@ -554,5 +581,6 @@ class Hoist:
 
 
 def install_hoist(sam, accelerator, parts=DEFAULT_PARTS, graph_fill: bool = True, verify: bool = False,
-                  cache_prompts: int = 0) -> Hoist:
-    return Hoist(sam, accelerator, parts=parts, graph_fill=graph_fill, verify=verify, cache_prompts=cache_prompts)
+                  cache_prompts: int = 0, diff: bool = False) -> Hoist:
+    return Hoist(sam, accelerator, parts=parts, graph_fill=graph_fill, verify=verify, cache_prompts=cache_prompts,
+                 diff=diff)

@@ -27,6 +27,45 @@ def _skip_first_schedule():
     finally:
         smp.build_schedule = orig
 
+SA3_SAMPLE_SIZE = 5292032
+
+
+class _SpanTorch:
+    def __init__(self, torch_mod, frames: int):
+        self._torch = torch_mod
+        self.frames = int(frames)
+
+    def __getattr__(self, name):
+        return getattr(self._torch, name)
+
+    def randn(self, *size, **kw):
+        shape = tuple(size[0]) if len(size) == 1 and isinstance(size[0], (list, tuple)) else size
+        if len(shape) != 3 or not all(isinstance(s, int) for s in shape) or shape[-1] >= self.frames:
+            return self._torch.randn(*size, **kw)
+        return self._torch.randn([*shape[:-1], self.frames], **kw)[..., :shape[-1]].contiguous()
+
+    def randn_like(self, x, **kw):
+        n = int(x.shape[-1])
+        if kw or x.dim() != 3 or n >= self.frames:
+            return self._torch.randn_like(x, **kw)
+        full = x.new_empty((*x.shape[:-1], self.frames))
+        return self._torch.randn_like(full)[..., :n].contiguous()
+
+
+@contextlib.contextmanager
+def _noise_span(frames: int):
+    import stable_audio_3.inference.sampling as smp
+    import stable_audio_3.model as sm
+    saved = [(m, m.torch) for m in (sm, smp) if not isinstance(m.torch, _SpanTorch)]
+    for m, t in saved:
+        m.torch = _SpanTorch(t, frames)
+    try:
+        yield
+    finally:
+        for m, t in saved:
+            m.torch = t
+
+
 _RANDOM_INITS = ("uniform_", "normal_", "trunc_normal_", "kaiming_uniform_", "kaiming_normal_", "xavier_uniform_",
                  "xavier_normal_", "orthogonal_")
 
@@ -65,7 +104,8 @@ class StableAudio3Generator(Generator):
                  unfuse_bias: bool = False, triton_gemm: bool = False, decode_prefix: bool = False,
                  decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
                  level: str = "rms", decoder_ckpt: str | None = None, amp: bool = False,
-                 prompt_style: str = "v1", stereo: bool = False, width: float = 1.0, **_):
+                 prompt_style: str = "v1", stereo: bool = False, width: float = 1.0, noise_span=None,
+                 hoist_diff: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -106,6 +146,9 @@ class StableAudio3Generator(Generator):
         self.prompt_style = str(prompt_style)
         self.stereo = bool(stereo)
         self.width = float(width)
+        self.noise_span = None if noise_span is None else (float(noise_span[0]), float(noise_span[1]))
+        self._span_frames = None
+        self.hoist_diff = bool(hoist_diff)
         self._load_error = None
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
@@ -177,7 +220,8 @@ class StableAudio3Generator(Generator):
             try:
                 from .sa3_hoist import ALL_PARTS, DEFAULT_PARTS, install_hoist
                 self._hoist = install_hoist(self._model, self._fast, cache_prompts=int(self.hoist_prompts),
-                                            parts=ALL_PARTS if self.hoist_rope else DEFAULT_PARTS)
+                                            parts=ALL_PARTS if self.hoist_rope else DEFAULT_PARTS,
+                                            diff=self.hoist_diff)
             except Exception:
                 self._hoist = None
 
@@ -199,6 +243,16 @@ class StableAudio3Generator(Generator):
         if not self.skip_first_step:
             return contextlib.nullcontext()
         return _skip_first_schedule()
+
+    def _noise(self):
+        if self.noise_span is None or self._model is None:
+            return contextlib.nullcontext()
+        if self._span_frames is None:
+            gen, pad = self.noise_span
+            ratio = int(self._model.model.pretransform.downsampling_ratio)
+            self._span_frames = int(self._model._adapt_sample_size([{"seconds_total": gen}], SA3_SAMPLE_SIZE,
+                                                                    pad)) // ratio
+        return _noise_span(self._span_frames)
 
     def _extra(self) -> dict:
         return {"cfg_interval": self.cfg_interval} if self.cfg_interval is not None else {}
@@ -274,7 +328,7 @@ class StableAudio3Generator(Generator):
         prompt = self._prompt(key)
         for attempt in range(1, self.max_static_retries + 1):
             self._count("static_retries")
-            with self._lock, torch.no_grad(), self._schedule():
+            with self._lock, torch.no_grad(), self._schedule(), self._noise():
                 audio = self._model.generate(
                     duration=self.gen_duration_s, steps=steps, cfg_scale=self.cfg_scale,
                     seed=retry_seed(base, attempt), batch_size=1, **self._inputs([prompt]), **self._extra())
@@ -299,7 +353,7 @@ class StableAudio3Generator(Generator):
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         self._ensure_loaded()
         import torch
-        with self._lock, torch.no_grad(), self._schedule():
+        with self._lock, torch.no_grad(), self._schedule(), self._noise():
             audio = self._model.generate(
                 duration=self.gen_duration_s,
                 steps=self._steps_for(key),
@@ -324,7 +378,7 @@ class StableAudio3Generator(Generator):
         out = [None] * len(items)
         for steps, idx in groups.items():
             sub = [items[i] for i in idx]
-            with self._lock, torch.no_grad(), self._schedule():
+            with self._lock, torch.no_grad(), self._schedule(), self._noise():
                 audio = self._model.generate(
                     duration=self.gen_duration_s, steps=steps,
                     cfg_scale=self.cfg_scale, seed=_seed(sub[0][0], sub[0][1]),

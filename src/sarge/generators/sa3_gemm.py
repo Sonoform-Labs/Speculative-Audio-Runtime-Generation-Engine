@@ -5,8 +5,12 @@ from typing import Optional
 import torch
 
 CONFIGS = {(1024, 8192): (64, 256, 32, 4, 3), (1024, 3072): (64, 128, 32, 4, 3), (4096, 1024): (64, 128, 64, 4, 4),
-           (1024, 1024): (64, 128, 64, 8, 4)}
-DEFAULT_SHAPES = ((1024, 8192), (1024, 3072), (4096, 1024))
+           (1024, 1024): (64, 128, 64, 8, 4), (1536, 7680): (128, 128, 32, 4, 3),
+           (1536, 3072): (128, 128, 64, 8, 3, "f32"), (1536, 12288): (128, 64, 32, 4, 3),
+           (6144, 1536): (128, 64, 64, 8, 4, "f32")}
+SMALL_SHAPES = ((1024, 8192), (1024, 3072), (4096, 1024))
+MEDIUM_SHAPES = ((1536, 7680), (1536, 3072), (1536, 12288), (6144, 1536))
+DEFAULT_SHAPES = SMALL_SHAPES + MEDIUM_SHAPES
 
 _OP = None
 
@@ -48,14 +52,45 @@ def _build():
         c = c_ptr + rm[:, None] * scm + rn[None, :] * scn
         tl.store(c, acc, mask=(rm[:, None] < M) & (rn[None, :] < N))
 
+    @triton.jit
+    def mm16s(a_ptr, b_ptr, c_ptr, bias_ptr, M, N, K, sam, sak, sbk, sbn, scm, scn,
+              BM: tl.constexpr, BN: tl.constexpr, BK: tl.constexpr, GROUP: tl.constexpr, HAS_BIAS: tl.constexpr):
+        pid = tl.program_id(0)
+        num_m = tl.cdiv(M, BM)
+        num_n = tl.cdiv(N, BN)
+        width = GROUP * num_n
+        gid = pid // width
+        first_m = gid * GROUP
+        gsize = min(num_m - first_m, GROUP)
+        pm = first_m + (pid % width) % gsize
+        pn = (pid % width) // gsize
+        rm = pm * BM + tl.arange(0, BM)
+        rn = pn * BN + tl.arange(0, BN)
+        rk = tl.arange(0, BK)
+        a = a_ptr + rm[:, None] * sam + rk[None, :] * sak
+        b = b_ptr + rk[:, None] * sbk + rn[None, :] * sbn
+        acc = tl.zeros((BM, BN), dtype=tl.float32)
+        for k in range(0, tl.cdiv(K, BK)):
+            x = tl.load(a, mask=(rm[:, None] < M) & (rk[None, :] < K - k * BK), other=0.0)
+            y = tl.load(b, mask=(rk[:, None] < K - k * BK) & (rn[None, :] < N), other=0.0)
+            acc += tl.dot(x, y, out_dtype=tl.float16).to(tl.float32)
+            a += BK * sak
+            b += BK * sbk
+        if HAS_BIAS:
+            acc += tl.load(bias_ptr + rn, mask=rn < N, other=0.0).to(tl.float32)[None, :]
+        c = c_ptr + rm[:, None] * scm + rn[None, :] * scn
+        tl.store(c, acc.to(tl.float16), mask=(rm[:, None] < M) & (rn[None, :] < N))
+
     @triton_op("sarge::linear16", mutates_args={})
     def linear16(x: torch.Tensor, w: torch.Tensor, bias: Optional[torch.Tensor]) -> torch.Tensor:
         m, k = x.shape
         n = w.shape[0]
-        bm, bn, bk, warps, stages = CONFIGS[(k, n)]
+        cfg = CONFIGS[(k, n)]
+        bm, bn, bk, warps, stages = cfg[:5]
+        kern = mm16s if len(cfg) > 5 and cfg[5] == "f32" else mm16
         out = torch.empty((m, n), device=x.device, dtype=x.dtype)
         grid = (triton.cdiv(m, bm) * triton.cdiv(n, bn),)
-        wrap_triton(mm16)[grid](x, w, out, out if bias is None else bias, m, n, k, x.stride(0), x.stride(1),
+        wrap_triton(kern)[grid](x, w, out, out if bias is None else bias, m, n, k, x.stride(0), x.stride(1),
                                 w.stride(1), w.stride(0), out.stride(0), out.stride(1), BM=bm, BN=bn, BK=bk, GROUP=8,
                                 HAS_BIAS=bias is not None, num_warps=warps, num_stages=stages)
         return out

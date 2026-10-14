@@ -7,6 +7,17 @@ from ..types import AudioClip, CacheKey
 from .base import Generator
 
 GUN_FAMILIES = ("blast", "handling")
+WARM_KEY = CacheKey("shoot", "pistol", "normal")
+
+
+def release_cuda_cache():
+    try:
+        import torch
+    except ImportError:
+        return
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+        torch.cuda.empty_cache()
 
 
 class RoutedGenerator(Generator):
@@ -14,7 +25,8 @@ class RoutedGenerator(Generator):
     latency_ms = 260.0
 
     def __init__(self, woosh_host: str = "127.0.0.1", woosh_port: int = 8771, gun_families=GUN_FAMILIES,
-                 guns=None, rest=None, warm_guns: bool = True, **sa3_kwargs):
+                 guns=None, rest=None, warm_guns: bool = True, start_rest=None, gun_cost_ms: float = 155.0,
+                 rest_cost_ms: float = 50.0, **sa3_kwargs):
         if guns is None:
             from .stable_audio3 import StableAudio3Generator
             guns = StableAudio3Generator(**sa3_kwargs)
@@ -29,17 +41,41 @@ class RoutedGenerator(Generator):
         self._rest_lock = threading.Lock()
         self.counts = {"guns": 0, "rest": 0}
         self.warm_guns = bool(warm_guns)
+        self.start_rest = start_rest
+        self._rest_started = False
+        self.costs = {"guns": float(gun_cost_ms), "rest": float(rest_cost_ms)}
 
     def route(self, key: CacheKey) -> str:
         return "guns" if family_for(key.event_type) in self.gun_families else "rest"
 
+    def cost_ms(self, key: CacheKey) -> float:
+        return self.costs[self.route(key)]
+
     def ensure_ready(self):
+        if self.start_rest is not None:
+            return self._ready_guns_first()
         for g in (self.guns, self.rest):
             ready = getattr(g, "ensure_ready", None)
             if ready:
                 ready()
         if self.warm_guns:
-            self.guns.generate(CacheKey("shoot", "pistol", "normal"), variant=0)
+            self.guns.generate(WARM_KEY, variant=0)
+
+    def _ready_guns_first(self):
+        ready = getattr(self.guns, "ensure_ready", None)
+        if ready:
+            ready()
+        if not self._rest_started:
+            if self.warm_guns:
+                self.guns.generate(WARM_KEY, variant=0)
+            release_cuda_cache()
+            self.start_rest()
+            self._rest_started = True
+        ready = getattr(self.rest, "ensure_ready", None)
+        if ready:
+            ready()
+        if self.warm_guns:
+            self.guns.generate(WARM_KEY, variant=0)
 
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         side = self.route(key)

@@ -94,6 +94,10 @@ class AffordanceEngine:
     def _bytes(self, clip):
         return int(getattr(clip, "nbytes", 0))
 
+    def cost_ms(self, key) -> float:
+        f = getattr(self.gen, "cost_ms", None) or getattr(getattr(self.gen, "inner", None), "cost_ms", None)
+        return float(f(key)) if callable(f) else self.gen_cost_ms
+
     def _used(self):
         return sum(self._bytes(c) for pool in self.cache.values() for c in pool)
 
@@ -142,7 +146,7 @@ class AffordanceEngine:
             self.cache.setdefault(key, []).append(clip)
             self.generated.add(key)
             self.stats[stat] += 1
-            self.stats["gpu_ms"] += self.gen_cost_ms
+            self.stats["gpu_ms"] += self.cost_ms(key)
         self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
 
     def on_context_change(self, ctx: GameContext, gpu_pressure: float = 1.0, now: float | None = None):
@@ -187,10 +191,10 @@ class AffordanceEngine:
             self.priority[c.key] = self.L + c.p_use
             have = len(self.cache.get(c.key, ()))
             for v in range(have, self.variants_per_key):
-                if spent + self.gen_cost_ms > self.gpu_ms_budget:
+                if spent + self.cost_ms(c.key) > self.gpu_ms_budget:
                     break
                 batch.append((c.key, v))
-                spent += self.gen_cost_ms
+                spent += self.cost_ms(c.key)
         self._add_clips(batch)
 
     def _has_evictable(self):
@@ -262,7 +266,7 @@ class AffordanceEngine:
             self.cache.setdefault(key, []).append(clip)
             self.generated.add(key)
             self.stats[stat] += 1
-            self.stats["gpu_ms"] += self.gen_cost_ms
+            self.stats["gpu_ms"] += self.cost_ms(key)
         for item in batch:
             self.inflight.discard(item)
         self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
@@ -295,7 +299,7 @@ class AffordanceEngine:
         batch = []
         gated = 0
         for fp in proposals:
-            if fp.eta_s * 1000.0 < self.gen_cost_ms:
+            if fp.eta_s * 1000.0 < self.cost_ms(fp.key):
                 gated += 1
                 continue
             self.eta[fp.key] = self._now + fp.eta_s
@@ -303,10 +307,10 @@ class AffordanceEngine:
             self.priority[fp.key] = self.L + fp.p_use
             have = len(self.cache.get(fp.key, ()))
             for v in range(have, self.variants_per_key):
-                if spent + self.gen_cost_ms > self.gpu_ms_budget:
+                if spent + self.cost_ms(fp.key) > self.gpu_ms_budget:
                     break
                 batch.append((fp.key, v))
-                spent += self.gen_cost_ms
+                spent += self.cost_ms(fp.key)
         self._add_clips(batch)
         return {"generated": len(batch), "lead_gated": gated}
 
@@ -316,7 +320,7 @@ class AffordanceEngine:
         queued = 0
         gated = 0
         for fp in proposals:
-            if fp.eta_s * 1000.0 < self.gen_cost_ms:
+            if fp.eta_s * 1000.0 < self.cost_ms(fp.key):
                 gated += 1
                 continue
             self.eta[fp.key] = self._now + fp.eta_s
@@ -371,7 +375,7 @@ class AffordanceEngine:
             self.generated.add(key)
             self.recent[key] = 0
         self.stats["realtime"] += 1
-        self.stats["gpu_ms"] += self.gen_cost_ms
+        self.stats["gpu_ms"] += self.cost_ms(key)
         self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
         return clip
 
