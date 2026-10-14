@@ -14,6 +14,7 @@ MODELS = {
     "medium_e8": ("SA3 medium, euler 8 steps", "0.49 s", "Stability Community"),
     "moss_100_w10": ("MOSS-SoundEffect v2, 100 steps", "19.7 s", "Apache-2.0"),
     "woosh_flow": ("Sony Woosh Flow", "6.3 s", "CC-BY-NC, reference only"),
+    "woosh_dflow": ("Sony Woosh DFlow (distilled, 4 steps)", "0.22 s", "CC-BY-NC, reference only"),
 }
 KEYS = ["shoot-pistol", "shoot-rifle", "break-window", "bullet_impact-glass", "footstep-gravel", "footstep-stone",
         "footstep-wood", "footstep-metal", "footstep-water", "splash-water", "punch-body", "reload-rifle"]
@@ -23,6 +24,9 @@ def parse(argv):
     ap = argparse.ArgumentParser()
     ap.add_argument("--takes", type=int, default=3)
     ap.add_argument("--seed", default="bake1")
+    ap.add_argument("--models", default=",".join(MODELS))
+    ap.add_argument("--out", default="page")
+    ap.add_argument("--store", default="bakeoff1")
     return ap.parse_args(argv)
 
 
@@ -32,14 +36,15 @@ def h(s):
 
 def main(argv=None):
     a = parse(argv)
-    out = os.path.join(BASE, "page")
+    out = os.path.join(BASE, a.out)
+    chosen = {m: MODELS[m] for m in a.models.split(",")}
     if os.path.isdir(out):
         shutil.rmtree(out)
     os.makedirs(os.path.join(out, "a"))
     key, sections = {}, []
     letters = "ABCDEFGHIJ"
     for k in KEYS:
-        models = sorted(MODELS, key=lambda m: h(a.seed + k + m))
+        models = sorted(chosen, key=lambda m: h(a.seed + k + m))
         rows = []
         for i, m in enumerate(models):
             clips = []
@@ -74,8 +79,8 @@ peak-levelled to the same height. Letters are shuffled per sound. Mark the best 
 <p><button id='reveal'>Reveal</button> <button id='dl'>Download picks</button> <span id='tally'></span></p>
 <script>
 const KEY=%s, INFO=%s;
-let store={};try{store=JSON.parse(localStorage.getItem('bakeoff1')||'{}')}catch(e){}
-function save(){try{localStorage.setItem('bakeoff1',JSON.stringify(store))}catch(e){}}
+let store={};try{store=JSON.parse(localStorage.getItem('%s')||'{}')}catch(e){}
+function save(){try{localStorage.setItem('%s',JSON.stringify(store))}catch(e){}}
 function paint(){document.querySelectorAll('tr[data-k]').forEach(tr=>{const k=tr.dataset.k,l=tr.dataset.l,s=store[k]||{};
  tr.querySelectorAll('button').forEach(b=>b.classList.toggle('on',s[b.dataset.v]===l));});
  document.querySelectorAll('button.none').forEach(b=>b.classList.toggle('on',!!(store[b.dataset.k]||{}).none));}
@@ -92,10 +97,10 @@ document.getElementById('dl').onclick=()=>{const x=document.createElement('a');
  x.href=URL.createObjectURL(new Blob([JSON.stringify({picks:store,key:KEY},null,1)],{type:'application/json'}));
  x.download='bakeoff_picks.json';x.click();};
 paint();
-</script></body></html>""" % ("".join(sections), json.dumps(key), json.dumps(MODELS))
+</script></body></html>""" % ("".join(sections), json.dumps(key), json.dumps(chosen), a.store, a.store)
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(page)
-    print("wrote %s (%d sounds, %d options each)" % (os.path.join(out, "index.html"), len(KEYS), len(MODELS)))
+    print("wrote %s (%d sounds, %d options each)" % (os.path.join(out, "index.html"), len(KEYS), len(chosen)))
     return 0
 
 
