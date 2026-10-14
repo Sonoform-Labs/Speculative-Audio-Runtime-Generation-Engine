@@ -55,8 +55,9 @@ def start_woosh(args):
         raise SystemExit("woosh python not found: %s" % args.woosh_python)
     pin = os.path.join(os.path.dirname(REPO), "sarge-research", "modal", "runpinned.py")
     cmd = [args.woosh_python, "-u"] + ([pin] if os.path.isfile(pin) else []) + [
-        os.path.join(REPO, "scripts", "woosh_server.py"), "--model", args.woosh_model, "--frames", str(args.woosh_frames),
-        "--port", str(args.woosh_port), "--parent-pid", str(os.getpid())] + (["--amp"] if args.amp else []) + (
+        os.path.join(REPO, "scripts", "woosh_server.py"), "--model", args.woosh_model,
+        "--port", str(args.woosh_port), "--parent-pid", str(os.getpid())] + (
+        ["--frames", str(args.woosh_frames)] if args.woosh_frames else []) + (["--amp"] if args.amp else []) + (
         ["--stereo"] if args.stereo else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
@@ -104,8 +105,13 @@ def main(argv=None) -> int:
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
     ap.add_argument("--woosh-model", choices=["dflow", "flow"], default="dflow",
                     help="--generator hybrid: the Woosh model for everything except guns (dflow 4 steps, flow slower and finer)")
-    ap.add_argument("--woosh-frames", type=int, default=101,
-                    help="--generator hybrid: Woosh latent frames per request (100 per second of audio, 101 = 1.0 s)")
+    ap.add_argument("--woosh-frames", default=None,
+                    help="--generator hybrid: Woosh latent frames per request, 100 per second of audio (101 = 1.0 s): "
+                         "one count for every sound, or family=count pairs from sarge.amp (impact, step, other for "
+                         "the rest), e.g. impact=501. Each distinct count is one CUDA graph captured before READY, "
+                         "about 0.5 s and 60 to 80 MB each. Default: woosh_server.FRAMES, 101 for every family, since "
+                         "no count up to 501 brought any family to 5%% or fewer clips still sounding at the cut "
+                         "(docs/hybrid.md)")
     ap.add_argument("--woosh-port", type=int, default=8771)
     ap.add_argument("--woosh-hf-cache", default=r"D:\hf_cache",
                     help="--generator hybrid: the HF cache that holds roberta-large for the Woosh text encoder")

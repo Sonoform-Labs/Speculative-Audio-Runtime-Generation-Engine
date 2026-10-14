@@ -114,3 +114,50 @@ def test_hybrid_without_the_woosh_python_stops_before_loading(rs, monkeypatch, t
     with pytest.raises(SystemExit) as e:
         rs.main(["--generator", "hybrid", "--no-cache", "--woosh-python", str(tmp_path / "none.exe")])
     assert "woosh python not found" in str(e.value)
+
+
+def test_start_woosh_passes_frames_only_when_given(rs, monkeypatch, tmp_path):
+    py = tmp_path / "python.exe"
+    py.write_bytes(b"")
+    cmds = []
+
+    class Proc:
+        def __init__(self, cmd, **kw):
+            cmds.append(cmd)
+            self.stdout = iter(["woosh server listening on 127.0.0.1:8771\n"])
+
+        def poll(self):
+            return 0
+
+    monkeypatch.setattr(rs.subprocess, "Popen", Proc)
+    monkeypatch.setattr(rs.atexit, "register", lambda f: None)
+    base = dict(woosh_python=str(py), woosh_model="dflow", woosh_port=8771, amp=True, stereo=True,
+                woosh_hf_cache=str(tmp_path))
+    rs.start_woosh(types.SimpleNamespace(woosh_frames=None, **base))
+    rs.start_woosh(types.SimpleNamespace(woosh_frames="impact=501", **base))
+    assert "--frames" not in cmds[0]
+    i = cmds[1].index("--frames")
+    assert cmds[1][i + 1] == "impact=501"
+    assert cmds[1][-2:] == ["--amp", "--stereo"]
+
+
+def test_woosh_frames_flag_defaults_to_the_server_table(rs, monkeypatch, tmp_path):
+    seen = []
+
+    class Stop(Exception):
+        pass
+
+    def fake_serve(**kw):
+        kw["gen_kwargs"]["start_rest"]()
+        raise Stop()
+
+    py = tmp_path / "python.exe"
+    py.write_bytes(b"")
+    monkeypatch.setattr(rs, "serve", fake_serve)
+    monkeypatch.setattr(rs, "check_weights", lambda name: None)
+    monkeypatch.setattr(rs, "start_woosh", lambda args: seen.append(args.woosh_frames))
+    monkeypatch.delenv("SARGE_DECODER_CKPT", raising=False)
+    for extra in ([], ["--woosh-frames", "step=151,impact=201"]):
+        with pytest.raises(Stop):
+            rs.main(["--generator", "hybrid", "--no-cache", "--woosh-python", str(py)] + extra)
+    assert seen == [None, "step=151,impact=201"]

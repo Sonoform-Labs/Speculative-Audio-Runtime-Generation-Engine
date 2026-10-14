@@ -140,3 +140,148 @@ def test_istft_matches_torch_istft_bitwise():
         out = ws.Istft(Head, frames)(spec)
         assert out.shape == ref.shape == (1, (frames - 1) * 480)
         assert torch.equal(out, ref)
+
+
+def test_frames_table_names_every_family_that_reaches_woosh():
+    from sarge.amp import FAMILIES
+    assert set(ws.FRAMES) == {"impact", "step", "other"}
+    assert set(ws.FRAMES) - {"other"} <= set(FAMILIES)
+    assert all(isinstance(n, int) and n >= 101 for n in ws.FRAMES.values())
+
+
+def test_parse_frames_default_single_count_and_family_pairs():
+    assert ws.parse_frames(None) == ws.FRAMES and ws.parse_frames(None) is not ws.FRAMES
+    assert ws.parse_frames("") == ws.FRAMES
+    assert ws.parse_frames("151") == {"impact": 151, "step": 151, "other": 151}
+    assert ws.parse_frames("impact=501") == dict(ws.FRAMES, impact=501)
+    assert ws.parse_frames(" step = 201 ,other=301") == dict(ws.FRAMES, step=201, other=301)
+    assert ws.parse_frames("blast=151")["blast"] == 151
+    with pytest.raises(ValueError):
+        ws.parse_frames("glass=501")
+
+
+def test_frames_for_picks_the_bucket_of_the_amp_family():
+    t = {"impact": 501, "step": 201, "other": 301}
+    assert [ws.frames_for(e, t) for e in ("footstep", "bullet impact", "break", "punch", "jump")] == [
+        201, 501, 501, 501, 201]
+    assert ws.frames_for("splash", t) == 301
+    assert ws.frames_for("shoot", t) == 301
+    assert ws.frames_for("shoot", dict(t, blast=151)) == 151
+
+
+def test_prepare_warms_each_distinct_count_once_in_ascending_order():
+    class Cuda:
+        def __init__(self):
+            self.mem = 0
+
+        def synchronize(self):
+            pass
+
+        def memory_reserved(self):
+            return self.mem
+
+    class G:
+        def __init__(self):
+            self.torch = type("T", (), {"cuda": Cuda()})()
+            self.calls = []
+
+        def __call__(self, prompt, seed, mark=None, frames=None):
+            self.calls.append((prompt, seed, frames))
+            self.torch.cuda.mem += frames * 2 ** 20
+
+    g = G()
+    out = ws.prepare(g, {"impact": 501, "step": 201, "other": 201})
+    assert g.calls == [(ws.WARM, 0, 201), (ws.WARM, 0, 501)]
+    assert sorted(out) == [201, 501]
+    assert out[201]["reserved_mb"] == 201 and out[501]["reserved_mb"] == 501 and out[501]["warm_s"] >= 0.0
+
+
+class _HostOnly:
+    def __init__(self, torch):
+        self._t = torch
+        self.cuda = type("C", (), {"synchronize": staticmethod(lambda: None),
+                                   "memory_reserved": staticmethod(lambda: 0)})()
+
+    def __getattr__(self, name):
+        return getattr(self._t, name)
+
+
+def _stub_dflow(torch, frames=101):
+    g = object.__new__(ws.Gen)
+    g.torch, g.ldm, g.frames, g.plain = _HostOnly(torch), None, frames, False
+    g.kind, g.graph, g.steps = "dflow", "full", 4
+    g.stats, g.buckets = {"nfe": []}, {}
+    g._cond = lambda p: {"c": torch.full((2,), float(len(p)))}
+    captures, replays = [], []
+
+    def capture(cond, n):
+        st = {"noise": torch.zeros(1, 128, n), "eps": [torch.zeros(1, 128, n)], "cond": {"c": torch.zeros(2)},
+              "out": torch.zeros(1, (n - 1) * 480)}
+        g.buckets[n] = {"g": type("R", (), {"replay": staticmethod(lambda: replays.append(n))})(), "g_ae": None,
+                        "st": st}
+        captures.append(n)
+
+    g._capture_dflow = capture
+    return g, captures, replays
+
+
+def test_dflow_request_replays_the_bucket_of_its_length_without_a_new_capture():
+    torch = pytest.importorskip("torch")
+    g, captures, replays = _stub_dflow(torch)
+    ws.prepare(g, {"impact": 501, "step": 101, "other": 101})
+    assert captures == [101, 501] and replays == [101, 501]
+    out = g("glass", 7, frames=501)
+    assert captures == [101, 501] and replays == [101, 501, 501]
+    assert out.shape == (500 * 480, 1)
+    assert torch.equal(g.buckets[501]["st"]["cond"]["c"], torch.full((2,), 5.0))
+    assert torch.equal(g.buckets[101]["st"]["cond"]["c"], torch.full((2,), float(len(ws.WARM))))
+    g("step", 3)
+    assert captures == [101, 501] and replays == [101, 501, 501, 101]
+
+
+def test_dflow_noise_is_drawn_at_the_bucket_length_from_the_request_seed():
+    torch = pytest.importorskip("torch")
+    g, _c, _r = _stub_dflow(torch)
+    g("a", 11, frames=151)
+    torch.manual_seed(11)
+    assert torch.equal(g.buckets[151]["st"]["noise"], torch.randn(1, 128, 151))
+
+
+def test_finish_drops_the_end_of_window_burst_before_levelling():
+    t = np.arange(ws.SR) / ws.SR
+    x = (0.3 * np.exp(-t * 3.0) * np.sin(2 * np.pi * 440 * t)).astype(np.float32)
+    x[-200:] = 0.9
+    y = ws.finish(x[:, None], "break", "normal", False, False)
+    assert len(y) <= ws.SR - int(ws.END_CUT_S * ws.SR)
+    assert np.abs(y[: len(y) // 4]).max() > 0.8
+
+
+def test_render_retries_a_silent_take_and_keeps_good_ones_untouched():
+    seeds = []
+
+    def gen(prompt, seed, frames=101):
+        seeds.append(seed)
+        x = np.zeros((ws.SR, 1), dtype=np.float32)
+        x[-100:] = 0.5
+        if len(seeds) > 1:
+            x[1000:2000] = 0.3
+        return x
+
+    out = ws.render(gen, "metal step", 7, frames=101)
+    assert len(seeds) == 2 and seeds[0] == 7 and seeds[1] != 7
+    assert ws.body_peak(out) == np.float32(0.3)
+    seeds.clear()
+    ws.render(lambda p, s, frames=101: (seeds.append(s), np.full((ws.SR, 1), 0.2, dtype=np.float32))[1], "x", 3)
+    assert seeds == [3]
+
+
+def test_render_gives_up_after_the_retry_budget_and_returns_the_loudest():
+    calls = []
+
+    def gen(prompt, seed, frames=101):
+        calls.append(seed)
+        return np.full((ws.SR, 1), 0.001 * len(calls), dtype=np.float32)
+
+    out = ws.render(gen, "x", 1)
+    assert len(calls) == 1 + ws.SILENT_RETRIES
+    assert ws.body_peak(out) == np.float32(0.001 * len(calls))
