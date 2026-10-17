@@ -78,8 +78,6 @@ def process(y, sr: int, event: str = "", intensity: str = "normal", *, level: st
         a = _natural(a, sr, floor_db=float(sh.get("floor_db", -55.0)))
     elif trim != "none":
         a = _extract(a, sr, duration_s)
-    if sh.get("t40_s"):
-        a = decay_cap(a, sr, float(sh["t40_s"]))
     if sh.get("lowpass_hz"):
         a = lowpass(a, sr, float(sh["lowpass_hz"]))
     if amp_mode in ("full", "punch"):
@@ -97,4 +95,6 @@ def process(y, sr: int, event: str = "", intensity: str = "normal", *, level: st
         a = normalize_loudness(a, target_rms=target_for(intensity))
     else:
         a = normalize_peak(a, peak_for(intensity))
+    if sh.get("t40_s"):
+        a = decay_cap(a, sr, float(sh["t40_s"]))
     return np.asarray(a, dtype=np.float32)

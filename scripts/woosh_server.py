@@ -18,6 +18,8 @@ sys.path.insert(0, str(HERE.parent / "src"))
 
 from model_server import _recv, _send
 from sarge import startup
+from sarge.prompts import build as build_prompt
+from sarge.types import CacheKey, seed_for
 
 WOOSH_HOME = os.environ.get("WOOSH_HOME", r"F:\AI\cache\woosh")
 MODELS = {"flow": ("checkpoints/Woosh-Flow", 4.5), "dflow": ("checkpoints/Woosh-DFlow", 4.5)}
@@ -615,20 +617,29 @@ def make_gen(kind, frames, steps=4, solver="dopri5", cond_cache=0, graph="none",
                ae_precision=ae_precision, batch_cfg=batch_cfg, time_dtype=time_dtype, mod_cache=mod_cache)
 
 
-def body_peak(x):
+def body_peak(x, shape=None):
     m = x.mean(axis=1) if x.ndim == 2 else x
-    return float(np.abs(m[:max(1, len(m) - int(END_CUT_S * SR))]).max())
+    m = m[:max(1, len(m) - int(END_CUT_S * SR))]
+    if shape:
+        from sarge.generators.stable_audio import _natural
+        from sarge.loudness import dc_highpass
+        m = _natural(dc_highpass(np.asarray(m, dtype=np.float32), SR).astype(np.float32), SR,
+                     floor_db=float(shape.get("floor_db", -55.0)))
+        if shape.get("lowpass_hz"):
+            from sarge.post import lowpass
+            m = lowpass(m, SR, float(shape["lowpass_hz"]))
+    return float(np.abs(m).max())
 
 
-def render(gen, prompt, seed, **kw):
+def render(gen, prompt, seed, shape=None, **kw):
     from sarge.static_guard import retry_seed
     raw = gen(prompt, seed, **kw)
-    best = body_peak(raw)
+    best = body_peak(raw, shape)
     for attempt in range(1, SILENT_RETRIES + 1):
         if best >= SILENT_PEAK:
             break
         alt = gen(prompt, retry_seed(seed, attempt), **kw)
-        p = body_peak(alt)
+        p = body_peak(alt, shape)
         if p > best:
             raw, best = alt, p
     return raw
@@ -661,6 +672,16 @@ def physics_shape(phys):
         return {}
     from sarge.world import shape
     return {"shape": shape(phys)}
+
+
+def render_key(gen, key, variant, frames):
+    prompt = build_prompt(key.event_type, key.material, key.intensity, key.context, key.phys)
+    return render(gen, prompt, seed_for(key, int(variant)), shape=physics_shape(key.phys).get("shape"),
+                  frames=frames_for(key.event_type, frames))
+
+
+def finish_key(raw, key, amp, stereo, level="peak"):
+    return finish(raw, key.event_type, key.intensity, amp, stereo, level=level, **physics_shape(key.phys))
 
 
 def parent_gone(pid):
@@ -738,9 +759,6 @@ def main():
     startup.stage("woosh base imports", _T_SCRIPT)
     if args.parent_pid:
         watch_parent(args.parent_pid)
-    from sarge.prompts import build
-    from sarge.types import CacheKey, seed_for
-
     opts = dict(OPTIONS, **({} if args.plain else ADOPTED[args.model]))
     opts.update({k: getattr(args, k) for k in OPTIONS if getattr(args, k) is not None})
     frames = parse_frames(args.frames)
@@ -777,13 +795,10 @@ def main():
                 try:
                     key = CacheKey(req["event_type"], req["material"], req.get("intensity", "normal"),
                                    req.get("context", "default"), req.get("phys", ""))
-                    prompt = build(key.event_type, key.material, key.intensity, key.context, key.phys)
                     t = time.perf_counter()
                     with lock:
-                        raw = render(gen, prompt, seed_for(key, int(req.get("variant", 0))),
-                                     frames=frames_for(key.event_type, frames))
-                    y = finish(raw, key.event_type, key.intensity, args.amp, args.stereo, level=args.level,
-                               **physics_shape(key.phys))
+                        raw = render_key(gen, key, req.get("variant", 0), frames)
+                    y = finish_key(raw, key, args.amp, args.stereo, level=args.level)
                 except (ConnectionError, OSError):
                     raise
                 except Exception as e:

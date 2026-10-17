@@ -197,6 +197,8 @@ hfHome      F:\AI\cache\hf
 port        8765
 ```
 
+The arguments did not change for the on-time defaults: `--concurrent-gen` is now on inside `run_sidecar.py` (see "Concurrent misses on by default" below), so the scene gets it without a new flag, and adding `--no-concurrent-gen` to the arguments brings back the single-lock path. The one scene edit of 2026-10-17 is physical: the shared ball and tile PhysicMaterial `psfx_bouncy` now has bounciness 0.8 where it had 1, so the demo balls lose energy on each bounce (`docs/physics-context.md`, "The demo balls now lose energy"; the old scene is in `D:\PSfxUnityTest_backup_20261016\WalkArena.unity`).
+
 `hfHome` moved from the scene's old `D:\hf_cache`, because stable-audio-3-medium only lives under `F:\AI\cache\hf\hub`; with the old value the sidecar now stops at startup and says so. Woosh reads its roberta-large text config from `D:\hf_cache`; `run_sidecar.py` hands the worker `HF_HUB_CACHE` from `--woosh-hf-cache` (default `D:\hf_cache`), so the worker finds it whatever `HF_HOME` or `TRANSFORMERS_CACHE` the game passes. `runpinned.py` keeps the sidecar off core 8 (Woosh is pinned by `run_sidecar.py` either way), and because it moves the working directory to `scripts\`, the cache directory is given as an absolute path. Without pinning, `scripts\run_sidecar.py --generator hybrid --realtime --stereo --amp --detailed-prompts` gives the same engine. `--learn` (the runtime affordance learner) was part of the Unity-environment run.
 
 ## Loudness levelling and world playback (flags off)
@@ -222,6 +224,26 @@ Playback is a Unity switch. `unity/Sarge/Runtime/SargePlayback.cs` is a pool of 
 
 Finishing costs more on the CPU (pinned, 4 threads): a Woosh clip 4.5 ms today, 5.9 ms with `--amp punch` and 6.5 ms with the full amplifier; a gun clip 19.7, 19.8 and 23.4 ms. `scripts/bench/level_page.py` builds the blind page `data/_gate/feel/loudness_page/index.html`: 46 single clips through the three chains and 7 game scenes (six with the current chain against v2 at 4, 8 and 12 m, plus six footsteps through the three chains), at the levels the demo plays them, with best and worst picks, Reveal and Download. Tests: `tests/test_level.py`.
 
+## Concurrent misses on by default
+
+Since 2026-10-17 `run_sidecar.py` turns `--concurrent-gen` and `--async-cache-write` on unless `--no-concurrent-gen` or `--no-async-cache-write` is given. Under `--concurrent-gen` a realtime miss renders outside the engine lock, so a cached sound on another connection answers while a gun renders, and no prediction or background render starts beside a miss until it lands. It is the one on-time flag whose checks all passed; `docs/on-time.md` has the measurements, the check that found what held some first hits (the 16-bit disk-cache write on the reply path, which HEAD has too), and the flags that stay off. Every sound-changing flag (`--world`, `--level loudness`, `--amp punch`, mix v2) stays off, and so do `--async-cache-write`, `--keep-warm-ms`, `--predict-fixes`, `--pool-fix` and `--sibling-on-miss`.
+
+`e2e_hybrid.py` ran four times under Unity's environment on ports 8767 and 8772 with `--learn`: once cold (`--evict --settle 15`) and once warm with the new defaults, once warm with `--no-concurrent-gen` (every flag off) and once warm with `--async-cache-write` added. Results are in `data/_gate/opt/_e2e/e2e_ontime_*.json`; the clip comparisons are `data/_gate/startup/compare_ontime.json` and `compare_ontime_q0.json` (the saved arrays were deleted after the comparison; each run folder keeps its `index.json` with a sha1 per clip).
+
+| | cold, defaults | warm, defaults | warm, every flag off | warm, + `--async-cache-write` |
+|---|---|---|---|---|
+| READY | 66.1 s | 47.1 s | 46.6 s | 46.4 s |
+| VRAM peak during startup / at READY (MiB) | 9,687 / 9,721 | 9,721 / 9,721 | 9,721 / 9,721 | 9,687 / 9,721 |
+| VRAM peak during requests (MiB) | 10,245 | 10,245 | 10,245 | 10,245 |
+| very first request (a gun) | 154.0 ms | 153.3 ms | 153.8 ms | 153.3 ms |
+| gun first hit, 14 keys, median / p90 / max | 150.0 / 158 / 162 ms | 150.2 / 161 / 187 ms | 149.8 / 160 / 162 ms | 149.1 / 157 / 161 ms |
+| Woosh first hit, 24 keys, median / p90 | 34.5 / 52.0 ms | 34.2 / 52.1 ms | 34.5 / 52.3 ms | 33.7 / 51.6 ms |
+| repeat of a cached sound, guns / Woosh | 1.19 / 0.57 ms | 1.21 / 0.61 ms | 1.29 / 0.58 ms | 1.31 / 0.43 ms |
+| clips against `baseline_warm_1` | 75 of 75 identical | 75 of 75 identical | 75 of 75 identical (gate Q0) | 75 of 75 identical |
+| Woosh worker after the kill | gone in 0.8 s | gone in 0.8 s | gone in 0.8 s | gone in 0.8 s |
+
+All four runs passed gate V (startup peak at most 10,752 MiB, READY at most 9,830 MiB). This harness samples the card every 0.5 s; the on-time bench samples every 0.1 s and saw startup peaks of 10,031 to 10,259 MiB with the same code, still inside the bound; the peak while both models rendered at once, which this harness does not set up on purpose, was 10,243 to 10,247 MiB in the on-time bench's `s2` runs, under 11,571. The cold run evicted 91,449 files (36.0 GB) in 139 s and waited 110 s for Defender to settle; Defender still used 17.6 s of CPU before READY, and the DiT compile took 37.4 s (22 s in the warm runs), the same stall described under Startup, so 66.1 s sits inside the 51.7 to 86.5 s spread of the earlier cold runs. This harness sends one request at a time on one connection, so the first-hit columns match whatever the flags; the head-of-line gain of `--concurrent-gen` shows only with the T preset's two event lanes, as measured in `docs/on-time.md` (a cached sound behind a gun miss: 245 ms at the median under HEAD, 0.6 ms now).
+
 ## Candidates waiting for your ear
 
 `data/_gate/opt/page/index.html` (built by `scripts/bench/opt_page.py`, key in `data/_gate/opt/page_key.json`) holds every G2 candidate for blind listening: 23 sounds, three takes per option, letters shuffled per sound, best, worst and "none sound right", picks kept in the browser, Reveal and Download. Each sound also offers the production setting and the setting before the speed work, so the same page doubles as an ear check on the G1 adoptions.
@@ -233,6 +255,8 @@ Finishing costs more on the CPU (pinned, 4 threads): a Woosh clip 4.5 ms today, 
 | Woosh Flow | rk4 8 steps 361; rk4 16 steps 720; midpoint 16 steps 364; midpoint 32 steps 723 | 1005 (fp32 before 3584) |
 
 The Woosh candidates were rendered in fp32 and would ship in bf16; the bf16 versions sit within 0.03 of the same ratios. Six SA3 steps is the candidate I would listen to first: it saves 27 ms on every gun and moved the sound by about one seed (ratio 1.03), with pistol identity at 0.79. The shorter generations cut tails on most clips and will probably lose. On the Woosh side, 6 steps at 1.0 s (ratio 0.42) and 4 steps at 1.5 s keep a new-prompt first hit near 60 ms, while 8 steps pushes it to about 80 ms. The fixed Flow solvers would bring Flow down to about 0.36 s, still too slow for an unpredicted first hit, though fine for sounds the predictor asks for early.
+
+The physics context has a separate page, `data/_gate/feel/world_page/index.html` (built by `scripts/bench/world_page.py` from the `world_render.py demo` renders, key in `data/_gate/feel/world_page_key.json`): the eleven demo collisions, each through HEAD, `--world` and `--world --level loudness`, three takes each at the level the game plays them. The numbers behind it are in `docs/physics-context.md` under "GPU checks run".
 
 ## Still open
 

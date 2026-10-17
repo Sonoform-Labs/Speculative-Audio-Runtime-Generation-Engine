@@ -42,13 +42,13 @@ HARD_VN = 6.0
 GROUND = {"shape": "box", "ext": [10.0, 0.2, 10.0], "dyn": 0}
 GROUNDS = {"grass", "gravel", "dirt", "sand", "snow", "mud", "carpet", "water"}
 ADJECTIVE = {"wood": "wooden"}
-SIZE_WORD = {"tiny": "tiny", "small": "small", "medium": "", "large": "large", "huge": "huge"}
+SIZE_WORD = {"tiny": "", "small": "", "medium": "", "large": "", "huge": ""}
+BUILD_WORDS = {"inflated": "", "hollow": ""}
 PANEL = {"glass": "pane", "metal": "plate", "steel": "plate", "iron": "plate", "wood": "board", "stone": "slab",
          "concrete": "slab"}
 CONTACT_WORDS = {"sharp": "a sharp bright click", "crisp": "a crisp hard knock", "dull": "a dull thud",
                  "soft": "a soft muffled bump"}
-RING_WORDS = {"dead": "short and dry, stopping at once", "short": "a brief {m} ring that dies away quickly",
-              "ringing": "a ringing {m} tail", "long": "a long resonant {m} ring"}
+RING_WORDS = {"dead": "", "short": "", "ringing": "", "long": ""}
 FRAGMENTS = {"glass": "bright tinkling shards", "ceramic": "clinking shards", "porcelain": "clinking shards",
              "wood": "cracking splinters", "stone": "gritty chips and debris", "concrete": "gritty chips and debris",
              "brick": "gritty chips and debris", "plastic": "clattering plastic pieces"}
@@ -300,9 +300,7 @@ def _article(phrase):
 
 
 def _object(mat, size, build, noun):
-    words = [SIZE_WORD.get(size, "")]
-    if build in ("inflated", "hollow"):
-        words.append(build)
+    words = [SIZE_WORD.get(size, ""), BUILD_WORDS.get(build, "")]
     if mat and not _has_word(noun, mat):
         words.append(mat)
     words.append(noun)

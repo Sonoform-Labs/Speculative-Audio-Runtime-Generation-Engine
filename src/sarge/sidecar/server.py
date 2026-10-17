@@ -212,12 +212,15 @@ class _Handler(socketserver.BaseRequestHandler):
         except BaseException as e:
             with engine_lock:
                 eng.release_realtime(key)
+            _wake_deepen(self.server)
             if isinstance(e, OSError):
                 raise FrameError("internal", "generation failed: %s" % e, fatal=False)
             raise
         with engine_lock:
             served = eng.complete_realtime(key, made)
-            return (served,) + self._served(intent, made)
+            out = (served,) + self._served(intent, made)
+        _wake_deepen(self.server)
+        return out
 
     def _on_event(self, body):
         t_recv = time.time()
@@ -505,7 +508,12 @@ def _deepen_loop(server):
                 _idle(server, 0.05 if did else 0.5)
                 continue
             with engine_lock:
-                batch, stat = planner(max_items=getattr(server, "deepen_batch", 1))
+                held = bool(getattr(eng, "claims", None))
+                if not held:
+                    batch, stat = planner(max_items=getattr(server, "deepen_batch", 1))
+            if held:
+                _idle(server, 0.5)
+                continue
             if batch:
                 tg = time.perf_counter()
                 clips = eng.gen.generate_batch(batch)
@@ -536,7 +544,8 @@ def _keep_warm_loop(server):
     while getattr(server, "keep_warm_s", 0.0) > 0.0:
         time.sleep(server.keep_warm_s / 2.0)
         with engine_lock:
-            idle = server.clients > 0 and time.monotonic() - server.last_gen_t >= server.keep_warm_s
+            idle = (server.clients > 0 and not getattr(server.engine, "claims", None)
+                    and time.monotonic() - server.last_gen_t >= server.keep_warm_s)
         if not idle:
             continue
         t = time.perf_counter()
@@ -556,12 +565,12 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
           learn: bool = False, realtime: bool = False, deepen_batch: int = 1, world: bool = False,
           event_log: str | None = None, predict_fixes: bool = False, pool_fix: bool = False,
           concurrent_gen: bool = False, keep_warm_ms: float = 0.0, sibling_on_miss: bool = False,
-          **engine_kwargs) -> SfxServer:
+          cache_async: bool = False, **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
             from ..generators.cached import CachedGenerator
-            gen = CachedGenerator(gen, cache_dir)
+            gen = CachedGenerator(gen, cache_dir, async_write=cache_async)
         if learn:
             from ..affordance_learn import RuntimeAffordanceLearner
             from ..router import EventRouter

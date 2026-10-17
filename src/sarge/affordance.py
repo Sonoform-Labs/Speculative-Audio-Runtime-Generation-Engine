@@ -79,6 +79,7 @@ class AffordanceEngine:
         self.demand_set: set = set()
         self.demand_cap: int = 128
         self.inflight: set = set()
+        self.claims: set = set()
         self.eta: dict = {}
         self.grace_s: float = 0.5
         self._now: float = 0.0
@@ -337,7 +338,7 @@ class AffordanceEngine:
             self.eta[fp.key] = self._now + fp.eta_s
             self.want[fp.key] = max(self.want.get(fp.key, 0), self._target_variants(fp.key))
             self.priority[fp.key] = self.L + fp.p_use
-            if fp.key not in self.cache and fp.key not in self.demand_set:
+            if fp.key not in self.cache and fp.key not in self.demand_set and fp.key not in self.claims:
                 self._queue_demand(fp.key)
                 queued += 1
         return {"queued": queued, "lead_gated": gated}
@@ -396,13 +397,16 @@ class AffordanceEngine:
         if self.sibling_on_miss and self._sibling(key) is not None:
             return False
         self.inflight.add((key, 0))
+        self.claims.add(key)
         return True
 
     def release_realtime(self, key: CacheKey):
         self.inflight.discard((key, 0))
+        self.claims.discard(key)
 
     def complete_realtime(self, key: CacheKey, clip: AudioClip) -> str:
         self.inflight.discard((key, 0))
+        self.claims.discard(key)
         self.fired.add(key)
         self.eta.pop(key, None)
         if self.learner is not None:

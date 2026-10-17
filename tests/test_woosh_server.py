@@ -285,3 +285,59 @@ def test_render_gives_up_after_the_retry_budget_and_returns_the_loudest():
     out = ws.render(gen, "x", 1)
     assert len(calls) == 1 + ws.SILENT_RETRIES
     assert ws.body_peak(out) == np.float32(0.001 * len(calls))
+
+
+def test_render_judges_a_physics_take_by_what_the_chain_keeps():
+    t = np.arange(ws.SR) / ws.SR
+    bright = (0.3 * np.sin(2 * np.pi * 6000.0 * t) * np.minimum(1.0, t / 0.01)).astype(np.float32)[:, None]
+    low = (0.3 * np.sin(2 * np.pi * 120.0 * t) * np.exp(-t / 0.1)).astype(np.float32)[:, None]
+    burst = np.zeros((ws.SR, 1), dtype=np.float32)
+    end, n = ws.SR - int(ws.END_CUT_S * ws.SR), int(0.002 * ws.SR)
+    burst[end - n:end, 0] = 0.01 * np.sin(2 * np.pi * 2000.0 * t[:n])
+    soft = {"t40_s": 0.2, "punch_scale": 0.25, "drive": 1.0, "floor_db": -45.0, "lowpass_hz": 400.0}
+    assert ws.body_peak(bright, soft) < ws.SILENT_PEAK <= ws.body_peak(bright)
+    assert ws.body_peak(burst, dict(soft, lowpass_hz=None)) < ws.SILENT_PEAK <= ws.body_peak(burst)
+    for first in (bright, burst):
+        seeds = []
+
+        def gen(prompt, seed, frames=101):
+            seeds.append(seed)
+            return first if len(seeds) == 1 else low
+
+        assert ws.render(gen, "x", 5, shape=soft) is low and len(seeds) == 2
+        seeds.clear()
+        assert ws.render(gen, "x", 5) is first and seeds == [5]
+
+
+def test_render_key_matches_the_old_request_path_and_judges_by_the_shape_only_with_physics():
+    from sarge.prompts import build
+    from sarge.types import CacheKey, seed_for
+    calls = []
+
+    def gen(prompt, seed, frames=101):
+        calls.append((prompt, seed, frames))
+        return np.full((ws.SR, 1), 0.2, dtype=np.float32)
+
+    frames = ws.parse_frames(None)
+    k = CacheKey("impact", "metal", "hard", "default")
+    ws.render_key(gen, k, 2, frames)
+    assert calls == [(build("impact", "metal", "hard", "default"), seed_for(k, 2), ws.frames_for("impact", frames))]
+    raw = np.full((ws.SR, 1), 0.2, dtype=np.float32)
+    np.testing.assert_array_equal(ws.finish_key(raw, k, "full", True), ws.finish(raw, "impact", "hard", "full", True))
+    seen = {}
+    orig = ws.render
+
+    def spy(g, prompt, seed, shape=None, **kw):
+        seen["shape"] = shape
+        return orig(g, prompt, seed, shape=shape, **kw)
+
+    ws.render = spy
+    try:
+        ws.render_key(gen, k, 0, frames)
+        assert seen["shape"] is None
+        kp = CacheKey("impact", "metal", "hard", "default",
+                      "bounce;a=rubber,large,inflated,ball;b=metal,huge,static,floor;c=soft;r=short,metal")
+        ws.render_key(gen, kp, 0, frames)
+        assert seen["shape"]["lowpass_hz"] == 400.0
+    finally:
+        ws.render = orig

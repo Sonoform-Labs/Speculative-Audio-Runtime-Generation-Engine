@@ -530,8 +530,8 @@ def test_pool_fix_skips_variants_already_cached_or_in_flight():
     e = AffordanceEngine(MockGenerator(), realtime=True, variants_per_key=3, vram_budget_kb=200_000)
     e.pool_fix = True
     k = CacheKey("a", "b", "normal")
-    assert e.claim_realtime(k)
     e.register_predictions([FusedProposal(k, 5.0, 0.9, ("m",))])
+    assert e.claim_realtime(k)
     planned = []
     for _ in range(2):
         b, _stat = e.plan_batch(max_items=1)
@@ -541,3 +541,109 @@ def test_pool_fix_skips_variants_already_cached_or_in_flight():
     rest, _stat = e.plan_batch(max_items=1)
     assert planned == [(k, 1), (k, 2)] and rest == []
     assert sorted(c.variant_id for c in e.cache[k]) == [0, 1, 2]
+
+
+def test_a_claimed_key_is_not_queued_by_predictions():
+    e = AffordanceEngine(MockGenerator(), realtime=True, vram_budget_kb=200_000, authored=set())
+    k, other = CacheKey("a", "b", "normal"), CacheKey("c", "d", "normal")
+    assert e.claim_realtime(k)
+    res = e.register_predictions([FusedProposal(k, 5.0, 0.9, ("m",)), FusedProposal(other, 5.0, 0.9, ("m",))])
+    assert e.demand == [other] and res["queued"] == 1
+    e.complete_realtime(k, e.gen.generate(k, variant=0))
+    assert not e.claims
+    e.register_predictions([FusedProposal(k, 5.0, 0.9, ("m",))])
+    assert e.demand == [other]
+    assert e.claim_realtime(CacheKey("x", "y", "normal"))
+    e.release_realtime(CacheKey("x", "y", "normal"))
+    assert not e.claims and not e.inflight
+
+
+class Stamped(SlowGen):
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.spans = []
+
+    def generate(self, key, *, variant=0):
+        t0 = time.perf_counter()
+        clip = super().generate(key, variant=variant)
+        self.spans.append((str(key), variant, t0, time.perf_counter()))
+        return clip
+
+
+def _claim_then_predict(flag):
+    gen = Stamped(slow_s=0.2)
+    srv = _srv(gen, concurrent_gen=flag, deepen=True)
+    try:
+        def slow():
+            with SfxClient(*srv.server_address) as c2:
+                c2.event("slow", "metal")
+
+        t = threading.Thread(target=slow)
+        t.start()
+        time.sleep(0.04)
+        with SfxClient(*srv.server_address) as c:
+            c.predict([{"source": "m", "event_type": "bg", "material": "wood", "eta_s": 5.0}])
+            meta, _ = c.event("fast", "wood")
+        t.join()
+        deadline = time.perf_counter() + 3.0
+        while time.perf_counter() < deadline:
+            if any(s[0].startswith("bg|") for s in gen.spans):
+                break
+            time.sleep(0.005)
+    finally:
+        _stop(srv)
+    spans = {(s[0].split("|")[0], s[1]): s for s in gen.spans}
+    return spans, meta
+
+
+def test_concurrent_gen_starts_no_background_render_while_a_claim_renders():
+    spans, meta = _claim_then_predict(True)
+    assert spans[("bg", 0)][2] >= spans[("slow", 0)][3]
+    assert ("slow", 1) not in spans
+    assert meta["served"] == "realtime"
+
+
+def test_concurrent_gen_background_renders_match_the_serial_path():
+    def run(flag):
+        gen = Stamped(slow_s=0.01)
+        srv = _srv(gen, concurrent_gen=flag, deepen=True)
+        try:
+            with SfxClient(*srv.server_address) as c:
+                for et, mat in [("a", "wood"), ("b", "stone"), ("a", "wood"), ("b", "stone"), ("c", "metal"),
+                                ("a", "wood"), ("b", "stone"), ("c", "metal"), ("a", "grass")]:
+                    c.event(et, mat)
+                    time.sleep(0.12)
+        finally:
+            _stop(srv)
+        return sorted((s[0], s[1]) for s in gen.spans)
+
+    assert run(True) == run(False)
+
+
+def test_async_cache_write_returns_before_the_disk_and_serves_the_same_bits(tmp_path, monkeypatch):
+    from sarge.generators.cached import CachedGenerator
+    from sarge.types import AudioClip
+
+    real = AudioClip.to_wav
+
+    def slow_wav(self, path):
+        time.sleep(0.12)
+        real(self, path)
+
+    monkeypatch.setattr(AudioClip, "to_wav", slow_wav)
+    k = CacheKey("fast", "wood", "normal")
+    out = {}
+    for flag in (False, True):
+        g = CachedGenerator(MockGenerator(), str(tmp_path / str(flag)), async_write=flag)
+        t0 = time.perf_counter()
+        first = g.generate(k, variant=0)
+        ms = (time.perf_counter() - t0) * 1000.0
+        again = g.generate(k, variant=0)
+        batch = g.generate_batch([(k, 0), (k, 1)])
+        assert g.flush(5.0)
+        out[flag] = (ms, first.samples, again.samples, [c.samples for c in batch])
+    assert out[False][0] >= 100.0 and out[True][0] < 60.0
+    for a, b in zip(out[False][1:3], out[True][1:3]):
+        assert np.array_equal(a, b)
+    for a, b in zip(out[False][3], out[True][3]):
+        assert np.array_equal(a, b)

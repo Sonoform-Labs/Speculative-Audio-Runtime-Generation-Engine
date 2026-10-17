@@ -331,8 +331,13 @@ def _main_kwargs(rs, monkeypatch, argv):
 def test_sidecar_flags_default_to_head_and_switch_only_when_given(rs, monkeypatch):
     kw = _main_kwargs(rs, monkeypatch, ["--amp"])
     assert kw["gen_kwargs"]["amp"] is True and kw["gen_kwargs"]["level"] == "peak" and kw["vram_budget_kb"] == 50_000.0
+    assert kw["concurrent_gen"] is True and kw["cache_async"] is True
+    assert not {"world", "event_log", "predict_fixes", "pool_fix", "keep_warm_ms", "sibling_on_miss"} & set(kw)
+    kw = _main_kwargs(rs, monkeypatch, ["--amp", "--no-concurrent-gen", "--no-async-cache-write"])
     assert not {"world", "event_log", "predict_fixes", "pool_fix", "concurrent_gen", "keep_warm_ms",
-                "sibling_on_miss"} & set(kw)
+                "sibling_on_miss", "cache_async"} & set(kw)
+    kw = _main_kwargs(rs, monkeypatch, ["--concurrent-gen", "--async-cache-write"])
+    assert kw["concurrent_gen"] is True and kw["cache_async"] is True
     kw = _main_kwargs(rs, monkeypatch, [])
     assert "amp" not in kw["gen_kwargs"]
     kw = _main_kwargs(rs, monkeypatch, ["--amp", "punch", "--level", "loudness", "--world"])
@@ -361,3 +366,16 @@ def test_loudness_mode_carries_intensity_by_level_and_never_inverts(amp_mode):
         m = [L.momentary_max(post.process(x, sr, "break", i, level="loudness", amp_mode=amp_mode, stereo=True), sr)
              for i in ("soft", "normal", "hard")]
         assert m[0] <= m[1] + 1e-6 and m[1] <= m[2] + 1e-6
+
+
+def test_shaped_chain_caps_decay_after_the_lowpass_and_the_levelling():
+    sr = 48000
+    t = np.arange(sr) / sr
+    click = np.zeros(sr)
+    click[:240] = np.hanning(480)[240:] * 0.9 * np.sign(np.sin(2 * np.pi * 7000.0 * t[:240]))
+    tail = 0.08 * np.sin(2 * np.pi * 150.0 * t) * np.exp(-t / 0.12)
+    x = (click + tail).astype(np.float32)
+    sh = {"t40_s": 0.08, "punch_scale": 0.25, "drive": 1.0, "floor_db": -45.0, "lowpass_hz": 400.0}
+    for level in ("peak", "loudness"):
+        y = post.process(x, sr, "impact", "hard", level=level, amp_mode="full", stereo=True, shape=sh)
+        assert 0.67 * 0.08 <= post.decay_time(y, sr) <= 1.5 * 0.08

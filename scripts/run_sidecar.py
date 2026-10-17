@@ -225,8 +225,14 @@ def main(argv=None) -> int:
     ap.add_argument("--predict-fixes", action="store_true",
                     help="prediction fixes: learned event aliases, last fired intensity, no lead gate in realtime mode")
     ap.add_argument("--pool-fix", action="store_true", help="plan every variant of a demanded key before moving on")
-    ap.add_argument("--concurrent-gen", action="store_true",
-                    help="generate a realtime miss outside the engine lock so cached keys answer meanwhile")
+    ap.add_argument("--concurrent-gen", action=argparse.BooleanOptionalAction, default=True,
+                    help="on by default: a realtime miss generates outside the engine lock so cached keys answer "
+                         "meanwhile, and no background render starts until the miss lands; served clips are the "
+                         "same bits either way (docs/on-time.md); --no-concurrent-gen brings back the single-lock path")
+    ap.add_argument("--async-cache-write", action=argparse.BooleanOptionalAction, default=True,
+                    help="on by default: write the 16-bit disk-cache copy of each new clip on a background thread so "
+                         "the reply never waits for the disk; a read of a clip still being written waits for it, so "
+                         "served clips stay the same bits; --no-async-cache-write writes inline")
     ap.add_argument("--keep-warm-ms", type=float, default=0.0,
                     help="keep the GPU warm while a client is connected, one tiny job every this many ms (0 = off)")
     ap.add_argument("--sibling-on-miss", action="store_true",
@@ -307,7 +313,8 @@ def main(argv=None) -> int:
     extra = {k: v for k, v in (("world", args.world), ("event_log", args.event_log),
                                ("predict_fixes", args.predict_fixes), ("pool_fix", args.pool_fix),
                                ("concurrent_gen", args.concurrent_gen), ("keep_warm_ms", args.keep_warm_ms),
-                               ("sibling_on_miss", args.sibling_on_miss)) if v}
+                               ("sibling_on_miss", args.sibling_on_miss), ("cache_async", args.async_cache_write))
+             if v}
     cache_dir = None if args.no_cache else args.cache_dir
     cleared = 0
     if cache_dir and os.path.isdir(cache_dir):
@@ -328,7 +335,9 @@ def main(argv=None) -> int:
     print(f"sidecar READY on {host}:{port}  generator={args.generator}  tier={tier} "
           f"sampler={sampler} steps={steps}  gen_cost_ms={gen_cost:.0f}  mode={mode}  "
           f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'} (cleared {cleared})  "
-          f"decoder={os.path.basename(gen_kwargs['decoder_ckpt']) if gen_kwargs.get('decoder_ckpt') else 'base'}",
+          f"decoder={os.path.basename(gen_kwargs['decoder_ckpt']) if gen_kwargs.get('decoder_ckpt') else 'base'}  "
+          f"concurrent-gen={'on' if args.concurrent_gen else 'off'}  "
+          f"cache-write={'async' if args.async_cache_write else 'inline'}",
           flush=True)
     print("ctrl-c to stop", flush=True)
 

@@ -133,7 +133,7 @@ def test_prompt_words_name_the_real_objects():
     assert "rubber ball" in p and "metal floor" in p and "bouncing hard" in p
     assert "steel struck" not in p and "clang" not in p
     p = build("glass bottle hit", "gravel", "normal", "default", phys=world.bucket(phys(BOTTLE, floor("gravel"), 2)))
-    assert p.startswith("Glass bottle impact, a hollow glass bottle hitting the gravel")
+    assert p.startswith("Glass bottle impact, a dull thud, a glass bottle hitting the gravel")
     p = build("wooden crate hit", "gravel", "soft", "tunnel", phys=world.bucket(phys(CRATE, floor("gravel"), 1)))
     assert "wood wooden" not in p and "gently hitting" in p and "tunnel" in p
     p = build("break", "window", "normal", "indoor_small", phys=world.bucket({"a": PANE}, "break"))

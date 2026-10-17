@@ -228,7 +228,7 @@ def physical(ev, intensity, S, phys):
     if w["kind"] == "break":
         return _join(w["head"], w["action"], w["contact"], "%s on %s %s" % (w["ring"], S["floor"], S["in"]),
                      "close perspective foley")
-    return _join(w["head"], w["action"], w["contact"], w["ring"], "foley, close-distance", S["foley"])
+    return _join(w["head"], w["contact"], w["ring"], w["action"], "foley, close-distance", S["foley"])
 
 
 def breaking(material, S):

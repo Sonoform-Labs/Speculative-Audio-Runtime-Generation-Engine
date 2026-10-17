@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import os
+import queue
+import threading
 
 from .base import Generator
 from ..types import AudioClip, CacheKey
@@ -10,13 +12,53 @@ CACHE_SCHEMA = "prompt_enrichment_v1"
 
 
 class CachedGenerator(Generator):
-    def __init__(self, inner: Generator, cache_dir: str):
+    def __init__(self, inner: Generator, cache_dir: str, async_write: bool = False):
         self.inner = inner
         self.cache_dir = cache_dir
         self.name = inner.name
         self.sample_rate = inner.sample_rate
         self.latency_ms = inner.latency_ms
         os.makedirs(cache_dir, exist_ok=True)
+        self.async_write = bool(async_write)
+        self._pending = {}
+        self._pending_lock = threading.Lock()
+        self._writes = None
+        if self.async_write:
+            self._writes = queue.Queue()
+            threading.Thread(target=self._writer, name="sfx-cache-writer", daemon=True).start()
+
+    def _writer(self):
+        while True:
+            path, clip, done = self._writes.get()
+            try:
+                clip.to_wav(path)
+            except Exception:
+                pass
+            finally:
+                with self._pending_lock:
+                    if self._pending.get(path) is done:
+                        del self._pending[path]
+                done.set()
+
+    def _store(self, path: str, clip: AudioClip):
+        if self._writes is None:
+            clip.to_wav(path)
+            return
+        done = threading.Event()
+        with self._pending_lock:
+            self._pending[path] = done
+        self._writes.put((path, clip, done))
+
+    def _settled(self, path: str):
+        with self._pending_lock:
+            done = self._pending.get(path)
+        if done is not None:
+            done.wait()
+
+    def flush(self, timeout: float | None = None) -> bool:
+        with self._pending_lock:
+            waits = list(self._pending.values())
+        return all(d.wait(timeout) for d in waits)
 
     def ensure_ready(self):
         r = getattr(self.inner, "ensure_ready", None)
@@ -63,12 +105,13 @@ class CachedGenerator(Generator):
 
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         path = self._path(key, variant)
+        self._settled(path)
         if os.path.exists(path):
             clip = AudioClip.from_wav(path, keep_channels=True)
             clip.variant_id = variant
             return clip
         clip = self.inner.generate(key, variant=variant)
-        clip.to_wav(path)
+        self._store(path, clip)
         return clip
 
     def generate_batch(self, items: list) -> list:
@@ -76,6 +119,7 @@ class CachedGenerator(Generator):
         misses = []
         for i, (key, variant) in enumerate(items):
             path = self._path(key, variant)
+            self._settled(path)
             if os.path.exists(path):
                 clip = AudioClip.from_wav(path, keep_channels=True)
                 clip.variant_id = variant
@@ -86,6 +130,6 @@ class CachedGenerator(Generator):
             made = self.inner.generate_batch([items[i] for i in misses])
             for j, i in enumerate(misses):
                 clip = made[j]
-                clip.to_wav(self._path(*items[i]))
+                self._store(self._path(*items[i]), clip)
                 results[i] = clip
         return results
