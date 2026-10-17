@@ -222,22 +222,51 @@ class AffordanceEngine:
                 return True
         return False
 
+    def _free_variants(self, key):
+        held = {c.variant_id for c in self.cache.get(key, ())}
+        return [v for v in range(self.variants_per_key) if v not in held and (key, v) not in self.inflight]
+
+    def _plan_by_deadline(self, max_items):
+        batch = []
+        while len(batch) < max_items:
+            best = None
+            for i, key in enumerate(self.demand):
+                free = self._free_variants(key)
+                if not free:
+                    continue
+                started = bool(self.cache.get(key)) or any(k == key for k, _v in self.inflight)
+                rank = (started, self.eta.get(key, float("inf")), i)
+                if best is None or rank < best[0]:
+                    best = (rank, key, free[0])
+            if best is None:
+                break
+            _rank, key, v = best
+            self.want[key] = max(self.want.get(key, 0), self.variants_per_key)
+            self.priority[key] = self.L + 0.5
+            self.inflight.add((key, v))
+            batch.append((key, v))
+        done = [k for k in self.demand if not self._free_variants(k)]
+        for key in done:
+            self.demand.remove(key)
+            self.demand_set.discard(key)
+        return batch
+
     def plan_batch(self, max_items: int = 1):
+        if self.pool_fix:
+            batch = self._plan_by_deadline(max_items)
+            if batch:
+                return batch, "demand_gen"
+            return self._plan_pinned(max_items)
         batch = []
         while self.demand and len(batch) < max_items:
             key = self.demand.pop(0)
             self.demand_set.discard(key)
-            if key in self.cache and not self.pool_fix:
+            if key in self.cache:
                 continue
             self.want[key] = max(self.want.get(key, 0), self.variants_per_key)
             self.priority[key] = self.L + 0.5
             have = len(self.cache.get(key, ()))
-            if self.pool_fix:
-                held = {c.variant_id for c in self.cache.get(key, ())}
-                todo = [v for v in range(self.variants_per_key) if v not in held]
-            else:
-                todo = range(have, self.variants_per_key)
-            for v in todo:
+            for v in range(have, self.variants_per_key):
                 item = (key, v)
                 if item in self.inflight:
                     continue
@@ -245,11 +274,12 @@ class AffordanceEngine:
                 batch.append(item)
                 if len(batch) >= max_items:
                     break
-            if self.pool_fix and any((key, v) not in self.inflight for v in todo):
-                self.demand.insert(0, key)
-                self.demand_set.add(key)
         if batch:
             return batch, "demand_gen"
+        return self._plan_pinned(max_items)
+
+    def _plan_pinned(self, max_items):
+        batch = []
         for key in list(self.pinned):
             have = len(self.cache.get(key, ()))
             if have >= self.want.get(key, 0):

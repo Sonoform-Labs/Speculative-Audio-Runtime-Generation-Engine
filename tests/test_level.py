@@ -331,13 +331,16 @@ def _main_kwargs(rs, monkeypatch, argv):
 def test_sidecar_flags_default_to_head_and_switch_only_when_given(rs, monkeypatch):
     kw = _main_kwargs(rs, monkeypatch, ["--amp"])
     assert kw["gen_kwargs"]["amp"] is True and kw["gen_kwargs"]["level"] == "peak" and kw["vram_budget_kb"] == 50_000.0
-    assert kw["concurrent_gen"] is True and kw["cache_async"] is True
-    assert not {"world", "event_log", "predict_fixes", "pool_fix", "keep_warm_ms", "sibling_on_miss"} & set(kw)
-    kw = _main_kwargs(rs, monkeypatch, ["--amp", "--no-concurrent-gen", "--no-async-cache-write"])
+    assert kw["concurrent_gen"] is True and kw["cache_async"] is True and kw["predict_fixes"] is True
+    assert not {"world", "event_log", "pool_fix", "keep_warm_ms", "sibling_on_miss"} & set(kw)
+    kw = _main_kwargs(rs, monkeypatch, ["--amp", "--no-concurrent-gen", "--no-async-cache-write", "--no-predict-fixes"])
     assert not {"world", "event_log", "predict_fixes", "pool_fix", "concurrent_gen", "keep_warm_ms",
                 "sibling_on_miss", "cache_async"} & set(kw)
-    kw = _main_kwargs(rs, monkeypatch, ["--concurrent-gen", "--async-cache-write"])
-    assert kw["concurrent_gen"] is True and kw["cache_async"] is True
+    kw = _main_kwargs(rs, monkeypatch, ["--no-predict-fixes"])
+    assert "predict_fixes" not in kw and kw["concurrent_gen"] is True and kw["cache_async"] is True
+    kw = _main_kwargs(rs, monkeypatch, ["--concurrent-gen", "--async-cache-write", "--predict-fixes", "--pool-fix"])
+    assert kw["concurrent_gen"] is True and kw["cache_async"] is True and kw["predict_fixes"] is True
+    assert kw["pool_fix"] is True
     kw = _main_kwargs(rs, monkeypatch, [])
     assert "amp" not in kw["gen_kwargs"]
     kw = _main_kwargs(rs, monkeypatch, ["--amp", "punch", "--level", "loudness", "--world"])

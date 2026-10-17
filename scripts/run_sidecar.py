@@ -222,9 +222,14 @@ def main(argv=None) -> int:
     ap.add_argument("--world", action="store_true",
                     help="physics context: the server buckets the phys block Unity sends into the key and the prompt")
     ap.add_argument("--event-log", default=None, help="write one JSON line per request (timings, served or generated)")
-    ap.add_argument("--predict-fixes", action="store_true",
-                    help="prediction fixes: learned event aliases, last fired intensity, no lead gate in realtime mode")
-    ap.add_argument("--pool-fix", action="store_true", help="plan every variant of a demanded key before moving on")
+    ap.add_argument("--predict-fixes", action=argparse.BooleanOptionalAction, default=True,
+                    help="on by default: a predicted stem maps to the fired event it names (footstep to iron boot "
+                         "footstep), a prediction that sends no intensity takes the last fired one, no lead gate in "
+                         "realtime mode, after expands to learned follow-up events (docs/on-time.md); "
+                         "--no-predict-fixes takes every prediction literally")
+    ap.add_argument("--pool-fix", action="store_true",
+                    help="plan every variant of a predicted key, by deadline: the first variant of every predicted key "
+                         "in ETA order, then the extra variants in ETA order")
     ap.add_argument("--concurrent-gen", action=argparse.BooleanOptionalAction, default=True,
                     help="on by default: a realtime miss generates outside the engine lock so cached keys answer "
                          "meanwhile, and no background render starts until the miss lands; served clips are the "
@@ -337,6 +342,7 @@ def main(argv=None) -> int:
           f"learn={'on' if args.learn else 'off'}  cache={cache_dir or 'off'} (cleared {cleared})  "
           f"decoder={os.path.basename(gen_kwargs['decoder_ckpt']) if gen_kwargs.get('decoder_ckpt') else 'base'}  "
           f"concurrent-gen={'on' if args.concurrent_gen else 'off'}  "
+          f"predict-fixes={'on' if args.predict_fixes else 'off'}  "
           f"cache-write={'async' if args.async_cache_write else 'inline'}",
           flush=True)
     print("ctrl-c to stop", flush=True)

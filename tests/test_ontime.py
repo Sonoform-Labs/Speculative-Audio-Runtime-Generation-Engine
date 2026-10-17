@@ -647,3 +647,105 @@ def test_async_cache_write_returns_before_the_disk_and_serves_the_same_bits(tmp_
         assert np.array_equal(a, b)
     for a, b in zip(out[False][3], out[True][3]):
         assert np.array_equal(a, b)
+
+
+def test_predict_fixes_keep_the_intensity_a_prediction_sends():
+    srv = _srv(predict_fixes=True)
+    try:
+        with SfxClient(*srv.server_address) as c:
+            c.event("glass bottle hit", "gravel", "hard")
+            c.predict([{"source": "impact", "event_type": "glass bottle hit", "material": "glass",
+                        "intensity": "normal", "eta_s": 0.58}])
+            c.predict([{"source": "impact", "event_type": "glass bottle hit", "material": "stone", "eta_s": 0.6}])
+            c.event("iron boot footstep", "wood", "hard")
+            c.predict([{"source": "motion", "event_type": "footstep", "material": "stone", "intensity": "normal",
+                        "eta_s": 0.6}])
+        queued = _queued(srv)
+    finally:
+        _stop(srv)
+    assert CacheKey("glass bottle hit", "glass", "normal") in queued
+    assert CacheKey("glass bottle hit", "glass", "hard") not in queued
+    assert CacheKey("glass bottle hit", "stone", "hard") in queued
+    assert CacheKey("iron boot footstep", "stone", "normal") in queued
+    assert CacheKey("iron boot footstep", "stone", "hard") not in queued
+
+
+def _equip_then_step(flag, max_items=1):
+    e = AffordanceEngine(MockGenerator(), realtime=True, vram_budget_kb=200_000)
+    e.pool_fix = flag
+    e.lead_gate = False
+    shoot, rel, empty = (CacheKey("shoot", "rifle", "normal"), CacheKey("reload", "rifle", "normal"),
+                         CacheKey("empty_click", "rifle", "normal"))
+    e.register_predictions([FusedProposal(shoot, 0.5, 0.95, ("equip",)), FusedProposal(rel, 3.0, 0.6, ("equip",)),
+                            FusedProposal(empty, 5.0, 0.3, ("equip",))], now=0.0)
+    planned = []
+
+    def step():
+        b, _stat = e.plan_batch(max_items=max_items)
+        planned.extend(b)
+        e.commit_clips(b, e.gen.generate_batch(b), "demand_gen")
+        return b
+
+    step()
+    e.register_predictions([FusedProposal(CacheKey("footstep", "grass", "normal"), 0.25, 0.9, ("motion",))], now=0.75)
+    while step():
+        pass
+    return [(k.event_type, v) for k, v in planned], e
+
+
+def test_pool_fix_plans_first_variants_by_eta_before_extra_variants():
+    fixed, e = _equip_then_step(True)
+    assert fixed == [("shoot", 0), ("footstep", 0), ("reload", 0), ("empty_click", 0),
+                     ("shoot", 1), ("footstep", 1), ("reload", 1), ("empty_click", 1)]
+    assert not e.demand and not e.demand_set and not e.inflight
+    assert all(sorted(c.variant_id for c in pool) == [0, 1] for pool in e.cache.values())
+    head, _e = _equip_then_step(False)
+    assert head == [("shoot", 0), ("reload", 0), ("empty_click", 0), ("footstep", 0)]
+    pair, _e = _equip_then_step(True, max_items=2)
+    assert pair[:2] == [("shoot", 0), ("reload", 0)]
+    assert pair[2:4] == [("footstep", 0), ("empty_click", 0)]
+
+
+class SlowPrefix(SlowGen):
+    def generate(self, key, *, variant=0):
+        self.calls.append((str(key), variant))
+        if key.event_type.startswith("slow"):
+            time.sleep(self.slow_s)
+        return MockGenerator.generate(self, key, variant=variant)
+
+
+def test_pool_fix_renders_a_near_prediction_before_extra_variants_of_earlier_ones():
+    def run(flag):
+        gen = SlowPrefix(slow_s=0.12)
+        srv = _srv(gen, predict_fixes=True, pool_fix=flag, deepen=True)
+        step = CacheKey("footstep", "grass", "normal")
+        try:
+            with SfxClient(*srv.server_address) as c:
+                c.predict([{"source": "equip", "event_type": "slow%d" % i, "material": "rifle", "intensity": "normal",
+                            "eta_s": 0.5 + 2.5 * i, "confidence": 0.9} for i in range(3)], now=0.0)
+                time.sleep(0.05)
+                t0 = time.perf_counter()
+                c.predict([{"source": "motion", "event_type": "footstep", "material": "grass", "intensity": "normal",
+                            "eta_s": 0.25, "confidence": 0.9}], now=0.75)
+                while time.perf_counter() - t0 < 3.0:
+                    with engine_lock:
+                        if srv.engine.cache.get(step):
+                            break
+                    time.sleep(0.002)
+                waited = time.perf_counter() - t0
+            deadline = time.perf_counter() + 3.0
+            while time.perf_counter() < deadline:
+                with engine_lock:
+                    if not srv.engine.demand and not srv.engine.inflight:
+                        break
+                time.sleep(0.01)
+            with engine_lock:
+                held = {str(k): sorted(c.variant_id for c in pool) for k, pool in srv.engine.cache.items()}
+            return waited, held
+        finally:
+            _stop(srv)
+
+    fast, held = run(True)
+    slow, _held = run(False)
+    assert fast < 0.25 and fast < slow
+    assert all(v == [0, 1] for v in held.values()) and len(held) == 4

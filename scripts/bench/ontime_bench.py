@@ -22,12 +22,17 @@ OUT = os.path.join(ROOT, "data", "_gate", "ontime")
 CACHE = os.path.join(ROOT, ".cache", "sfx_ontime")
 BASE = ["--generator", "hybrid", "--realtime", "--stereo", "--amp", "--detailed-prompts", "--learn"]
 MOCK = ["--generator", "mock", "--realtime", "--learn"]
-OFF = ["--no-concurrent-gen"]
-ARMS = {"head": OFF, "ref": ["--vram-kb", "2000000", "--target-variants", "2"] + OFF, "cg": ["--concurrent-gen"],
-        "cga": ["--concurrent-gen", "--async-cache-write"],
-        "fix": ["--predict-fixes", "--pool-fix", "--concurrent-gen"], "pf": ["--predict-fixes", "--pool-fix"] + OFF,
-        "kw50": ["--keep-warm-ms", "50"] + OFF, "kw200": ["--keep-warm-ms", "200"] + OFF}
-PHASES = {"head": "bac", "ref": "r", "cg": "ba", "cga": "ba", "fix": "ba", "pf": "b", "kw50": "c", "kw200": "c"}
+OFF_GEN = ["--no-concurrent-gen", "--no-async-cache-write"]
+OFF = OFF_GEN + ["--no-predict-fixes"]
+ARMS = {"head": OFF, "ref": ["--vram-kb", "2000000", "--target-variants", "2"] + OFF,
+        "cg": ["--concurrent-gen", "--no-async-cache-write", "--no-predict-fixes"],
+        "cga": ["--concurrent-gen", "--async-cache-write", "--no-predict-fixes"],
+        "fix": ["--predict-fixes", "--pool-fix", "--concurrent-gen", "--no-async-cache-write"],
+        "pf": ["--predict-fixes", "--pool-fix"] + OFF_GEN,
+        "kw50": ["--keep-warm-ms", "50"] + OFF, "kw200": ["--keep-warm-ms", "200"] + OFF,
+        "dflt": ["--no-predict-fixes"], "pfx": ["--predict-fixes"], "pfp": ["--predict-fixes", "--pool-fix"]}
+PHASES = {"head": "bac", "ref": "r", "cg": "ba", "cga": "ba", "fix": "ba", "pf": "b", "kw50": "c", "kw200": "c",
+          "dflt": "ba", "pfx": "ba", "pfp": "ba"}
 FOREIGN = ("run_sidecar", "woosh_server", "e2e_hybrid", "woosh_opt", "medium_opt", "world_render")
 GUN_EVENTS = ("shoot", "reload", "empty_click", "equip")
 LATE_MS = 20.0

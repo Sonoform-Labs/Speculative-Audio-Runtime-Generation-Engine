@@ -469,10 +469,11 @@ def _fixed(server, key, p):
                 for e, prob in _successors(server, after, key.context)]
     if not keys:
         keys = [(key, 1.0)]
+    given = "intensity" in p
     out = []
     for k, scale in keys:
         et = _alias(server, k.event_type)
-        inten = k.intensity if k.phys else server.last_intensity.get(et, k.intensity)
+        inten = k.intensity if k.phys or given else server.last_intensity.get(et, k.intensity)
         out.append((CacheKey(et, k.material, inten, k.context, k.phys), scale))
     return out
 

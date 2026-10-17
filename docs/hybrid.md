@@ -226,7 +226,7 @@ Finishing costs more on the CPU (pinned, 4 threads): a Woosh clip 4.5 ms today, 
 
 ## Concurrent misses on by default
 
-Since 2026-10-17 `run_sidecar.py` turns `--concurrent-gen` and `--async-cache-write` on unless `--no-concurrent-gen` or `--no-async-cache-write` is given. Under `--concurrent-gen` a realtime miss renders outside the engine lock, so a cached sound on another connection answers while a gun renders, and no prediction or background render starts beside a miss until it lands. It is the one on-time flag whose checks all passed; `docs/on-time.md` has the measurements, the check that found what held some first hits (the 16-bit disk-cache write on the reply path, which HEAD has too), and the flags that stay off. Every sound-changing flag (`--world`, `--level loudness`, `--amp punch`, mix v2) stays off, and so do `--async-cache-write`, `--keep-warm-ms`, `--predict-fixes`, `--pool-fix` and `--sibling-on-miss`.
+Since 2026-10-17 `run_sidecar.py` turns `--concurrent-gen` and `--async-cache-write` on unless `--no-concurrent-gen` or `--no-async-cache-write` is given. Under `--concurrent-gen` a realtime miss renders outside the engine lock, so a cached sound on another connection answers while a gun renders, and no prediction or background render starts beside a miss until it lands. It is the one on-time flag whose checks all passed; `docs/on-time.md` has the measurements, the check that found what held some first hits (the 16-bit disk-cache write on the reply path, which HEAD has too), and the flags that stay off. Every sound-changing flag (`--world`, `--level loudness`, `--amp punch`, mix v2) stays off, and so do `--keep-warm-ms`, `--pool-fix` and `--sibling-on-miss`; `--async-cache-write` came on later the same day, and `--predict-fixes` after that (next section).
 
 `e2e_hybrid.py` ran four times under Unity's environment on ports 8767 and 8772 with `--learn`: once cold (`--evict --settle 15`) and once warm with the new defaults, once warm with `--no-concurrent-gen` (every flag off) and once warm with `--async-cache-write` added. Results are in `data/_gate/opt/_e2e/e2e_ontime_*.json`; the clip comparisons are `data/_gate/startup/compare_ontime.json` and `compare_ontime_q0.json` (the saved arrays were deleted after the comparison; each run folder keeps its `index.json` with a sha1 per clip).
 
@@ -243,6 +243,26 @@ Since 2026-10-17 `run_sidecar.py` turns `--concurrent-gen` and `--async-cache-wr
 | Woosh worker after the kill | gone in 0.8 s | gone in 0.8 s | gone in 0.8 s | gone in 0.8 s |
 
 All four runs passed gate V (startup peak at most 10,752 MiB, READY at most 9,830 MiB). This harness samples the card every 0.5 s; the on-time bench samples every 0.1 s and saw startup peaks of 10,031 to 10,259 MiB with the same code, still inside the bound; the peak while both models rendered at once, which this harness does not set up on purpose, was 10,243 to 10,247 MiB in the on-time bench's `s2` runs, under 11,571. The cold run evicted 91,449 files (36.0 GB) in 139 s and waited 110 s for Defender to settle; Defender still used 17.6 s of CPU before READY, and the DiT compile took 37.4 s (22 s in the warm runs), the same stall described under Startup, so 66.1 s sits inside the 51.7 to 86.5 s spread of the earlier cold runs. This harness sends one request at a time on one connection, so the first-hit columns match whatever the flags; the head-of-line gain of `--concurrent-gen` shows only with the T preset's two event lanes, as measured in `docs/on-time.md` (a cached sound behind a gun miss: 245 ms at the median under HEAD, 0.6 ms now).
+
+## Prediction fixes on by default
+
+`run_sidecar.py` also turns `--predict-fixes` on unless `--no-predict-fixes` is given. It maps a predicted stem to the event the game fires (`footstep` to `iron boot footstep` while the boots are on), fills the intensity of a prediction that sends none from the last fired one and keeps an intensity a prediction sends, drops the lead gate in realtime mode and expands `after` to learned follow-up events. In the on-time bench's scripted session (`docs/on-time.md`, `s3`) it served 5 and 6 of 110 events on demand against 7 and 7, played 6 of 22 first hits over 20 ms against 7 in both runs, and used 1.6% less GPU time in all; every served clip matched the reference. `--pool-fix` stays off: with its deadline order fixed it still cost 72% more GPU time and gained nothing in the session.
+
+`e2e_hybrid.py` ran twice warm under Unity's environment on ports 8767 and 8772 with `--learn`: once with the new defaults and once with every flag off (`--no-predict-fixes --no-concurrent-gen --no-async-cache-write`). Results are in `data/_gate/opt/_e2e/e2e_predfix.json` and `e2e_predfix_q0.json`, the clip comparisons in `data/_gate/startup/compare_predfix.json` and `compare_predfix_q0.json` (the saved arrays were deleted after the comparison; each run folder keeps its `index.json`).
+
+| | warm, defaults | warm, every flag off |
+|---|---|---|
+| READY | 46.8 s | 46.6 s |
+| VRAM peak during startup / at READY (MiB) | 9,682 / 9,716 | 9,716 / 9,716 |
+| VRAM peak during requests (MiB) | 10,240 | 10,240 |
+| very first request (a gun) | 153.6 ms | 153.3 ms |
+| gun first hit, 14 keys, median / p90 / max | 149.5 / 159 / 161 ms | 149.8 / 159 / 168 ms |
+| Woosh first hit, 24 keys, median / p90 | 33.7 / 51.4 ms | 34.3 / 52.2 ms |
+| repeat of a cached sound, guns / Woosh | 1.25 / 0.39 ms | 1.27 / 0.48 ms |
+| clips against `baseline_warm_1` | 75 of 75 identical (gate L) | 75 of 75 identical (gate Q0) |
+| Woosh worker after the kill | gone in 0.8 s | gone in 0.8 s |
+
+Both runs passed gate V. This harness sends no PREDICT messages, so the prediction fixes reach only the guesses of the habit model here, and the first-hit columns match within run-to-run spread. The scene needs no new argument, and `--no-predict-fixes` in its arguments brings back literal predictions.
 
 ## Candidates waiting for your ear
 
