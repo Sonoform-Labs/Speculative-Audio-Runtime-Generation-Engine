@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import threading
+import time
 
 from ..amp import family_for
+from ..startup import stage
 from ..types import AudioClip, CacheKey
 from .base import Generator
 
@@ -26,7 +28,7 @@ class RoutedGenerator(Generator):
 
     def __init__(self, woosh_host: str = "127.0.0.1", woosh_port: int = 8771, gun_families=GUN_FAMILIES,
                  guns=None, rest=None, warm_guns: bool = True, start_rest=None, gun_cost_ms: float = 155.0,
-                 rest_cost_ms: float = 50.0, **sa3_kwargs):
+                 rest_cost_ms: float = 50.0, load_rest=None, drop_rest=None, **sa3_kwargs):
         if guns is None:
             from .stable_audio3 import StableAudio3Generator
             guns = StableAudio3Generator(**sa3_kwargs)
@@ -42,6 +44,8 @@ class RoutedGenerator(Generator):
         self.counts = {"guns": 0, "rest": 0}
         self.warm_guns = bool(warm_guns)
         self.start_rest = start_rest
+        self.load_rest = load_rest
+        self.drop_rest = drop_rest
         self._rest_started = False
         self.costs = {"guns": float(gun_cost_ms), "rest": float(rest_cost_ms)}
 
@@ -50,6 +54,10 @@ class RoutedGenerator(Generator):
 
     def cost_ms(self, key: CacheKey) -> float:
         return self.costs[self.route(key)]
+
+    @property
+    def post_tag(self) -> str:
+        return getattr(self.guns, "post_tag", "")
 
     def ensure_ready(self):
         if self.start_rest is not None:
@@ -61,21 +69,45 @@ class RoutedGenerator(Generator):
         if self.warm_guns:
             self.guns.generate(WARM_KEY, variant=0)
 
+    def _drop_rest(self):
+        drop, self.drop_rest = self.drop_rest, None
+        if drop is not None and not self._rest_started:
+            try:
+                drop()
+            except Exception:
+                pass
+
     def _ready_guns_first(self):
-        ready = getattr(self.guns, "ensure_ready", None)
-        if ready:
-            ready()
+        t = time.time()
+        try:
+            ready = getattr(self.guns, "ensure_ready", None)
+            if ready:
+                ready()
+            t = stage("guns loaded", t)
+            if self.load_rest is not None:
+                load, self.load_rest = self.load_rest, None
+                load()
+            if not self._rest_started:
+                if self.warm_guns:
+                    self.guns.generate(WARM_KEY, variant=0)
+                    t = stage("gun warm 1", t)
+                release_cuda_cache()
+                t = stage("release_cuda_cache", t)
+        except BaseException:
+            self._drop_rest()
+            raise
         if not self._rest_started:
-            if self.warm_guns:
-                self.guns.generate(WARM_KEY, variant=0)
-            release_cuda_cache()
+            self.drop_rest = None
             self.start_rest()
             self._rest_started = True
+            t = stage("woosh started", t)
         ready = getattr(self.rest, "ensure_ready", None)
         if ready:
             ready()
+        t = stage("woosh connected", t)
         if self.warm_guns:
             self.guns.generate(WARM_KEY, variant=0)
+            stage("gun warm 2", t)
 
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         side = self.route(key)

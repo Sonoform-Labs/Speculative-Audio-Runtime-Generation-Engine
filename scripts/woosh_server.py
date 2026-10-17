@@ -8,6 +8,8 @@ import time
 from collections import OrderedDict
 from pathlib import Path
 
+_T_SCRIPT = time.time()
+
 import numpy as np
 
 HERE = Path(__file__).resolve().parent
@@ -15,6 +17,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent / "src"))
 
 from model_server import _recv, _send
+from sarge import startup
 
 WOOSH_HOME = os.environ.get("WOOSH_HOME", r"F:\AI\cache\woosh")
 MODELS = {"flow": ("checkpoints/Woosh-Flow", 4.5), "dflow": ("checkpoints/Woosh-DFlow", 4.5)}
@@ -62,17 +65,70 @@ def prepare(gen, frames, prompt=WARM):
     for n in sorted(set(frames.values())):
         torch.cuda.synchronize()
         r0, t0 = torch.cuda.memory_reserved(), time.perf_counter()
+        t = time.time()
         gen(prompt, 0, frames=n)
         torch.cuda.synchronize()
         out[n] = {"warm_s": time.perf_counter() - t0, "reserved_mb": (torch.cuda.memory_reserved() - r0) / 2 ** 20}
+        startup.stage("woosh warm-up %d frames" % n, t)
     return out
 
 
+def _timed_reads(base):
+    orig = base._load_statedict_from_disk
+
+    def read(self, *a, **kw):
+        t = time.time()
+        out = orig(self, *a, **kw)
+        path = getattr(self, "_weights_path", None) or "?"
+        try:
+            mb = " %.0f MB" % (os.path.getsize(path) / 1e6)
+        except OSError:
+            mb = ""
+        startup.stage("woosh weights %s%s" % (os.path.basename(os.path.dirname(path)), mb), t)
+        return out
+
+    base._load_statedict_from_disk = read
+    return orig
+
+
+HOLD = {"on": False}
+
+
+def priority(below):
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes as w
+        k = ctypes.WinDLL("kernel32", use_last_error=True)
+        k.GetCurrentProcess.restype = w.HANDLE
+        k.SetPriorityClass.argtypes = [w.HANDLE, w.DWORD]
+        k.SetPriorityClass.restype = w.BOOL
+        return bool(k.SetPriorityClass(k.GetCurrentProcess(), 0x4000 if below else 0x20))
+    except Exception:
+        return False
+
+
+def hold(name, torch=None):
+    if not HOLD["on"]:
+        return
+    t = startup.stage("woosh waiting for the %s gate%s" % (
+        name, ", cuda initialised %s" % torch.cuda.is_initialized() if torch is not None else ""))
+    for line in sys.stdin:
+        if line.strip() == name:
+            startup.stage("woosh %s gate open" % name, t)
+            return
+    os._exit(0)
+
+
 def load(kind):
+    t = time.time()
     import torch
+    t = startup.stage("woosh torch import", t)
     os.chdir(WOOSH_HOME)
     import woosh.module.audioretrieval_module as wam
     from transformers import AutoConfig
+    t = startup.stage("woosh package import", t)
 
     class ConfigOnlyRoberta(wam.RobertaModel):
         @classmethod
@@ -80,15 +136,27 @@ def load(kind):
             return wam.RobertaModel(AutoConfig.from_pretrained(name, **kw))
 
     wam.RobertaModel = ConfigOnlyRoberta
-    from woosh.components.base import LoadConfig
+    from woosh.components.base import BaseComponent, LoadConfig
     ckpt, cfg = MODELS[kind]
     if kind == "flow":
-        from woosh.model.ldm import LatentDiffusionModel
-        ldm = LatentDiffusionModel(LoadConfig(path=ckpt))
+        from woosh.model.ldm import LatentDiffusionModel as build
     else:
-        from woosh.model.flowmap_from_pretrained import FlowMapFromPretrained
-        ldm = FlowMapFromPretrained(LoadConfig(path=ckpt))
-    return torch, ldm.eval().to("cuda"), cfg
+        from woosh.model.flowmap_from_pretrained import FlowMapFromPretrained as build
+    hold("load", torch)
+    t = time.time()
+    orig = _timed_reads(BaseComponent)
+    try:
+        ldm = build(LoadConfig(path=ckpt))
+    finally:
+        BaseComponent._load_statedict_from_disk = orig
+    t = startup.stage("woosh model build + weights", t)
+    hold("gpu", torch)
+    if HOLD["on"] and priority(False):
+        startup.stage("woosh back to normal priority")
+    t = time.time()
+    ldm = ldm.eval().to("cuda")
+    startup.stage("woosh to cuda", t)
+    return torch, ldm, cfg
 
 
 def renoise_for(steps):
@@ -255,6 +323,7 @@ class Gen:
             raise ValueError("bad option: graph %s precision %s ae_precision %s time_dtype %s" % (
                 graph, precision, ae_precision, time_dtype))
         torch, ldm, cfg = load(kind)
+        t = time.time()
         self.torch, self.ldm, self.cfg = torch, ldm, cfg
         self.kind, self.frames, self.steps, self.solver = kind, int(frames), int(steps), solver
         self.graph, self.precision, self.ae_precision = graph, precision, ae_precision
@@ -282,6 +351,7 @@ class Gen:
         self.plain = not (self.cache.size or graph != "none" or precision != "fp32" or ae_precision != "fp32" or
                           self.batch_cfg or time_dtype != "float64")
         self.no_cond, self.buckets, self.mod = {}, {}, None
+        startup.stage("woosh precision cast", t)
 
     def __call__(self, prompt, seed, mark=None, frames=None):
         mark = mark or _skip
@@ -372,7 +442,10 @@ class Gen:
                   "cond": {k: v.clone() for k, v in cond.items()},
                   "t": torch.linspace(1, 0, self.steps + 1).to("cuda")}
             ae = None if self.graph == "sampler" else self._ae_fn(st, n)
+            t = time.time()
             mc = self._mod_const(st, ren, n) if self.mod_cache else None
+            if mc is not None:
+                t = startup.stage("woosh modulation record", t)
 
             def body():
                 self.fms.torch = EpsTorch(torch, st["eps"])
@@ -394,6 +467,7 @@ class Gen:
             g, st["out"] = graphed(torch, body)
             self.buckets[n] = {"g": g, "g_ae": None, "st": st}
             self.stats["graphs"] += 1
+            startup.stage("woosh graph warm + capture %d frames" % n, t)
         except Exception as e:
             self.buckets[n] = None
             self.stats["graph_error"] = repr(e)[:600]
@@ -560,7 +634,13 @@ def render(gen, prompt, seed, **kw):
     return raw
 
 
-def finish(x, event, intensity, amp, stereo):
+def finish(x, event, intensity, amp, stereo, level="peak", shape=None):
+    if level != "peak" or shape or amp == "punch":
+        from sarge.post import process
+        y = x[:, 0] if x.ndim == 2 and x.shape[1] == 1 else x
+        y = np.ascontiguousarray(y[:max(1, len(y) - int(END_CUT_S * SR))], dtype=np.float32)
+        return process(y, SR, event, intensity, level=level, amp_mode="punch" if amp == "punch" else (
+            "full" if amp else "off"), stereo=bool(stereo), shape=shape)
     from sarge.generators.stable_audio import _natural
     from sarge.loudness import normalize_peak, peak_for
     y = x[:, 0] if x.ndim == 2 and x.shape[1] == 1 else x
@@ -573,6 +653,14 @@ def finish(x, event, intensity, amp, stereo):
         from sarge.stereo import widen
         y = widen(y, SR, event)
     return normalize_peak(y, peak_for(intensity)).astype(np.float32)
+
+
+def physics_shape(phys):
+    import inspect
+    if not phys or "shape" not in inspect.signature(finish).parameters:
+        return {}
+    from sarge.world import shape
+    return {"shape": shape(phys)}
 
 
 def parent_gone(pid):
@@ -631,12 +719,23 @@ def main():
     ap.add_argument("--mod-cache", action=argparse.BooleanOptionalAction, default=None)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8771)
-    ap.add_argument("--amp", action="store_true")
+    ap.add_argument("--amp", nargs="?", const="full", choices=("full", "punch"), default=None,
+                    help="amplifier stage: --amp or --amp full is attack emphasis plus saturation, --amp punch is the "
+                         "attack emphasis alone")
     ap.add_argument("--stereo", action="store_true")
+    ap.add_argument("--level", choices=("peak", "loudness"), default="peak",
+                    help="peak sets each clip's peak per intensity; loudness sets its 400 ms loudness per intensity "
+                         "with at most 6 dB of lookahead limiting (sarge.loudness.normalize_level)")
     ap.add_argument("--parent-pid", type=int, default=None,
                     help="exit when this process ends (the sidecar passes its pid so a killed sidecar never leaves the "
                          "worker holding the port and its VRAM)")
+    ap.add_argument("--hold", action="store_true",
+                    help="import everything, then wait for a 'load' line on stdin before building the model and "
+                         "a 'gpu' line before touching the GPU (the sidecar opens them in turn); exit on EOF; the "
+                         "process runs at below-normal CPU priority until the gpu gate")
     args = ap.parse_args()
+    startup.stage("woosh python up", at=_T_SCRIPT)
+    startup.stage("woosh base imports", _T_SCRIPT)
     if args.parent_pid:
         watch_parent(args.parent_pid)
     from sarge.prompts import build
@@ -645,6 +744,19 @@ def main():
     opts = dict(OPTIONS, **({} if args.plain else ADOPTED[args.model]))
     opts.update({k: getattr(args, k) for k in OPTIONS if getattr(args, k) is not None})
     frames = parse_frames(args.frames)
+    if args.hold:
+        HOLD["on"] = True
+        if priority(True):
+            startup.stage("woosh below normal priority until the gpu gate")
+        t = time.time()
+        import scipy.fft
+        import scipy.signal
+        import sarge.amp
+        import sarge.generators.stable_audio
+        import sarge.loudness
+        import sarge.static_guard
+        import sarge.stereo
+        startup.stage("woosh finishing imports", t)
     gen = make_gen(args.model, frames["other"], args.steps, args.solver, **opts)
     lock = threading.Lock()
     t0 = time.perf_counter()
@@ -662,14 +774,21 @@ def main():
                 if req.get("type") == "hello":
                     _send(conn, {"type": "hello", "sample_rate": SR, "model": "woosh-" + args.model})
                     continue
-                key = CacheKey(req["event_type"], req["material"], req.get("intensity", "normal"),
-                               req.get("context", "default"))
-                prompt = build(key.event_type, key.material, key.intensity, key.context)
-                t = time.perf_counter()
-                with lock:
-                    raw = render(gen, prompt, seed_for(key, int(req.get("variant", 0))),
-                                 frames=frames_for(key.event_type, frames))
-                y = finish(raw, key.event_type, key.intensity, args.amp, args.stereo)
+                try:
+                    key = CacheKey(req["event_type"], req["material"], req.get("intensity", "normal"),
+                                   req.get("context", "default"), req.get("phys", ""))
+                    prompt = build(key.event_type, key.material, key.intensity, key.context, key.phys)
+                    t = time.perf_counter()
+                    with lock:
+                        raw = render(gen, prompt, seed_for(key, int(req.get("variant", 0))),
+                                     frames=frames_for(key.event_type, frames))
+                    y = finish(raw, key.event_type, key.intensity, args.amp, args.stereo, level=args.level,
+                               **physics_shape(key.phys))
+                except (ConnectionError, OSError):
+                    raise
+                except Exception as e:
+                    _send(conn, {"type": "error", "message": "%s: %s" % (type(e).__name__, e)})
+                    continue
                 ch = 1 if y.ndim == 1 else int(y.shape[1])
                 _send(conn, {"type": "audio", "sample_rate": SR, "channels": ch, "frames": int(y.shape[0]),
                              "gen_ms": (time.perf_counter() - t) * 1000.0}, np.ascontiguousarray(y).tobytes())
@@ -682,6 +801,7 @@ def main():
     srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     srv.bind((args.host, args.port))
     srv.listen(8)
+    startup.done("woosh listening")
     print("woosh server listening on %s:%d" % (args.host, srv.getsockname()[1]), flush=True)
     while True:
         conn, _ = srv.accept()

@@ -67,6 +67,8 @@ class RemoteGenerator(Generator):
     def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
         req = {"type": "gen", "event_type": key.event_type, "material": key.material,
                "intensity": key.intensity, "context": key.context, "variant": int(variant)}
+        if key.phys:
+            req["phys"] = key.phys
         for attempt in (0, 1):
             try:
                 self._ensure()
@@ -76,12 +78,14 @@ class RemoteGenerator(Generator):
                 self._sock = None
                 if attempt == 1:
                     raise
+        if body.get("type") == "error":
+            raise RuntimeError("model server: %s" % body.get("message", "error"))
         sr = int(body.get("sample_rate", self.sample_rate))
         samples = np.frombuffer(pcm, dtype="<f4").astype(np.float32)
         ch = int(body.get("channels", 1) or 1)
         if ch > 1:
             samples = samples.reshape(-1, ch)
-        return AudioClip(np.ascontiguousarray(samples), sr, variant_id=variant)
+        return AudioClip(np.ascontiguousarray(samples), sr, variant_id=variant, gen_ms=body.get("gen_ms"))
 
     def close(self):
         if self._sock is not None:

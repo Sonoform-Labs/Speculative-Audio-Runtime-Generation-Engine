@@ -210,6 +210,27 @@ def prop_hit(obj, material, intensity, S):
                  "foley, close-distance", S["foley"])
 
 
+EVENT_VERBS = {"hit", "hits", "impact", "impacts", "bounce", "bounces", "collision", "collide", "land", "landing",
+               "drop", "fall", "strike", "bump", "knock", "thud", "break", "smash", "shatter", "crash", "slam",
+               "clang", "contact"}
+
+
+def event_noun(ev):
+    words = [w for w in (ev or "").lower().split() if w not in EVENT_VERBS]
+    if words and len(words) <= 3 and all(w.isalpha() for w in words):
+        return " ".join(words)
+    return ""
+
+
+def physical(ev, intensity, S, phys):
+    from .world import prompt_words
+    w = prompt_words(phys, noun=event_noun(ev), intensity=intensity)
+    if w["kind"] == "break":
+        return _join(w["head"], w["action"], w["contact"], "%s on %s %s" % (w["ring"], S["floor"], S["in"]),
+                     "close perspective foley")
+    return _join(w["head"], w["action"], w["contact"], w["ring"], "foley, close-distance", S["foley"])
+
+
 def breaking(material, S):
     noun, obj, mass, det = BREAKS.get(material, (material, "a %s object" % material, material,
                                                  "%s fragments scattering" % material))
@@ -217,11 +238,13 @@ def breaking(material, S):
         noun, obj, mass, det, S["floor"], S["in"])
 
 
-def build(event, material, intensity="normal", context="default"):
+def build(event, material, intensity="normal", context="default", phys=""):
     ev = (event or "").strip().lower()
     mat = (material or "").strip().lower()
     sk = space_of(context)
     S = dict(SPACES[sk], key=sk)
+    if phys:
+        return physical(ev, intensity, S, phys)
     if ev in ("shoot", "fire"):
         g, name = _gun(mat)
         return g["fire"].format(name=name, gun=S["gun"], at=S["at"], tail=S["tail"])

@@ -65,10 +65,16 @@ class SfxClient:
             "surfaces": list(surfaces), "region": region, "gpu_pressure": gpu_pressure})
         return body
 
-    def event(self, event_type: str, material: str, intensity: str = "normal", context: str = "default"):
-        _, body, pcm = self._round_trip(MsgType.EVENT, {
-            "type": "event", "event_type": event_type, "material": material,
-            "intensity": intensity, "context": context})
+    def event(self, event_type: str, material: str, intensity: str = "normal", context: str = "default",
+              phys=None, have=None, have_phys: str = ""):
+        req = {"type": "event", "event_type": event_type, "material": material,
+               "intensity": intensity, "context": context}
+        if phys is not None:
+            req["phys"] = phys
+        if have is not None:
+            req["have"] = list(have)
+            req["have_phys"] = str(have_phys or "")
+        _, body, pcm = self._round_trip(MsgType.EVENT, req)
         samples = wire.decode_pcm(pcm, body.get("format", self.pcm))
         ch = int(body.get("channels", 1) or 1)
         if ch > 1:

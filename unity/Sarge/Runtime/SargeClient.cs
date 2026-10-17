@@ -33,6 +33,18 @@ namespace Sarge
         public float duration_s;
         public string intent;
         public int learned;
+        public string phys_key;
+        public bool meta_only;
+    }
+
+    [Serializable]
+    public class PredictAck
+    {
+        public string type;
+        public int queued;
+        public int lead_gated;
+        public int cached_keys;
+        public string[] phys_keys;
     }
 
     [Serializable]
@@ -59,6 +71,9 @@ namespace Sarge
         public string context;
         public float etaS;
         public float confidence;
+        public string physJson;
+        public string physSig;
+        public string after;
     }
 
     public class SfxProtocolException : Exception
@@ -140,6 +155,33 @@ namespace Sarge
             return new AudioResult { meta = meta, samples = DecodePcm(f.pcm, meta.format, meta.n_samples * Math.Max(1, meta.channels)) };
         }
 
+        public AudioResult Event(string eventType, string material, string intensity, string context, string physJson,
+            System.Collections.Generic.IList<int> have = null, string havePhys = null)
+        {
+            if (string.IsNullOrEmpty(physJson) && have == null) return Event(eventType, material, intensity, context);
+            var sb = new StringBuilder();
+            sb.Append("{\"type\":\"event\",\"event_type\":").Append(Quote(eventType));
+            sb.Append(",\"material\":").Append(Quote(material));
+            sb.Append(",\"intensity\":").Append(Quote(intensity));
+            sb.Append(",\"context\":").Append(Quote(context));
+            if (!string.IsNullOrEmpty(physJson)) sb.Append(",\"phys\":").Append(physJson);
+            if (have != null)
+            {
+                sb.Append(",\"have\":[");
+                for (int i = 0; i < have.Count; i++) { if (i > 0) sb.Append(','); sb.Append(have[i].ToString(CultureInfo.InvariantCulture)); }
+                sb.Append(']');
+                sb.Append(",\"have_phys\":").Append(Quote(havePhys ?? ""));
+            }
+            sb.Append('}');
+            WriteFrame(EVENT, sb.ToString());
+            var f = ReadFrame();
+            var meta = JsonUtility.FromJson<AudioMeta>(f.json);
+            var samples = meta.meta_only || f.pcm.Length == 0
+                ? Array.Empty<float>()
+                : DecodePcm(f.pcm, meta.format, meta.n_samples * Math.Max(1, meta.channels));
+            return new AudioResult { meta = meta, samples = samples };
+        }
+
         public AudioClip EventClip(string eventType, string material, string intensity = "normal", string context = "default")
         {
             var r = Event(eventType, material, intensity, context);
@@ -155,7 +197,7 @@ namespace Sarge
             ReadFrame();
         }
 
-        public void Predict(System.Collections.Generic.List<SfxPrediction> preds, float now)
+        public PredictAck Predict(System.Collections.Generic.List<SfxPrediction> preds, float now)
         {
             var sb = new StringBuilder();
             sb.Append("{\"type\":\"predict\",\"now\":").Append(F(now)).Append(",\"predictions\":[");
@@ -169,11 +211,16 @@ namespace Sarge
                 sb.Append(",\"intensity\":").Append(Quote(p.intensity ?? "normal"));
                 sb.Append(",\"context\":").Append(Quote(p.context ?? "default"));
                 sb.Append(",\"eta_s\":").Append(F(p.etaS));
-                sb.Append(",\"confidence\":").Append(F(p.confidence)).Append('}');
+                sb.Append(",\"confidence\":").Append(F(p.confidence));
+                if (!string.IsNullOrEmpty(p.physJson)) sb.Append(",\"phys\":").Append(p.physJson);
+                if (!string.IsNullOrEmpty(p.after)) sb.Append(",\"after\":").Append(Quote(p.after));
+                sb.Append('}');
             }
             sb.Append("]}");
             WriteFrame(PREDICT, sb.ToString());
-            ReadFrame();
+            var f = ReadFrame();
+            try { return JsonUtility.FromJson<PredictAck>(f.json); }
+            catch (Exception) { return null; }
         }
 
         static float[] DecodePcm(byte[] buf, string format, int n)

@@ -88,6 +88,9 @@ class AffordanceEngine:
         self.generated: set = set()
         self.fired: set = set()
         self.last_served = None
+        self.lead_gate = True
+        self.pool_fix = False
+        self.sibling_on_miss = False
         self.stats = {"spec_gen": 0, "demand_gen": 0, "realtime": 0, "hits": 0, "fallback": 0,
                       "silence": 0, "evicted": 0, "gpu_ms": 0.0, "peak_bytes": 0}
 
@@ -223,12 +226,17 @@ class AffordanceEngine:
         while self.demand and len(batch) < max_items:
             key = self.demand.pop(0)
             self.demand_set.discard(key)
-            if key in self.cache:
+            if key in self.cache and not self.pool_fix:
                 continue
             self.want[key] = max(self.want.get(key, 0), self.variants_per_key)
             self.priority[key] = self.L + 0.5
             have = len(self.cache.get(key, ()))
-            for v in range(have, self.variants_per_key):
+            if self.pool_fix:
+                held = {c.variant_id for c in self.cache.get(key, ())}
+                todo = [v for v in range(self.variants_per_key) if v not in held]
+            else:
+                todo = range(have, self.variants_per_key)
+            for v in todo:
                 item = (key, v)
                 if item in self.inflight:
                     continue
@@ -236,6 +244,9 @@ class AffordanceEngine:
                 batch.append(item)
                 if len(batch) >= max_items:
                     break
+            if self.pool_fix and any((key, v) not in self.inflight for v in todo):
+                self.demand.insert(0, key)
+                self.demand_set.add(key)
         if batch:
             return batch, "demand_gen"
         for key in list(self.pinned):
@@ -320,7 +331,7 @@ class AffordanceEngine:
         queued = 0
         gated = 0
         for fp in proposals:
-            if fp.eta_s * 1000.0 < self.cost_ms(fp.key):
+            if self.lead_gate and fp.eta_s * 1000.0 < self.cost_ms(fp.key):
                 gated += 1
                 continue
             self.eta[fp.key] = self._now + fp.eta_s
@@ -379,6 +390,44 @@ class AffordanceEngine:
         self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
         return clip
 
+    def claim_realtime(self, key: CacheKey) -> bool:
+        if not self.realtime or self.cache.get(key) or (key, 0) in self.inflight:
+            return False
+        if self.sibling_on_miss and self._sibling(key) is not None:
+            return False
+        self.inflight.add((key, 0))
+        return True
+
+    def release_realtime(self, key: CacheKey):
+        self.inflight.discard((key, 0))
+
+    def complete_realtime(self, key: CacheKey, clip: AudioClip) -> str:
+        self.inflight.discard((key, 0))
+        self.fired.add(key)
+        self.eta.pop(key, None)
+        if self.learner is not None:
+            self.learner.observe_event(key)
+        while self._used() + self._bytes(clip) > self.vram_budget:
+            if not self._evict_min_speculative():
+                break
+        if self._used() + self._bytes(clip) <= self.vram_budget:
+            self.cache.setdefault(key, []).append(clip)
+            self.generated.add(key)
+            self.recent[key] = len(self.cache[key]) - 1
+        self.stats["realtime"] += 1
+        self.stats["gpu_ms"] += self.cost_ms(key)
+        self.stats["peak_bytes"] = max(self.stats["peak_bytes"], self._used())
+        self.last_served = clip
+        return "realtime"
+
+    def _sibling(self, key: CacheKey):
+        near = sorted((k for k in self.cache if self.cache[k] and k.event_type == key.event_type
+                       and k.context == key.context and k.phys == key.phys), key=str)
+        for k in near:
+            if k.material == key.material:
+                return k
+        return near[0] if near else None
+
     def on_event(self, key: CacheKey) -> str:
         self.fired.add(key)
         self.eta.pop(key, None)
@@ -392,6 +441,15 @@ class AffordanceEngine:
             self.last_served = pool[idx]
             return "cached"
         if self.realtime:
+            sib = self._sibling(key) if self.sibling_on_miss else None
+            if sib is not None:
+                self._queue_demand(key)
+                self.stats["sibling"] = self.stats.get("sibling", 0) + 1
+                pool = self.cache[sib]
+                idx = (self.recent.get(sib, -1) + 1) % len(pool)
+                self.recent[sib] = idx
+                self.last_served = pool[idx]
+                return "sibling"
             self.last_served = self._realtime_generate(key)
             return "realtime"
         self._queue_demand(key)

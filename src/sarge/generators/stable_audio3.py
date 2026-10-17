@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import contextlib
+import os
 import threading
+import time
 
 import numpy as np
 
 from .base import Generator
 from ..loudness import normalize_loudness, normalize_peak, peak_for, target_for
+from ..startup import stage
 from ..static_guard import is_static, retry_seed
 from ..types import AudioClip, CacheKey
 from .stable_audio import _extract, _natural, _seed, build_prompt
@@ -83,6 +86,62 @@ def _skip_random_init():
             setattr(init, n, f)
 
 
+class _StageTorch:
+    def __init__(self, torch_mod, marks):
+        self._torch = torch_mod
+        self._marks = marks
+
+    def __getattr__(self, name):
+        if name == "float16" and "copy" in self._marks and "cuda" not in self._marks:
+            self._marks["cuda"] = stage("medium to device fp32", self._marks["copy"])
+        return getattr(self._torch, name)
+
+
+def _timed(fn, label, marks, name):
+    def run(*a, **k):
+        t = time.time()
+        out = fn(*a, **k)
+        marks[name] = stage(label(a) if callable(label) else label, t)
+        return out
+
+    return run
+
+
+def _mb(a):
+    try:
+        return "medium weights mmap %.0f MB" % (os.path.getsize(a[0]) / 1e6)
+    except (OSError, IndexError, TypeError):
+        return "medium weights mmap"
+
+
+@contextlib.contextmanager
+def _load_stages():
+    try:
+        import stable_audio_3.factory as fac
+        import stable_audio_3.loading_utils as lu
+    except ImportError:
+        yield {}
+        return
+    marks = {}
+    saved = [(lu, n, getattr(lu, n)) for n in ("create_diffusion_cond_from_config", "load_file", "copy_state_dict",
+                                                 "torch") if hasattr(lu, n)]
+    saved += [(fac, n, getattr(fac, n)) for n in ("T5GemmaConditioner",) if hasattr(fac, n)]
+    wrap = {"create_diffusion_cond_from_config": ("medium model build", "build"), "load_file": (_mb, "read"),
+            "copy_state_dict": ("medium weights read + state copy", "copy"),
+            "T5GemmaConditioner": ("t5gemma load", "t5")}
+    for mod, n, f in saved:
+        if n == "torch":
+            mod.torch = _StageTorch(f, marks)
+        else:
+            label, key = wrap[n]
+            setattr(mod, n, _timed(f, label, marks, key))
+    try:
+        yield marks
+    finally:
+        for mod, n, f in saved:
+            setattr(mod, n, f)
+
+
 STATIC_STATS = ("static_checks", "static_flagged", "static_retries", "static_rescued", "static_exhausted")
 
 
@@ -105,7 +164,7 @@ class StableAudio3Generator(Generator):
                  decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
                  level: str = "rms", decoder_ckpt: str | None = None, amp: bool = False,
                  prompt_style: str = "v1", stereo: bool = False, width: float = 1.0, noise_span=None,
-                 hoist_diff: bool = False, **_):
+                 hoist_diff: bool = False, weight_cache: str | None = None, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -142,13 +201,17 @@ class StableAudio3Generator(Generator):
         self.trim = str(trim)
         self.level = str(level)
         self.decoder_ckpt = str(decoder_ckpt) if decoder_ckpt else None
-        self.amp = bool(amp)
+        self.amp = bool(amp) and amp != "off"
+        self.amp_mode = amp if isinstance(amp, str) else ("full" if amp else "off")
         self.prompt_style = str(prompt_style)
         self.stereo = bool(stereo)
         self.width = float(width)
         self.noise_span = None if noise_span is None else (float(noise_span[0]), float(noise_span[1]))
         self._span_frames = None
         self.hoist_diff = bool(hoist_diff)
+        self.weight_cache = weight_cache or None
+        self._cache_target = None
+        self._cache_writer = None
         self._load_error = None
         self.cfg_interval = None if cfg_interval is None else (float(cfg_interval[0]), float(cfg_interval[1]))
         self._hoist = None
@@ -163,11 +226,13 @@ class StableAudio3Generator(Generator):
             return
         if self._load_error is not None:
             raise self._load_error
+        t = time.time()
         if self.fast_load:
             from ..fastmeta import install
             install()
         import torch
         from stable_audio_3 import StableAudioModel
+        t = stage("sa3 imports", t)
         if self.device is None:
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
         acc16 = self.fp16_accumulation and hasattr(torch.backends.cuda.matmul, "allow_fp16_accumulation")
@@ -185,9 +250,15 @@ class StableAudio3Generator(Generator):
             except Exception as e:
                 self._load_error = e
                 raise
-        with _skip_random_init() if self.fast_load else contextlib.nullcontext():
-            model = StableAudioModel.from_pretrained(
-                self.model_name, device=self.device, model_half=self.model_half)
+        model = self._cached_model(torch) if self.weight_cache else None
+        if model is None:
+            with _skip_random_init() if self.fast_load else contextlib.nullcontext(), _load_stages() as marks:
+                model = StableAudioModel.from_pretrained(
+                    self.model_name, device=self.device, model_half=self.model_half)
+            t = stage("medium fp16" if "cuda" in marks else "medium loaded", marks.get("cuda", t))
+            if self._cache_target is not None:
+                self._store_cache(model)
+        t = time.time()
         if dec_sd is not None:
             try:
                 model.same.model.decoder.load_state_dict(dec_sd, strict=True)
@@ -216,6 +287,7 @@ class StableAudio3Generator(Generator):
                                          decode_keep_frames=keep, triton_proj=self.triton_proj)
             except Exception:
                 self._fast = None
+            t = stage("accelerator (triton gemm %d linears)" % len(getattr(self._fast, "triton_linears", ())), t)
         if self._fast is not None and self.hoist_prompts is not None:
             try:
                 from .sa3_hoist import ALL_PARTS, DEFAULT_PARTS, install_hoist
@@ -224,9 +296,81 @@ class StableAudio3Generator(Generator):
                                             diff=self.hoist_diff)
             except Exception:
                 self._hoist = None
+            stage("hoist install", t)
+
+    def _cached_model(self, torch):
+        import gc
+        import json
+        from .. import weight_cache as wc
+        t = time.time()
+        self._cache_target = None
+        if not (self.model_half and str(self.device).startswith("cuda") and torch.cuda.is_available()):
+            stage("weight cache: off, it needs fp16 on cuda")
+            return None
+        try:
+            import stable_audio_3.loading_utils as lu
+            from stable_audio_3 import StableAudioModel
+            from stable_audio_3.model_configs import all_models
+            config_path, ckpt = all_models[self.model_name].resolve()
+            key = wc.key_of(wc.fingerprint(self.model_name, ckpt, config_path))
+            path = wc.path_for(self.weight_cache, self.model_name, key)
+        except Exception as e:
+            stage("weight cache: slow path, no key (%s)" % (repr(e)[:160],), t)
+            return None
+        gone = wc.sweep(self.weight_cache)
+        if gone:
+            stage("weight cache: removed %d leftovers of interrupted writes (%s)" % (
+                len(gone), ", ".join(os.path.basename(p) for p in gone)[:200]))
+        self._cache_target = (path, key)
+        if not os.path.isfile(path):
+            stage("weight cache: slow path, will build %s" % path, t)
+            return None
+        inner = model = err = None
+        try:
+            with open(config_path) as fh:
+                config = json.load(fh)
+            with _skip_random_init() if self.fast_load else contextlib.nullcontext(), _load_stages():
+                inner = lu.create_diffusion_cond_from_config(config)
+            inner.eval().requires_grad_(False)
+            wc.restore(inner, path, key, self.device)
+            inner.use_lora = False
+            inner.lora_names = []
+            model = StableAudioModel(inner, config, self.device, True)
+        except Exception as e:
+            err = repr(e)[:200]
+        if model is None:
+            inner = None
+            gc.collect()
+            torch.cuda.empty_cache()
+            try:
+                os.remove(path)
+            except OSError as e:
+                self._cache_target = None
+                err = "%s; kept, no rebuild: %s" % (err, repr(e)[:80])
+            stage("weight cache: slow path, cache unusable (%s)" % err, t)
+            return None
+        self._cache_target = None
+        wc.touch(path)
+        stage("weight cache: fp16 load from %s" % path, t)
+        return model
+
+    def _store_cache(self, model):
+        from .. import weight_cache as wc
+        path, key = self._cache_target
+        self._cache_target = None
+        try:
+            self._cache_writer = wc.save_async(model.model, path, key, {"model": self.model_name}, self.model_name)
+        except Exception as e:
+            stage("weight cache: not written, %s" % (repr(e)[:200],))
 
     def ensure_ready(self):
         self._ensure_loaded()
+
+    @property
+    def post_tag(self) -> str:
+        if self.level != "loudness" and getattr(self, "amp_mode", "") != "punch":
+            return ""
+        return "post:%s:%s" % (self.level, self.amp_mode if self.amp else "off")
 
     def _prompt(self, key: CacheKey) -> str:
         override = self.prompts.get(str(key))
@@ -292,6 +436,11 @@ class StableAudio3Generator(Generator):
             mono = np.ascontiguousarray(a.T)
         else:
             mono = a.mean(axis=0) if a.ndim == 2 else a
+        if self.level == "loudness" or getattr(self, "amp_mode", "") == "punch":
+            from ..post import process
+            return process(mono, self.sample_rate, key.event_type, key.intensity, level=self.level,
+                           amp_mode=self.amp_mode if self.amp else "off", stereo=self.stereo, width=self.width,
+                           trim=self.trim, duration_s=self.duration_s)
         if self.trim == "natural":
             mono = _natural(mono, self.sample_rate)
         else:

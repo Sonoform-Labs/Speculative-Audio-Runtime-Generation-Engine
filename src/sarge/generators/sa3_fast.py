@@ -1,8 +1,17 @@
 from __future__ import annotations
 
+import threading
+import time
 from collections import OrderedDict
 
 import torch
+
+from ..startup import active, stage
+
+
+def _sync():
+    if active():
+        torch.cuda.synchronize()
 
 
 class GraphedForward:
@@ -28,6 +37,7 @@ class GraphedForward:
         return tuple(parts)
 
     def _capture(self, x, t, kw):
+        t0 = time.time()
         sx = x.clone()
         st = t.clone()
         skw = {k: v.clone() for k, v in kw.items() if torch.is_tensor(v)}
@@ -35,12 +45,17 @@ class GraphedForward:
         side = torch.cuda.Stream()
         side.wait_stream(torch.cuda.current_stream())
         with torch.cuda.stream(side):
-            for _ in range(2):
+            for i in range(2):
                 self.orig(sx, st, **skw, **consts)
+                if i == 0:
+                    _sync()
+                    t0 = stage("dit compile + first run %s" % (tuple(x.shape),), t0)
         torch.cuda.current_stream().wait_stream(side)
         graph = torch.cuda.CUDAGraph()
         with torch.cuda.graph(graph, pool=self.pool, capture_error_mode="thread_local"):
             out = self.orig(sx, st, **skw, **consts)
+        _sync()
+        stage("dit second run + graph capture", t0)
         return {"graph": graph, "x": sx, "t": st, "kw": skw, "out": out}
 
     def __call__(self, x, t, **kw):
@@ -69,27 +84,68 @@ class GraphedForward:
         return ent["out"].clone()
 
 
+def _refuse_in(thread, real):
+    def refuse(*a, **k):
+        if threading.get_ident() == thread:
+            raise RuntimeError("prefill")
+        return real(*a, **k)
+
+    return refuse
+
+
 class GraphedDecode:
-    def __init__(self, orig):
+    def __init__(self, orig, eager=None):
         self.orig = orig
+        self.eager = eager
         self.pool = torch.cuda.graph_pool_handle()
         self.entries = {}
         self.failed = {}
+        self.prefilled = set()
         self.captured = 0
         self.replays = 0
 
     def _capture(self, z, chunked):
+        t0 = time.time()
         sz = z.clone()
         side = torch.cuda.Stream()
         side.wait_stream(torch.cuda.current_stream())
         with torch.cuda.stream(side):
-            for _ in range(2):
+            self._prefill(sz, chunked)
+            for i in range(2):
                 self.orig(sz, chunked=chunked)
+                if i == 0:
+                    _sync()
+                    t0 = stage("decoder compile + first run %s" % (tuple(z.shape),), t0)
         torch.cuda.current_stream().wait_stream(side)
         graph = torch.cuda.CUDAGraph()
         with torch.cuda.graph(graph, pool=self.pool, capture_error_mode="thread_local"):
             out = self.orig(sz, chunked=chunked)
+        _sync()
+        stage("decoder second run + graph capture", t0)
         return {"graph": graph, "z": sz, "out": out}
+
+    def _prefill(self, z, chunked):
+        if self.eager is None:
+            return False
+        mark = (tuple(z.shape[1:]), str(z.device), chunked)
+        if mark in self.prefilled:
+            return False
+        try:
+            import stable_audio_3.models.transformer as tm
+        except ImportError:
+            return False
+        saved = getattr(tm, "flex_attention_compiled", None)
+        if saved is None or not hasattr(tm, "_SLIDING_WINDOW_BLOCK_MASK_CACHE"):
+            return False
+        tm.flex_attention_compiled = _refuse_in(threading.get_ident(), saved)
+        try:
+            self.eager(z, chunked=chunked)
+        except Exception:
+            return False
+        finally:
+            tm.flex_attention_compiled = saved
+        self.prefilled.add(mark)
+        return True
 
     def __call__(self, z, chunked=None, **kw):
         if kw or not torch.is_tensor(z) or not z.is_cuda:
@@ -127,9 +183,11 @@ class CondCache:
         ent = self.store.get(k)
         if ent is None:
             self.misses += 1
+            t0 = time.time()
             with torch.inference_mode():
                 out = self.cdm.conditioner([{"prompt": prompt, "seconds_total": seconds}], self.device)
             ent = {n: [x.clone() if torch.is_tensor(x) else x for x in v] for n, v in out.items()}
+            stage("text conditioning (miss %d)" % self.misses, t0)
             self.store[k] = ent
             while len(self.store) > self.max_prompts:
                 self.store.popitem(last=False)
@@ -178,6 +236,7 @@ class GraphedText:
         return getattr(self.orig, name)
 
     def _capture(self, ids, mask):
+        t0 = time.time()
         sids = ids.clone()
         smask = mask.clone()
         side = torch.cuda.Stream()
@@ -189,6 +248,8 @@ class GraphedText:
         graph = torch.cuda.CUDAGraph()
         with torch.cuda.graph(graph, pool=self.pool, capture_error_mode="thread_local"):
             out = self.orig(input_ids=sids, attention_mask=smask)["last_hidden_state"]
+        _sync()
+        stage("t5 graph capture %s" % (tuple(ids.shape),), t0)
         return {"graph": graph, "ids": sids, "mask": smask, "out": out}
 
     def __call__(self, input_ids=None, attention_mask=None, **kw):
@@ -260,11 +321,11 @@ class Accelerator:
         pt = getattr(sam.model, "pretransform", None)
         self.prefix = None
         if pt is not None and (compile_decode or graph_decode or decode_keep_frames):
-            dec = pt.decode
+            dec = raw = pt.decode
             if compile_decode:
                 dec = torch.compile(dec, mode=compile_mode or "default", dynamic=False)
             if graph_decode and torch.cuda.is_available() and str(sam.device).startswith("cuda"):
-                self.decode_graph = GraphedDecode(dec)
+                self.decode_graph = GraphedDecode(dec, eager=raw if compile_decode else None)
                 dec = self.decode_graph
             ratio = getattr(pt, "downsampling_ratio", None)
             if decode_keep_frames and ratio:

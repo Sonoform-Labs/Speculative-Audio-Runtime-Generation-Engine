@@ -37,9 +37,11 @@ class CacheKey:
     material: str
     intensity: str
     context: str = "default"
+    phys: str = ""
 
     def __str__(self) -> str:
-        return f"{self.event_type}|{self.material}|{self.intensity}|{self.context}"
+        base = f"{self.event_type}|{self.material}|{self.intensity}|{self.context}"
+        return f"{base}|{self.phys}" if self.phys else base
 
 
 @dataclass(slots=True)
@@ -79,6 +81,7 @@ class AudioClip:
     samples: np.ndarray
     sample_rate: int = SAMPLE_RATE
     variant_id: int = 0
+    gen_ms: float | None = None
 
     @property
     def channels(self) -> int:

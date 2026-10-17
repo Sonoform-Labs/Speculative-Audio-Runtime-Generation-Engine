@@ -1,17 +1,19 @@
 import _bootstrap
 
 import argparse
+import hashlib
+import importlib.metadata
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
 import time
 
-import numpy as np
 import psutil
 
-from sarge.sidecar.client import ProtocolError, connect
+np = ProtocolError = connect = None
 
 BENCH = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(BENCH))
@@ -34,16 +36,125 @@ IDLE = [(0.0, "guns", ("shoot", "rifle", "soft", "indoor_small")), (1.0, "guns",
         (8.0, "rest", ("footstep", "wood", "normal", "indoor_small")),
         (3.0, "rest", ("break", "window", "normal", "tunnel")), (8.0, "rest", ("splash", "water", "normal", "tunnel"))]
 SR = {"guns": 44100, "rest": 48000}
+VARIANT_GUNS = [("shoot", "pistol", "normal", "default"), ("shoot", "rifle", "loud", "indoor_small"),
+                ("reload", "rifle", "normal", "tunnel"), ("empty_click", "pistol", "soft", "default"),
+                ("equip", "rifle", "normal", "outdoor_open"), ("shoot", "pistol", "loud", "indoor_large")]
+VARIANT_REST = [("break", "window", "normal", "default"), ("bullet impact", "glass", "loud", "indoor_small"),
+                ("footstep", "gravel", "soft", "default"), ("footstep", "stone", "normal", "tunnel"),
+                ("footstep", "water", "normal", "default"), ("splash", "water", "loud", "outdoor_open"),
+                ("footstep", "wood", "normal", "indoor_large"), ("punch", "body", "normal", "default")]
+STAGE = re.compile(r"^(\[woosh\] )?\[startup\] ([\d.]+) s (.*?)(?: \(([\d.]+) s\))?$")
+PRE_ROLL_S = 3.0
+WATCH = ("System", "MsMpEng.exe", "SearchIndexer.exe", "MemCompression")
+SAVER = None
+
+
+def late_imports():
+    global np, ProtocolError, connect
+    import numpy as np
+    from sarge.sidecar.client import ProtocolError, connect
 
 
 def smi():
     try:
-        r = subprocess.run(["nvidia-smi", "--query-gpu=memory.used,memory.total,clocks.sm,pstate",
+        r = subprocess.run(["nvidia-smi", "--query-gpu=memory.used,memory.total,clocks.sm,pstate,utilization.gpu",
                             "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=20)
-        used, total, sm, ps = (x.strip() for x in r.stdout.strip().splitlines()[0].split(","))
-        return {"used_mib": int(used), "total_mib": int(total), "sm_mhz": int(sm), "pstate": ps}
+        used, total, sm, ps, util = (x.strip() for x in r.stdout.strip().splitlines()[0].split(","))
+        return {"used_mib": int(used), "total_mib": int(total), "sm_mhz": int(sm), "pstate": ps, "util": int(util)}
     except Exception as e:
         return {"error": str(e)}
+
+
+def disk_letters():
+    cmd = "Get-Partition | Where-Object DriveLetter | ForEach-Object { '{0}|{1}' -f $_.DiskNumber, $_.DriveLetter }"
+    out = {}
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-Command", cmd], capture_output=True, text=True, timeout=60)
+        for line in r.stdout.splitlines():
+            if "|" in line:
+                n, d = line.strip().split("|")
+                out.setdefault("PhysicalDrive" + n, []).append(d + ":")
+    except Exception:
+        pass
+    return {k: "+".join(sorted(v)) for k, v in out.items()}
+
+
+class Saver:
+    def __init__(self, path):
+        self.path = path
+        self.index = []
+        self.names = set()
+        os.makedirs(path, exist_ok=True)
+
+    def save(self, tag, et, mat, inten, ctx, variant, y, body, ms):
+        slug = "_".join(str(x).replace(" ", "-") for x in (et, mat, inten, ctx))
+        name = "%s__%s__v%d" % (tag, slug, variant)
+        k = 2
+        while name in self.names:
+            name = "%s__%s__v%d__%d" % (tag, slug, variant, k)
+            k += 1
+        self.names.add(name)
+        y = np.ascontiguousarray(y, dtype=np.float32)
+        np.save(os.path.join(self.path, name + ".npy"), y)
+        self.index.append({"file": name + ".npy", "pass": tag, "key": "%s|%s|%s|%s" % (et, mat, inten, ctx),
+                           "variant": int(variant), "served": body.get("served"),
+                           "sample_rate": int(body.get("sample_rate", 0)), "channels": int(body.get("channels", 1)),
+                           "shape": list(y.shape), "sha1": hashlib.sha1(y.tobytes()).hexdigest(), "ms": round(ms, 2)})
+
+    def close(self, extra=None):
+        with open(os.path.join(self.path, "index.json"), "w", encoding="utf-8") as fh:
+            json.dump({"clips": self.index, **(extra or {})}, fh, indent=1)
+
+
+def settle(quiet_s=15.0, limit=0.05, max_s=900.0, every=1.0):
+    procs = []
+    for pid, name in watchlist().items():
+        if name == "MsMpEng.exe":
+            try:
+                procs.append(psutil.Process(pid))
+            except psutil.Error:
+                pass
+
+    def cpu():
+        s = 0.0
+        for p in procs:
+            try:
+                c = p.cpu_times()
+                s += c.user + c.system
+            except psutil.Error:
+                pass
+        return s
+
+    if not procs:
+        return {"skipped": "MsMpEng not found"}
+    t0 = time.time()
+    c0 = last = cpu()
+    tl = time.time()
+    quiet_since = t0
+    rates = []
+    while time.time() - t0 < max_s:
+        time.sleep(every)
+        c, now = cpu(), time.time()
+        rate = (c - last) / max(1e-6, now - tl)
+        rates.append(round(rate, 3))
+        last, tl = c, now
+        if rate >= limit:
+            quiet_since = now
+        elif now - quiet_since >= quiet_s:
+            return {"seconds": round(now - t0, 1), "msmpeng_cpu_s": round(c - c0, 2), "quiet": True,
+                    "rates": rates}
+    return {"seconds": round(time.time() - t0, 1), "msmpeng_cpu_s": round(cpu() - c0, 2), "quiet": False,
+            "rates": rates}
+
+
+def affinity(procs):
+    out = {}
+    for pid, role in procs.items():
+        try:
+            out[str(pid)] = [role, sorted(psutil.Process(pid).cpu_affinity())]
+        except (psutil.Error, AttributeError):
+            pass
+    return out
 
 
 def proc_gpu(pids):
@@ -69,18 +180,118 @@ def proc_gpu(pids):
     return out
 
 
+def watchlist():
+    out = {}
+    for p in psutil.process_iter(["name"]):
+        if p.info["name"] in WATCH:
+            out[p.pid] = p.info["name"]
+    try:
+        out[psutil.win_service_get("SysMain").pid()] = "SysMain"
+    except Exception:
+        pass
+    return out
+
+
 class Sampler(threading.Thread):
-    def __init__(self, every=0.5):
+    def __init__(self, every=0.5, disks=None, watch=None):
         super().__init__(daemon=True)
         self.every, self.rows, self.stop = every, [], threading.Event()
         self.t0 = time.time()
+        self.disks = disks or {}
+        self.root = None
+        self.procs = {}
+        self.last = {}
+        self.trace = []
+        self.watch = {}
+        self.foreign = {}
+        self.ticks = 0
+        for pid, name in (watch or {}).items():
+            try:
+                self.watch[pid] = (psutil.Process(pid), name)
+            except psutil.Error:
+                pass
+
+    def _refresh(self):
+        try:
+            root = psutil.Process(self.root)
+            found = [root] + root.children(recursive=True)
+        except psutil.Error:
+            return
+        for p in found:
+            if p.pid in self.procs:
+                continue
+            try:
+                cl = " ".join(p.cmdline())
+            except psutil.Error:
+                continue
+            self.procs[p.pid] = (p, "woosh" if "woosh_server" in cl else "sidecar")
+
+    def _probe(self, t, s):
+        row = {"t": round(t - self.t0, 3), "vram": s.get("used_mib"), "gpu": s.get("util")}
+        try:
+            row["disk"] = {self.disks.get(k, k): [v.read_bytes, v.write_bytes, v.read_count, v.read_time]
+                           for k, v in psutil.disk_io_counters(perdisk=True).items()}
+            ct = psutil.cpu_times()
+            row["cpu_all"] = ct.user + ct.system
+        except Exception:
+            pass
+        if self.root:
+            self._refresh()
+            for pid, (p, role) in self.procs.items():
+                try:
+                    c = p.cpu_times()
+                    io = p.io_counters()
+                    self.last[pid] = (role, c.user + c.system, io.read_bytes, io.other_bytes)
+                except psutil.Error:
+                    pass
+            agg = {}
+            for role, cpu, rb, ob in self.last.values():
+                a = agg.setdefault(role, [0.0, 0, 0])
+                a[0] += cpu
+                a[1] += rb
+                a[2] += ob
+            row["proc"] = {k: [round(v[0], 3), v[1], v[2]] for k, v in agg.items()}
+        others = {}
+        for pid, (p, name) in self.watch.items():
+            try:
+                c = p.cpu_times()
+                io = p.io_counters()
+            except psutil.Error:
+                continue
+            o = others.setdefault(name, [0.0, 0, 0])
+            o[0] += c.user + c.system
+            o[1] += io.read_bytes
+            o[2] += io.read_count
+        row["others"] = {k: [round(v[0], 3), v[1], v[2]] for k, v in others.items()}
+        self.ticks += 1
+        if self.ticks % 4 == 1:
+            row["foreign"] = self._foreign()
+        return row
+
+    def _foreign(self):
+        me, parent = os.getpid(), os.getppid()
+        out = {}
+        for p in psutil.process_iter(["name", "ppid"]):
+            if "python" not in (p.info["name"] or "").lower() or p.pid in self.procs or p.pid in (me, parent) or \
+                    p.info["ppid"] == me:
+                continue
+            try:
+                if p.pid not in self.foreign:
+                    self.foreign[p.pid] = " ".join(p.cmdline())[:200]
+                c = p.cpu_times()
+                out[str(p.pid)] = round(c.user + c.system, 2)
+            except psutil.Error:
+                continue
+        return out
 
     def run(self):
         while not self.stop.is_set():
+            t = time.time()
             s = smi()
             if "used_mib" in s:
-                self.rows.append((time.time() - self.t0, s["used_mib"]))
-            self.stop.wait(self.every)
+                self.rows.append((t - self.t0, s["used_mib"]))
+            self.trace.append(self._probe(t, s))
+            self.stop.wait(max(0.05, self.every - (time.time() - t)))
 
     def peak(self, a=0.0, b=1e18):
         xs = [u for t, u in self.rows if a <= t <= b]
@@ -142,6 +353,16 @@ def ref_for(side, et, mat):
     return np.load(p) if os.path.isfile(p) else None
 
 
+def stages(txt):
+    out = []
+    for line in txt.splitlines():
+        m = STAGE.match(line.strip())
+        if m:
+            out.append([float(m.group(2)), float(m.group(4)) if m.group(4) else None,
+                        "woosh" if m.group(1) else "sidecar", m.group(3)])
+    return out
+
+
 def fire(c, side, et, mat, inten, ctx, rows, tag):
     t = time.perf_counter()
     try:
@@ -156,6 +377,8 @@ def fire(c, side, et, mat, inten, ctx, rows, tag):
     ms = (time.perf_counter() - t) * 1000.0
     y = np.asarray(s, dtype=np.float32)
     ch = int(body.get("channels", 1))
+    if SAVER is not None:
+        SAVER.save(tag, et, mat, inten, ctx, int(body.get("variant_id", -1)), y, body, ms)
     d = None
     if inten == "normal" and ctx == "default" and int(body.get("variant_id", -1)) == 0:
         ref = ref_for(side, et, mat)
@@ -210,22 +433,67 @@ def main(argv=None):
     ap.add_argument("--tag", default="hybrid")
     ap.add_argument("--port", type=int, default=8766)
     ap.add_argument("--woosh-port", type=int, default=8771)
+    ap.add_argument("--save-dir", default=None,
+                    help="save every served clip as .npy (float32 PCM as received) plus index.json")
+    ap.add_argument("--evict", action="store_true",
+                    help="drop SARGE's files from the file cache first (evict_cache.py) for a cold start")
+    ap.add_argument("--settle", type=float, default=15.0,
+                    help="after --evict, wait until Microsoft Defender (MsMpEng) has used under 0.05 of a core for "
+                         "this many seconds, so its post-eviction rescans do not land in the measured startup (0 = off)")
+    ap.add_argument("--sidecar-root", default=ROOT,
+                    help="run scripts/run_sidecar.py from this checkout (e.g. a HEAD export) with this repo's venvs "
+                         "and compile caches")
     ap.add_argument("--extra", nargs=argparse.REMAINDER, default=[])
     a = ap.parse_args(argv)
+    global SAVER
     os.makedirs(OUT, exist_ok=True)
     for p in woosh_by_port(a.woosh_port):
         raise SystemExit("a woosh server is already running on port %d (pid %d)" % (a.woosh_port, p))
     log_path = os.path.join(OUT, "sidecar_%s.log" % a.tag)
-    cmd = [sys.executable, "-u", PIN, os.path.join(ROOT, "scripts", "run_sidecar.py")] + ARGS + [
+    side_root = os.path.abspath(a.sidecar_root)
+    cmd = [sys.executable, "-u", PIN, os.path.join(side_root, "scripts", "run_sidecar.py")] + ARGS + [
         "--port", str(a.port), "--woosh-port", str(a.woosh_port),
         "--cache-dir", os.path.join(ROOT, ".cache", "sfx_bake")] + list(a.extra)
-    res = {"tag": a.tag, "cmd": cmd, "gpu_before": smi(), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
-    sampler = Sampler()
+    env = None
+    if os.path.normcase(side_root) != os.path.normcase(ROOT):
+        tv = importlib.metadata.version("torch").split("+")[0]
+        env = dict(os.environ, TORCHINDUCTOR_CACHE_DIR=os.path.join(ROOT, ".cache", "inductor-" + tv),
+                   TRITON_CACHE_DIR=os.path.join(ROOT, ".cache", "triton-" + tv))
+        cmd += ["--woosh-python", os.path.join(ROOT, ".venv_woosh", "Scripts", "python.exe")]
+    res = {"tag": a.tag, "cmd": cmd, "sidecar_root": side_root, "gpu_before": smi(),
+           "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    if a.save_dir:
+        SAVER = Saver(a.save_dir)
+    if a.evict:
+        import evict_cache
+        res["evict"] = evict_cache.evict(evict_cache.default_roots() + ([side_root] if env is not None else []))
+        print("evicted %d files, %.2f GB, %d failed, %.1f s" % (res["evict"]["files"], res["evict"]["gb"],
+                                                                 res["evict"]["failed"], res["evict"]["seconds"]),
+              flush=True)
+        if a.settle > 0:
+            res["settle"] = settle(quiet_s=a.settle)
+            print("defender settle %s" % {k: v for k, v in res["settle"].items() if k != "rates"}, flush=True)
+    try:
+        vm = psutil.virtual_memory()
+        res["ram_before"] = {"available_gb": round(vm.available / 1e9, 2), "total_gb": round(vm.total / 1e9, 2)}
+    except Exception:
+        pass
+    res["disks"] = disk_letters()
+    watch = watchlist()
+    res["watch"] = {str(k): v for k, v in watch.items()}
+    sampler = Sampler(disks=res["disks"], watch=watch)
     log = open(log_path, "w", encoding="utf-8")
-    t0 = time.time()
+    t0 = time.time() + PRE_ROLL_S
     sampler.t0 = t0
     sampler.start()
-    srv = subprocess.Popen(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT)
+    time.sleep(max(0.0, t0 - time.time()))
+    t0 = time.time()
+    srv = subprocess.Popen(cmd, cwd=side_root, env=env, stdout=log, stderr=subprocess.STDOUT)
+    sampler.root = srv.pid
+    try:
+        res["launch_offset_s"] = psutil.Process(srv.pid).create_time() - t0
+    except psutil.Error:
+        res["launch_offset_s"] = None
     woosh_up = ready = None
     procs = {}
     rows = []
@@ -248,8 +516,10 @@ def main(argv=None):
         print("woosh up %s s, READY %s s" % (woosh_up, ready), flush=True)
         if ready is None:
             raise SystemExit("sidecar never became READY, see %s" % log_path)
+        late_imports()
         procs = tree(srv.pid)
         res["pids"] = {str(p): r for p, r in procs.items()}
+        res["affinity"] = affinity(procs)
         time.sleep(2.0)
         res["gpu_ready"] = smi()
         res["proc_gpu_ready"] = by_role(proc_gpu(list(procs)), procs)
@@ -278,6 +548,15 @@ def main(argv=None):
             pre = smi()
             r = fire(c2, side, et, mat, inten, ctx, rows, "idle")
             r["idle_s"], r["sm_mhz_before"], r["pstate_before"] = gap, pre.get("sm_mhz"), pre.get("pstate")
+        res["stats_before_variants"] = c2.stats()
+        t_var = time.time() - t0
+        for side, keys in (("guns", VARIANT_GUNS), ("rest", VARIANT_REST)):
+            for et, mat, inten, ctx in keys:
+                fire(c2, side, et, mat, inten, ctx, rows, "variants")
+                c2.prewarm([{"event_type": et, "material": mat, "intensity": inten, "context": ctx}])
+                fire(c2, side, et, mat, inten, ctx, rows, "variants")
+                fire(c2, side, et, mat, inten, ctx, rows, "variants")
+        res["peak_used_mib_variants"] = sampler.peak(t_var)
         res["stats"] = c2.stats()
         c2.close()
         c.close()
@@ -315,7 +594,16 @@ def main(argv=None):
         res["left_running"] = woosh_by_port(a.woosh_port)
         res["gpu_end"] = smi()
         res["vram_timeline"] = [[round(t, 1), u] for t, u in sampler.rows]
+        res["trace"] = sampler.trace
+        res["foreign_python"] = {str(k): v for k, v in sampler.foreign.items()}
+        try:
+            with open(log_path, encoding="utf-8", errors="replace") as fh:
+                res["stages"] = stages(fh.read())
+        except OSError:
+            res["stages"] = []
         res["rows"] = rows
+        if SAVER is not None:
+            SAVER.close({"tag": a.tag, "startup": res.get("startup"), "time": res.get("time")})
         path = os.path.join(OUT, "e2e_%s.json" % a.tag)
         with open(path, "w", encoding="utf-8") as fh:
             json.dump(res, fh, indent=1, default=str)

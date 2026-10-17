@@ -43,6 +43,7 @@ class CachedGenerator(Generator):
 
     def _path(self, key: CacheKey, variant: int) -> str:
         g = self.inner
+        tag = getattr(g, "post_tag", "")
         sig = "|".join(str(x) for x in (
             CACHE_SCHEMA,
             getattr(g, "name", "?"), getattr(g, "model_name", ""),
@@ -56,7 +57,7 @@ class CachedGenerator(Generator):
             getattr(g, "duration_padding_s", ""), getattr(g, "mid_noise", ""),
             getattr(g, "static_guard", ""),
             variant,
-        ))
+        ) + ((tag,) if tag else ()))
         h = hashlib.md5(sig.encode()).hexdigest()[:16]
         return os.path.join(self.cache_dir, f"{h}.wav")
 

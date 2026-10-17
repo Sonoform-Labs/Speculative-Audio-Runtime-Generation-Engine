@@ -17,6 +17,7 @@ namespace Sarge
         public float movingThreshold = 0.2f;
         public int keepOnScreen = 10;
         public bool writeCsv = true;
+        public bool writePhys = false;
         public bool logToConsole = true;
         public KeyCode kickKey = KeyCode.K;
         public float kickMin = 3f;
@@ -211,7 +212,7 @@ namespace Sarge
             _hitStarted = true;
             try
             {
-                File.WriteAllText(_hitPath, HitHeader + "\n");
+                File.WriteAllText(_hitPath, HitHeader + (writePhys ? ",phys" : "") + "\n");
             }
             catch (System.Exception e)
             {
@@ -250,6 +251,11 @@ namespace Sarge
             string row = string.Format(CultureInfo.InvariantCulture,
                 "{0},{1:F4},{2:F5},{3:F5},{4}",
                 _label, Time.time, impulse, c.relativeVelocity.magnitude, other);
+            if (writePhys)
+            {
+                Collider self = c.contactCount > 0 ? c.GetContact(0).thisCollider : GetComponent<Collider>();
+                row += ",\"" + (SargePhysics.FromCollision(c, self) ?? "").Replace("\"", "\"\"") + "\"";
+            }
             if (writeCsv) AppendHit(row);
             if (logToConsole) Debug.Log("[SargeImpulseProbe] " + row);
         }

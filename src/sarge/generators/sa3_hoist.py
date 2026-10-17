@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import functools
+import time
 from collections import OrderedDict
 
 import torch
 import torch.nn.functional as F
 from einops import rearrange
+
+from ..startup import stage
 
 DEFAULT_PARTS = ("cond", "kv", "local")
 ALL_PARTS = ("cond", "kv", "local", "rope")
@@ -457,8 +460,10 @@ class Hoist:
             slot.lt_shape = (int(lc.shape[0]), int(lc.shape[2]), int(lc.shape[1])) if lc is not None else None
             if self.graph_fill:
                 try:
+                    t0 = time.time()
                     self._capture_fill(slot, ctx, lc)
                     self.counts["fill_graphs"] += 1
+                    stage("hoist fill graph %d" % self.counts["fill_graphs"], t0)
                 except Exception as e:
                     self.errors.append(("fill capture: %r" % (e,))[:400])
                     torch.cuda.synchronize()
