@@ -4,6 +4,6 @@ namespace Sarge
 {
     public class SargeSurface : MonoBehaviour
     {
-        public string material = "grass";
+        public string material = "";
     }
 }

@@ -40,9 +40,18 @@ SargeService.Instance.Play("footstep", "grass", myAudioSource);
 
 Or with components and no code:
 
-- **Sarge Emitter** fires a fixed event from `Emit()`, with an optional fallback clip.
+- **Sarge Emitter** fires the event you name from `Emit()`, with an optional class, prompt and fallback clip.
 - **Sarge Footsteps** raycasts for the surface and fires steps on an interval.
 - **Sarge Surface** tags ground objects with a material name.
+
+The package guesses nothing about your game. An untagged collider sends an empty material, a PhysicMaterial name goes out as written (only Unity's ` (Instance)` suffix is cut), and every component's `context` field falls back to `SargeService.context` (default `"default"`; under `--prompts generic` the server adds no space words for it, while the tuned prompts read it as outdoors). Set `SargeService.Instance.context` when the player enters a cave or a hall and every component follows.
+
+Two optional fields reach the server on any request:
+
+- `eventClass` is a routing hint. Under `--route class` a class such as `weapon` sends the sound to the gun model; without that flag it is ignored.
+- `prompt` is text you write for the sound. It goes to whichever model renders it and wins over the server's prompt.
+
+`SargeMotionPredictor.eventType` and `SargeAimPredictor.eventType` default to empty. The server then predicts the event that has landed most often on the surfaces that predictor named, so a step called `Footstep_Concrete` or an impact called `BulletHit` is learned from play. Set the field when you know the name, so the very first step can be predicted too.
 
 ## Impulse probe
 

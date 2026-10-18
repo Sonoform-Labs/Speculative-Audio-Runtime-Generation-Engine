@@ -66,9 +66,13 @@ class SfxClient:
         return body
 
     def event(self, event_type: str, material: str, intensity: str = "normal", context: str = "default",
-              phys=None, have=None, have_phys: str = ""):
+              phys=None, have=None, have_phys: str = "", cls: str = "", prompt: str = ""):
         req = {"type": "event", "event_type": event_type, "material": material,
                "intensity": intensity, "context": context}
+        if cls:
+            req["class"] = cls
+        if prompt:
+            req["prompt"] = prompt
         if phys is not None:
             req["phys"] = phys
         if have is not None:

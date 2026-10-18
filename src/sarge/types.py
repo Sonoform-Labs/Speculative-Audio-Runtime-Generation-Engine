@@ -12,7 +12,11 @@ SAMPLE_RATE = 48_000
 
 
 def seed_for(key, variant: int = 0) -> int:
-    base = int(hashlib.md5(str(key).encode()).hexdigest()[:8], 16)
+    s = str(key)
+    cls = getattr(key, "cls", "")
+    if cls:
+        s = s[:-len("|class=" + cls)]
+    base = int(hashlib.md5(s.encode()).hexdigest()[:8], 16)
     return (base ^ (variant * 2654435761)) & 0x7FFFFFFF
 
 
@@ -38,10 +42,12 @@ class CacheKey:
     intensity: str
     context: str = "default"
     phys: str = ""
+    cls: str = ""
 
     def __str__(self) -> str:
         base = f"{self.event_type}|{self.material}|{self.intensity}|{self.context}"
-        return f"{base}|{self.phys}" if self.phys else base
+        base = f"{base}|{self.phys}" if self.phys else base
+        return f"{base}|class={self.cls}" if self.cls else base
 
 
 @dataclass(slots=True)

@@ -7,7 +7,9 @@ namespace Sarge
     {
         public AudioSource source;
         public string eventType = "impact";
-        public string defaultMaterial = "stone";
+        public string defaultMaterial = "";
+        public string context = "";
+        public string eventClass = "";
         public float minVelocity = 0.6f;
         public float softVelocity = 1.5f;
         public float hardVelocity = 6f;
@@ -32,22 +34,24 @@ namespace Sarge
             if (Time.time - _last < cooldown) return;
             _last = Time.time;
 
-            string mat = MaterialOf(c.collider) ?? defaultMaterial;
+            string mat = MaterialOf(c.collider) ?? defaultMaterial ?? "";
             string intensity = IntensityFor(v);
             var src = source;
             if (!sendPhysics && !speedGain)
             {
-                SargeService.Instance.Request(eventType, mat, intensity, "default",
-                    clip => { if (src != null) src.PlayOneShot(clip); }, null);
+                SargeService.Instance.Request(eventType, mat, intensity, Context, null, null,
+                    clip => { if (src != null) src.PlayOneShot(clip); }, null, eventClass);
                 return;
             }
             float vol = speedGain ? SpeedGain(NormalSpeed(c)) : 1f;
             Collider self = c.contactCount > 0 ? c.GetContact(0).thisCollider : _col;
             string phys = sendPhysics ? SargePhysics.FromCollision(c, self) : null;
             string sig = sendPhysics ? SargePhysics.Signature(self, c.collider) : null;
-            SargeService.Instance.Request(eventType, mat, intensity, "default", phys, sig,
-                clip => { if (src != null) src.PlayOneShot(clip, vol); }, null);
+            SargeService.Instance.Request(eventType, mat, intensity, Context, phys, sig,
+                clip => { if (src != null) src.PlayOneShot(clip, vol); }, null, eventClass);
         }
+
+        public string Context => SargeService.Instance.ContextOr(context);
 
         public string IntensityFor(float v)
         {
@@ -74,7 +78,7 @@ namespace Sarge
             if (surf != null && !string.IsNullOrEmpty(surf.material)) return surf.material;
             var pm = col.sharedMaterial;
             if (pm != null && !string.IsNullOrEmpty(pm.name))
-                return pm.name.Replace(" (Instance)", "").Trim().ToLower();
+                return pm.name.Replace(" (Instance)", "").Trim();
             return null;
         }
     }

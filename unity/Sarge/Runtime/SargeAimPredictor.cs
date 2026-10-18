@@ -11,11 +11,11 @@ namespace Sarge
         public float interval = 0.1f;
         public float holdSeconds = 0.15f;
         public float maxDistance = 100f;
-        public string eventType = "bullet impact";
-        public string after = "shoot";
+        public string eventType = "";
+        public string after = "";
         public string intensity = "normal";
-        public string context = "default";
-        public string defaultMaterial = "metal";
+        public string context = "";
+        public string defaultMaterial = "";
         public float etaSeconds = 0.5f;
         public float confidence = 0.6f;
         public LayerMask mask = ~0;
@@ -46,7 +46,7 @@ namespace Sarge
                 return;
             }
             string mat = (MaterialResolver != null ? MaterialResolver(hit.collider) : null)
-                         ?? SargeAutoCapture.MaterialOf(hit.collider) ?? defaultMaterial;
+                         ?? SargeAutoCapture.MaterialOf(hit.collider) ?? defaultMaterial ?? "";
             if (mat != _candidate)
             {
                 _candidate = mat;
@@ -64,13 +64,13 @@ namespace Sarge
             var p = new SfxPrediction
             {
                 source = "aim",
-                eventType = resolved ?? eventType,
+                eventType = resolved ?? eventType ?? "",
                 material = mat,
                 intensity = intensity,
-                context = context,
+                context = SargeService.Instance.ContextOr(context),
                 etaS = etaSeconds,
                 confidence = confidence,
-                after = resolved != null ? null : after,
+                after = resolved != null || string.IsNullOrEmpty(after) ? null : after,
                 physJson = phys,
                 physSig = sig,
             };

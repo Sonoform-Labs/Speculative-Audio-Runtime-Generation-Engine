@@ -24,7 +24,7 @@ def _velvet(sr: int, length_s: float = 0.02, density: float = 1500.0, seed: int 
     return h
 
 
-def widen(audio, sr: int, event: str = "", width: float = 1.0) -> np.ndarray:
+def widen(audio, sr: int, event: str = "", width: float = 1.0, auto: bool = False) -> np.ndarray:
     from scipy.signal import butter, fftconvolve, sosfilt
     a = np.asarray(audio, dtype=np.float64)
     if a.ndim == 1:
@@ -32,7 +32,11 @@ def widen(audio, sr: int, event: str = "", width: float = 1.0) -> np.ndarray:
     else:
         mid = a.mean(axis=1)
         side = (a[:, 0] - a[:, 1]) * 0.5
-    amount = WIDTH.get(family_for(event), DEFAULT_WIDTH) * float(width)
+    if auto:
+        from .amp import auto_width
+        amount = auto_width(mid, sr) * float(width)
+    else:
+        amount = WIDTH.get(family_for(event), DEFAULT_WIDTH) * float(width)
     if amount > 0 and np.any(mid):
         d = fftconvolve(mid, _velvet(sr), mode="full")[:mid.shape[0]]
         d = sosfilt(butter(2, 250.0, btype="highpass", fs=sr, output="sos"), d)

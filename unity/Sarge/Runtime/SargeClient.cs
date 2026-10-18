@@ -74,6 +74,7 @@ namespace Sarge
         public string physJson;
         public string physSig;
         public string after;
+        public string eventClass;
     }
 
     public class SfxProtocolException : Exception
@@ -156,14 +157,17 @@ namespace Sarge
         }
 
         public AudioResult Event(string eventType, string material, string intensity, string context, string physJson,
-            System.Collections.Generic.IList<int> have = null, string havePhys = null)
+            System.Collections.Generic.IList<int> have = null, string havePhys = null, string eventClass = null, string prompt = null)
         {
-            if (string.IsNullOrEmpty(physJson) && have == null) return Event(eventType, material, intensity, context);
+            if (string.IsNullOrEmpty(physJson) && have == null && string.IsNullOrEmpty(eventClass) && string.IsNullOrEmpty(prompt))
+                return Event(eventType, material, intensity, context);
             var sb = new StringBuilder();
             sb.Append("{\"type\":\"event\",\"event_type\":").Append(Quote(eventType));
             sb.Append(",\"material\":").Append(Quote(material));
             sb.Append(",\"intensity\":").Append(Quote(intensity));
             sb.Append(",\"context\":").Append(Quote(context));
+            if (!string.IsNullOrEmpty(eventClass)) sb.Append(",\"class\":").Append(Quote(eventClass));
+            if (!string.IsNullOrEmpty(prompt)) sb.Append(",\"prompt\":").Append(Quote(prompt));
             if (!string.IsNullOrEmpty(physJson)) sb.Append(",\"phys\":").Append(physJson);
             if (have != null)
             {
@@ -206,8 +210,9 @@ namespace Sarge
                 var p = preds[i];
                 if (i > 0) sb.Append(',');
                 sb.Append("{\"source\":").Append(Quote(p.source ?? "motion"));
-                sb.Append(",\"event_type\":").Append(Quote(p.eventType));
-                sb.Append(",\"material\":").Append(Quote(p.material));
+                sb.Append(",\"event_type\":").Append(Quote(p.eventType ?? ""));
+                sb.Append(",\"material\":").Append(Quote(p.material ?? ""));
+                if (!string.IsNullOrEmpty(p.eventClass)) sb.Append(",\"class\":").Append(Quote(p.eventClass));
                 sb.Append(",\"intensity\":").Append(Quote(p.intensity ?? "normal"));
                 sb.Append(",\"context\":").Append(Quote(p.context ?? "default"));
                 sb.Append(",\"eta_s\":").Append(F(p.etaS));

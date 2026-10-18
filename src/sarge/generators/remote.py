@@ -43,6 +43,7 @@ class RemoteGenerator(Generator):
         self.port = int(port)
         self.connect_timeout = float(connect_timeout)
         self.sample_rate = int(sample_rate)
+        self.prompts: dict = {}
         self._sock = None
 
     def _connect(self):
@@ -69,6 +70,9 @@ class RemoteGenerator(Generator):
                "intensity": key.intensity, "context": key.context, "variant": int(variant)}
         if key.phys:
             req["phys"] = key.phys
+        prompt = self.prompts.get(str(key))
+        if prompt:
+            req["prompt"] = prompt
         for attempt in (0, 1):
             try:
                 self._ensure()

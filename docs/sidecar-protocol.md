@@ -70,6 +70,12 @@ Read exactly N bytes in a loop, since a single `recv` can return short. A `recv`
 
 The `served` field is `cached` for a cache hit, `realtime` for a clip generated on the spot, or `fallback` for a bundled clip on a miss.
 
+Optional fields on an event, a prediction (opcode 13) or a prewarm key, all ignored by older servers:
+
+- `"prompt": "..."` is text the game supplies for that key. It goes to whichever model renders the key (SA3 medium or Woosh) and wins over the server's prompt builder. The server remembers it for the key, so predictions and later events of the same key use it too. Sending a different prompt for a key drops the clips cached for it. It never changes the seed.
+- `"class": "weapon"` is an audio-free routing hint, read only under `--route class`, where a class listed in `--gun-class` (default `weapon`) goes to SA3 medium and everything else to Woosh. The class is part of the key there, but the seed ignores it.
+- A prediction may send `"event_type": ""`. The server then uses the event that has landed most often on that source's predicted surfaces (a learned kind per `source`, see docs/generic.md), and drops the prediction until one has.
+
 Error codes `bad_frame`, `bad_version`, and `oversized` are fatal and close the connection. `bad_json`, `bad_fields`, `unknown_type`, and `internal` are not, and the connection stays usable.
 
 ## Connection

@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+from .words import split_words
+
+STYLES = ("tuned", "generic")
+SA3_PREFIX = "TrackType: SFX, "
+WOOSH_PREFIX = ""
+UNSET_WORDS = ("", "default", "normal")
+
 SPACES = {
     "outdoor_open": {"foley": "exterior, open air", "gun": "exterior, open field, echo rolling away into the distance",
                      "in": "outdoors", "at": "in an open field", "tail": "with a long outdoor echo rolling away",
@@ -236,6 +243,37 @@ def breaking(material, S):
                                                  "%s fragments scattering" % material))
     return "Close perspective %s break, %s smashed with a hard crack, dense shatter of %s, %s settling on %s %s" % (
         noun, obj, mass, det, S["floor"], S["in"])
+
+
+def _field(text):
+    return [] if str(text or "").strip().lower() in UNSET_WORDS else split_words(text)
+
+
+def contact_words(phys):
+    if not phys:
+        return ""
+    from .world import CONTACT_WORDS, parse
+    try:
+        c = parse(phys).get("c")
+    except ValueError:
+        return ""
+    return CONTACT_WORDS.get(c[0], "") if c else ""
+
+
+def generic(event, material="", intensity="normal", context="default", phys="", prefix=""):
+    ev = split_words(event)
+    mat = split_words(material)
+    if mat and all(w in ev for w in mat):
+        mat = []
+    parts = [" ".join(ev), " ".join(mat), " ".join(_field(intensity)), " ".join(_field(context)), contact_words(phys)]
+    text = ", ".join(p for p in parts if p)
+    return prefix + text if text else prefix.rstrip(", ")
+
+
+def compose(style, key, prefix=""):
+    if style == "generic":
+        return generic(key.event_type, key.material, key.intensity, key.context, key.phys, prefix)
+    return build(key.event_type, key.material, key.intensity, key.context, key.phys)
 
 
 def build(event, material, intensity="normal", context="default", phys=""):

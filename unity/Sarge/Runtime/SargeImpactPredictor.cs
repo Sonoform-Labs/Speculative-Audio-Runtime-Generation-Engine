@@ -15,7 +15,7 @@ namespace Sarge
         public float confidence = 0.9f;
         public float minSendInterval = 0.05f;
         public LayerMask mask = ~0;
-        public string context = "default";
+        public string context = "";
 
         public static int castsPerFrame = 1000;
         static int _castFrame = -1, _casts;
@@ -150,7 +150,7 @@ namespace Sarge
             _lastSend = Time.time;
             _lastTarget = target;
             _lastIntensity = intensity;
-            string mat = SargeAutoCapture.MaterialOf(hit.collider) ?? capture.defaultMaterial;
+            string mat = SargeAutoCapture.MaterialOf(hit.collider) ?? capture.defaultMaterial ?? "";
             string phys = null;
             if (capture.sendPhysics)
             {
@@ -165,9 +165,10 @@ namespace Sarge
                 {
                     source = "impact",
                     eventType = capture.eventType,
+                    eventClass = capture.eventClass,
                     material = mat,
                     intensity = intensity,
-                    context = context,
+                    context = string.IsNullOrEmpty(context) ? capture.Context : context,
                     etaS = eta,
                     confidence = confidence,
                     physJson = phys,

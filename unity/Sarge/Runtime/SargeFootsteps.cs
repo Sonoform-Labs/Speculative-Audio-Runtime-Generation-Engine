@@ -6,8 +6,10 @@ namespace Sarge
     public class SargeFootsteps : MonoBehaviour
     {
         public AudioSource source;
+        public string eventType = "footstep";
         public string equipped = null;
-        public string defaultMaterial = "grass";
+        public string defaultMaterial = "";
+        public string context = "";
         public float interval = 0.5f;
         public float rayDistance = 2f;
         public bool autoStep = true;
@@ -53,14 +55,17 @@ namespace Sarge
         {
             string mat = _surface ?? defaultMaterial;
             var src = source;
-            SargeService.Instance.Request("footstep", mat, "normal", "default",
+            var svc = SargeService.Instance;
+            svc.Request(eventType, mat ?? "", "normal", svc.ContextOr(context),
                 clip => { if (src != null) src.PlayOneShot(clip); },
                 () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); });
         }
 
         void PushContext()
         {
-            SargeService.Instance.SetContext(equipped, new[] { _surface ?? defaultMaterial }, "default");
+            string mat = _surface ?? defaultMaterial;
+            var svc = SargeService.Instance;
+            svc.SetContext(equipped, string.IsNullOrEmpty(mat) ? new string[0] : new[] { mat }, svc.ContextOr(context));
         }
 
         string DetectSurface()

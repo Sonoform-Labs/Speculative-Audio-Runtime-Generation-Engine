@@ -85,9 +85,10 @@ def start_woosh(args, hold=False):
         os.path.join(REPO, "scripts", "woosh_server.py"), "--model", args.woosh_model,
         "--port", str(args.woosh_port), "--parent-pid", str(os.getpid())] + (
         ["--frames", str(args.woosh_frames)] if args.woosh_frames else []) + (["--amp"] if args.amp else []) + (
-        ["punch"] if args.amp == "punch" else []) + (
+        [args.amp] if args.amp in ("punch", "auto") else []) + (
         ["--level", "loudness"] if getattr(args, "level", None) == "loudness" else []) + (
-        ["--stereo"] if args.stereo else [])
+        ["--stereo"] if args.stereo else []) + (
+        ["--prompts", "generic"] if getattr(args, "prompts", None) == "generic" else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -182,7 +183,9 @@ def main(argv=None) -> int:
                     help="clips per background generation; with the cuda graph a pair costs the same per clip as one "
                          "and holds the gpu twice as long, so 1 is the default")
     ap.add_argument("--learn", action="store_true",
-                    help="use the runtime affordance learner + router (auto-derive affordances, no hand-authored tables)")
+                    help="use the runtime affordance learner + router: counts fired events for the 'learned' reply "
+                         "field and, without --realtime, derives prefetch candidates from them; that path still reads "
+                         "two word tables, affordance_learn._CONTINUOUS and router.REALTIME_TOLERANT (docs/generic.md)")
     ap.add_argument("--no-compile", action="store_true",
                     help="skip torch.compile and the decoder graph; starts about 30 s faster, each clip about 20 ms slower")
     ap.add_argument("--woosh-model", choices=["dflow", "flow"], default="dflow",
@@ -208,12 +211,36 @@ def main(argv=None) -> int:
                     help="send stereo clips: the model's two channels plus a decorrelated width stage by sound type "
                          "(bass stays centred); Unity builds two-channel clips from the reply metadata")
     ap.add_argument("--detailed-prompts", action="store_true",
-                    help="the searched prompt grammar: detailed source, action and acoustic wording plus the space from "
-                         "the request context (outdoor_open, indoor_small, indoor_large, tunnel; default is outdoor_open)")
-    ap.add_argument("--amp", nargs="?", const="full", choices=["full", "punch"], default=None,
+                    help="the searched prompt grammar (sarge.prompts.build, a phrasebook tuned to the demo's event and "
+                         "material names): detailed source, action and acoustic wording plus the space from the request "
+                         "context (outdoor_open, indoor_small, indoor_large, tunnel; default is outdoor_open); "
+                         "--generator hybrid always uses it unless --prompts generic")
+    ap.add_argument("--prompts", choices=["tuned", "generic"], default="tuned",
+                    help="generic: every prompt on both routes is built only from the request (event and material "
+                         "words split on underscores, capitals and digits, the intensity word, the context words, and "
+                         "with --world the contact words), one template for every sound, SA3 gets the vendor's "
+                         "'TrackType: SFX,' prefix (docs/generic.md); tuned (default): the prompts as before. A prompt "
+                         "the game sends (prebake key or event field) wins over both on both routes")
+    ap.add_argument("--route", choices=["families", "words", "class", "single"], default="families",
+                    help="--generator hybrid: which sounds go to SA3 medium (guns) and which to Woosh. families "
+                         "(default): substrings of sarge.amp.FAMILIES as before; words: a whole word of the event name "
+                         "in routed.DISCHARGE_WORDS or routed.FIREARM_WORDS, or a firearm word in the material; class: "
+                         "only a 'class' field sent by the game that names a --gun-class; single: every sound to "
+                         "--single-model")
+    ap.add_argument("--gun-class", default="weapon",
+                    help="--route class: comma-separated class values that go to SA3 medium (default weapon)")
+    ap.add_argument("--single-model", choices=["woosh", "sa3"], default="woosh",
+                    help="--route single: the one model every sound goes to")
+    ap.add_argument("--rapid-hz", type=float, default=1.5,
+                    help="prediction: an event that fires again faster than this many times a second stays out of "
+                         "the habit model and confirms only motion predictions (0 turns the filter off)")
+    ap.add_argument("--amp", nargs="?", const="full", choices=["full", "punch", "auto"], default=None,
                     help="amplifier stage after generation: attack emphasis and saturation by sound type, strongest on "
                          "gunshots (about +4 to 5 dB of density at the same peak), light on footsteps; --amp punch keeps "
-                         "the attack emphasis and drops the saturation")
+                         "the attack emphasis and drops the saturation; --amp auto sets the attack emphasis, the "
+                         "saturation and the stereo width from the clip's attack time, crest factor, spectral "
+                         "flatness and decay, with saturation held to the clip body and dropped when it would "
+                         "lengthen the decay (docs/generic.md)")
     ap.add_argument("--level", choices=["peak", "loudness"], default=None,
                     help="loudness: level every clip by its 400 ms loudness (hard -14, normal -17, soft -23 LUFS) with "
                          "a 30 Hz high-pass and at most 6 dB of lookahead limiting, both routes; peak sets the peak per "
@@ -295,12 +322,17 @@ def main(argv=None) -> int:
             raise SystemExit("woosh python not found: %s" % args.woosh_python)
         gen_kwargs.update(HYBRID_GUNS, woosh_port=args.woosh_port, start_rest=lambda: start_woosh(args),
                           rest_cost_ms=WOOSH_COST_MS[args.woosh_model])
+        if args.route != "families":
+            gen_kwargs.update(route=args.route, single_route="guns" if args.single_model == "sa3" else "rest",
+                              gun_classes=tuple(c for c in args.gun_class.split(",") if c.strip()))
         if cache_dir_of(args):
             gen_kwargs["weight_cache"] = cache_dir_of(args)
         if early_woosh():
             woosh = launch_woosh(args)
             gen_kwargs.update(start_rest=lambda: open_woosh(args, *woosh), load_rest=lambda: gate(woosh[0], "load"),
                               drop_rest=lambda: close_woosh(woosh[0]))
+    if args.prompts == "generic":
+        gen_kwargs["prompt_style"] = "generic"
     ckpt = args.decoder_ckpt or os.environ.get("SARGE_DECODER_CKPT")
     if ckpt:
         ckpt = ckpt if os.path.isabs(ckpt) else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ckpt)
@@ -318,8 +350,10 @@ def main(argv=None) -> int:
     extra = {k: v for k, v in (("world", args.world), ("event_log", args.event_log),
                                ("predict_fixes", args.predict_fixes), ("pool_fix", args.pool_fix),
                                ("concurrent_gen", args.concurrent_gen), ("keep_warm_ms", args.keep_warm_ms),
-                               ("sibling_on_miss", args.sibling_on_miss), ("cache_async", args.async_cache_write))
+                               ("sibling_on_miss", args.sibling_on_miss), ("cache_async", args.async_cache_write),
+                               ("read_class", args.generator == "hybrid" and args.route == "class"))
              if v}
+    extra["rapid_hz"] = args.rapid_hz
     cache_dir = None if args.no_cache else args.cache_dir
     cleared = 0
     if cache_dir and os.path.isdir(cache_dir):
@@ -343,6 +377,7 @@ def main(argv=None) -> int:
           f"decoder={os.path.basename(gen_kwargs['decoder_ckpt']) if gen_kwargs.get('decoder_ckpt') else 'base'}  "
           f"concurrent-gen={'on' if args.concurrent_gen else 'off'}  "
           f"predict-fixes={'on' if args.predict_fixes else 'off'}  "
+          f"prompts={args.prompts} route={args.route} amp={args.amp or 'off'}  "
           f"cache-write={'async' if args.async_cache_write else 'inline'}",
           flush=True)
     print("ctrl-c to stop", flush=True)

@@ -6,9 +6,12 @@ namespace Sarge
     public class SargeEmitter : MonoBehaviour
     {
         public AudioSource source;
-        public string eventType = "shoot";
-        public string material = "metal";
+        public string eventType = "";
+        public string material = "";
         public string intensity = "normal";
+        public string context = "";
+        public string eventClass = "";
+        public string prompt = "";
         public AudioClip authoredFallback;
 
         void Reset()
@@ -29,9 +32,16 @@ namespace Sarge
         public void Emit(string ev, string mat)
         {
             var src = source != null ? source : GetComponent<AudioSource>();
-            SargeService.Instance.Request(ev, mat, intensity, "default",
+            if (string.IsNullOrEmpty(ev))
+            {
+                Debug.LogWarning("[SARGE] " + name + ": SargeEmitter has no event type");
+                return;
+            }
+            var svc = SargeService.Instance;
+            svc.Request(ev, mat ?? "", intensity, svc.ContextOr(context), null, null,
                 clip => { if (src != null) src.PlayOneShot(clip); },
-                () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); });
+                () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); },
+                eventClass, prompt);
         }
     }
 }

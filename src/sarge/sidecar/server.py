@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import re
 import socket
 import socketserver
 import threading
 import time
+from dataclasses import replace
 
 from . import wire
 from .wire import ClientGone, FrameError, IdleTimeout, MsgType
@@ -17,12 +17,16 @@ from ..generators import get_generator
 from ..predictor import EventSequencePredictor
 from ..startup import stage
 from ..types import CacheKey
+from ..words import names, split_words
 
 engine_lock = threading.Lock()
 INFLIGHT_WAIT_S = 0.5
 
 MAX_PREBAKE_CONTEXTS = 256
-INTENT_IGNORE = {"footstep", "jump", "land"}
+RAPID_HZ = 1.5
+MOTION_SOURCE = "motion"
+KIND_WINDOW_S = 10.0
+KIND_DECAY = 0.8
 
 
 class SfxServer(socketserver.ThreadingTCPServer):
@@ -178,25 +182,33 @@ class _Handler(socketserver.BaseRequestHandler):
     def _key_from(self, body):
         key = CacheKey(str(body["event_type"]), str(body["material"]),
                        str(body.get("intensity", "normal")), str(body.get("context", "default")))
+        if getattr(self.server, "read_class", False):
+            key = replace(key, cls=str(body.get("class") or "").strip().lower())
         phys = body.get("phys")
-        if not getattr(self.server, "world", False) or not isinstance(phys, dict):
-            return key
-        from ..world import bucket, intensity_of
-        try:
-            b = bucket(phys, key.event_type)
-            inten = key.intensity if "intensity" in body else intensity_of(phys)
-        except (ValueError, TypeError, KeyError, ZeroDivisionError, OverflowError):
-            return key
-        return CacheKey(key.event_type, key.material, inten, key.context, b)
+        if getattr(self.server, "world", False) and isinstance(phys, dict):
+            from ..world import bucket, intensity_of
+            try:
+                b = bucket(phys, key.event_type)
+                inten = key.intensity if "intensity" in body else intensity_of(phys)
+            except (ValueError, TypeError, KeyError, ZeroDivisionError, OverflowError):
+                b = None
+            if b is not None:
+                key = replace(key, intensity=inten, phys=b)
+        _register_prompt(self.server, key, body.get("prompt"))
+        return key
 
     def _note(self, key):
         srv = self.server
         if key.phys and getattr(srv, "world", False):
             srv.last_phys[(key.event_type, key.material, key.context)] = (key.phys, key.intensity)
-        intent = self._update_intent(key)
+        rapid = _rapid(srv, key.event_type)
+        if getattr(srv, "read_class", False):
+            srv.last_class[key.event_type] = key.cls
+        _confirm(srv, key, rapid)
+        intent = self._update_intent(key, rapid)
+        srv.fired_seq += 1
+        srv.fired_at[key.event_type] = srv.fired_seq
         if getattr(srv, "predict_fixes", False):
-            srv.fired_seq += 1
-            srv.fired_at[key.event_type] = srv.fired_seq
             srv.last_intensity[key.event_type] = key.intensity
         return intent
 
@@ -283,12 +295,12 @@ class _Handler(socketserver.BaseRequestHandler):
                                "encode_ms": (t4 - t3) * 1e3, "send_ms": (time.perf_counter() - t4) * 1e3,
                                "bytes": len(pcm), "meta_only": meta_only, "client": id(self)})
 
-    def _update_intent(self, key):
+    def _update_intent(self, key, rapid=False):
         srv = self.server
         intent = getattr(srv, "intent", None)
         if intent is None or not hasattr(srv.engine, "register_predictions"):
             return getattr(srv, "last_intent", "")
-        if key.event_type in INTENT_IGNORE:
+        if rapid:
             return srv.last_intent
         for pk, conf in srv.intent_pending:
             srv.calib.observe("intent", conf, pk == key)
@@ -299,7 +311,8 @@ class _Handler(socketserver.BaseRequestHandler):
         pending = []
         raw = []
         for et, prob in intent.predict(ctx):
-            pk = _with_phys(srv, CacheKey(et, srv.intent_last_material.get(et, key.material), "normal", ctx), True)
+            pk = _with_phys(srv, CacheKey(et, srv.intent_last_material.get(et, key.material), "normal", ctx,
+                                          cls=_cls(srv, et)), True)
             raw.append(("intent", pk, srv.intent_lead_s, prob))
             pending.append((pk, prob))
         proposals = srv.fusion.fuse(raw)
@@ -325,6 +338,8 @@ class _Handler(socketserver.BaseRequestHandler):
                     raise FrameError("bad_fields", "each key needs event_type and material", fatal=False)
                 ck = CacheKey(str(k["event_type"]), str(k["material"]),
                               str(k.get("intensity", "normal")), str(k.get("context", "default")))
+                if getattr(self.server, "read_class", False):
+                    ck = replace(ck, cls=str(k.get("class") or "").strip().lower())
                 keys.append(ck)
                 if isinstance(k.get("prompt"), str) and k["prompt"]:
                     prompts[str(ck)] = k["prompt"]
@@ -367,6 +382,7 @@ class _Handler(socketserver.BaseRequestHandler):
         t_recv = time.time()
         raw = []
         phys_keys = []
+        seen = {}
         for p in preds:
             if not isinstance(p, dict) or "event_type" not in p or "material" not in p:
                 raise FrameError("bad_fields", "each prediction needs event_type and material", fatal=False)
@@ -377,14 +393,23 @@ class _Handler(socketserver.BaseRequestHandler):
                 conf = float(p.get("confidence", 1.0))
             except (TypeError, ValueError):
                 raise FrameError("bad_fields", "eta_s and confidence must be numbers", fatal=False)
+            src = str(p.get("source", MOTION_SOURCE))
+            pend = seen.setdefault(src, (set(), set()))
+            pend[0].add((key.material, key.context))
+            if isinstance(p.get("after"), str) and p["after"]:
+                pend[1].add(p["after"])
             if getattr(self.server, "predict_fixes", False):
                 with engine_lock:
-                    fixed = [(_with_phys(self.server, k2), scale) for k2, scale in _fixed(self.server, key, p)]
+                    fixed = [(_with_phys(self.server, k2), scale) for k2, scale in _fixed(self.server, key, p, src)]
                 for k2, scale in fixed:
-                    raw.append((str(p.get("source", "motion")), k2, eta, conf * scale))
+                    raw.append((src, k2, eta, conf * scale))
             else:
-                raw.append((str(p.get("source", "motion")), _with_phys(self.server, key), eta, conf))
+                with engine_lock:
+                    et = key.event_type or _kind(self.server, src)
+                if et:
+                    raw.append((src, _with_phys(self.server, replace(key, event_type=et)), eta, conf))
         with engine_lock:
+            _pend(self.server, seen)
             proposals = self.server.fusion.fuse(raw)
             result = self.server.engine.register_predictions(proposals, now=now)
             cached = len(self.server.engine.cache)
@@ -428,53 +453,122 @@ def _log(server, rec):
             server.event_log = None
 
 
+def _register_prompt(server, key, prompt):
+    if not isinstance(prompt, str) or not prompt.strip():
+        return
+    eng = server.engine
+    g = getattr(eng.gen, "inner", eng.gen)
+    pm = getattr(g, "prompts", None)
+    if not isinstance(pm, dict):
+        return
+    k = str(key)
+    with engine_lock:
+        if pm.get(k) == prompt:
+            return
+        had = k in pm
+        pm[k] = prompt
+        if had or key in eng.cache:
+            eng.cache.pop(key, None)
+            eng.recent.pop(key, None)
+
+
+def _rapid(server, event_type):
+    hz = float(getattr(server, "rapid_hz", 0.0) or 0.0)
+    now = server.clock()
+    prev = server.last_fire_t.get(event_type)
+    server.last_fire_t[event_type] = now
+    return hz > 0.0 and prev is not None and now - prev < 1.0 / hz
+
+
+def _pend(server, seen):
+    now = server.clock()
+    for src, (pairs, triggers) in seen.items():
+        server.kind_pending[src] = (pairs, triggers, now)
+
+
+def _confirm(server, key, rapid):
+    now = server.clock()
+    pair = (key.material, key.context)
+    for src in sorted(server.kind_pending, key=lambda s: s != MOTION_SOURCE):
+        pairs, triggers, t = server.kind_pending[src]
+        if now - t > KIND_WINDOW_S:
+            del server.kind_pending[src]
+            continue
+        if pair not in pairs or key.event_type in triggers:
+            continue
+        if src != MOTION_SOURCE and (rapid or key.event_type == _kind(server, MOTION_SOURCE)):
+            continue
+        score = server.kind_score.setdefault(src, {})
+        for e in score:
+            score[e] *= KIND_DECAY
+        score[key.event_type] = score.get(key.event_type, 0.0) + 1.0
+        server.kind_targets.setdefault(src, {}).setdefault(key.event_type, set()).add(pair)
+
+
+def _kind(server, source):
+    score = getattr(server, "kind_score", {}).get(source)
+    if not score:
+        return ""
+    targets = server.kind_targets.get(source, {})
+    return max(score, key=lambda e: (len(targets.get(e, ())), score[e], server.fired_at.get(e, 0)))
+
+
+def _cls(server, event_type, given=""):
+    if not getattr(server, "read_class", False):
+        return ""
+    return given or server.last_class.get(event_type, "")
+
+
 def _with_phys(server, key, intensity=False):
     if key.phys or not getattr(server, "world", False):
         return key
     hit = server.last_phys.get((key.event_type, key.material, key.context))
     if hit is None:
         return key
-    return CacheKey(key.event_type, key.material, hit[1] if intensity else key.intensity, key.context, hit[0])
+    return replace(key, intensity=hit[1] if intensity else key.intensity, phys=hit[0])
 
 
 def _alias(server, event_type):
     if not event_type:
         return event_type
-    pat = re.compile(r"(^|\s)" + re.escape(event_type) + r"(s|es|ed|ing)?$")
+    stem = split_words(event_type)
     best, seq = event_type, server.fired_at.get(event_type, 0)
     for f, n in server.fired_at.items():
-        if n > seq and pat.search(f):
+        if n > seq and names(stem, split_words(f)):
             best, seq = f, n
     return best
 
 
-def _successors(server, after, context, top=3):
+def _successors(server, after, context, source, top=3):
     counts = {}
     for (ctx, hist), d in getattr(server.intent, "ngram", {}).items():
         if ctx == context and hist and hist[-1] == after:
             for e, n in d.items():
                 counts[e] = counts.get(e, 0) + n
-    mats = server.intent_last_material
-    keep = [(e, n) for e, n in counts.items() if e != after and mats.get(e) != mats.get(after)]
+    landed = getattr(server, "kind_targets", {}).get(source, {})
+    keep = [(e, n) for e, n in counts.items() if e != after and len(landed.get(e, ())) >= 2]
     total = float(sum(n for _e, n in keep))
     keep.sort(key=lambda t: t[1], reverse=True)
     return [(e, n / total) for e, n in keep[:top]] if total else []
 
 
-def _fixed(server, key, p):
+def _fixed(server, key, p, source=MOTION_SOURCE):
     after = p.get("after")
     keys = []
     if isinstance(after, str) and after:
-        keys = [(CacheKey(e, key.material, key.intensity, key.context, key.phys), prob)
-                for e, prob in _successors(server, after, key.context)]
+        keys = [(replace(key, event_type=e, cls=_cls(server, e)), prob)
+                for e, prob in _successors(server, after, key.context, source)]
     if not keys:
-        keys = [(key, 1.0)]
+        et = key.event_type or _kind(server, source)
+        if not et:
+            return []
+        keys = [(replace(key, event_type=et, cls=_cls(server, et, key.cls)), 1.0)]
     given = "intensity" in p
     out = []
     for k, scale in keys:
         et = _alias(server, k.event_type)
         inten = k.intensity if k.phys or given else server.last_intensity.get(et, k.intensity)
-        out.append((CacheKey(et, k.material, inten, k.context, k.phys), scale))
+        out.append((replace(k, event_type=et, intensity=inten, cls=_cls(server, et, k.cls)), scale))
     return out
 
 
@@ -566,7 +660,8 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
           learn: bool = False, realtime: bool = False, deepen_batch: int = 1, world: bool = False,
           event_log: str | None = None, predict_fixes: bool = False, pool_fix: bool = False,
           concurrent_gen: bool = False, keep_warm_ms: float = 0.0, sibling_on_miss: bool = False,
-          cache_async: bool = False, **engine_kwargs) -> SfxServer:
+          cache_async: bool = False, rapid_hz: float = RAPID_HZ, read_class: bool = False, clock=None,
+          **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
@@ -603,6 +698,14 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.fired_at = {}
     server.fired_seq = 0
     server.last_intensity = {}
+    server.rapid_hz = float(rapid_hz or 0.0)
+    server.read_class = bool(read_class)
+    server.clock = clock or time.monotonic
+    server.last_fire_t = {}
+    server.last_class = {}
+    server.kind_pending = {}
+    server.kind_score = {}
+    server.kind_targets = {}
     server.event_log_lock = threading.Lock()
     server.event_log = open(event_log, "a", encoding="utf-8") if event_log else None
     if pool_fix:
@@ -622,7 +725,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
         calibration=server.calib,
         gen_cost_ms=getattr(engine, "gen_cost_ms", 393.0),
         latency_saved_ms=getattr(engine, "latency_saved_ms", 400.0),
-        owner={"footstep": "motion"})
+        owner=lambda source, key: source == MOTION_SOURCE)
     server.intent = EventSequencePredictor()
     server.intent_last_material = {}
     server.intent_pending = []

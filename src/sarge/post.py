@@ -5,7 +5,7 @@ import numpy as np
 from .amp import amplify
 from .loudness import _sos, dc_highpass, normalize_level, normalize_peak, peak_for
 
-AMP_MODES = ("off", "full", "punch")
+AMP_MODES = ("off", "full", "punch", "auto")
 LEVELS = ("peak", "loudness")
 
 
@@ -80,12 +80,13 @@ def process(y, sr: int, event: str = "", intensity: str = "normal", *, level: st
         a = _extract(a, sr, duration_s)
     if sh.get("lowpass_hz"):
         a = lowpass(a, sr, float(sh["lowpass_hz"]))
-    if amp_mode in ("full", "punch"):
+    if amp_mode in ("full", "punch", "auto"):
         a = amplify(a, sr, event, "normal" if level == "loudness" else intensity,
-                    punch_scale=float(sh.get("punch_scale", 1.0)), drive=amp_mode == "full", drive_cap=sh.get("drive"))
+                    punch_scale=float(sh.get("punch_scale", 1.0)), drive=amp_mode != "punch", drive_cap=sh.get("drive"),
+                    auto=amp_mode == "auto")
     if stereo:
         from .stereo import widen
-        a = widen(a, sr, event, width)
+        a = widen(a, sr, event, width, auto=amp_mode == "auto")
     if level == "loudness":
         a, st = normalize_level(a, sr, intensity)
         if stats is not None:

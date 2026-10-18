@@ -368,7 +368,7 @@ class StableAudio3Generator(Generator):
 
     @property
     def post_tag(self) -> str:
-        if self.level != "loudness" and getattr(self, "amp_mode", "") != "punch":
+        if self.level != "loudness" and getattr(self, "amp_mode", "") not in ("punch", "auto"):
             return ""
         return "post:%s:%s" % (self.level, self.amp_mode if self.amp else "off")
 
@@ -378,6 +378,9 @@ class StableAudio3Generator(Generator):
             return override
         if self.prompt_template:
             return self.prompt_template.format(intensity=key.intensity, material=key.material, event=key.event_type)
+        if self.prompt_style == "generic":
+            from ..prompts import SA3_PREFIX, generic
+            return generic(key.event_type, key.material, key.intensity, key.context, key.phys, SA3_PREFIX)
         if self.prompt_style == "detailed":
             from ..prompts import build
             return build(key.event_type, key.material, key.intensity, key.context)
@@ -445,12 +448,13 @@ class StableAudio3Generator(Generator):
             mono = _natural(mono, self.sample_rate)
         else:
             mono = _extract(mono, self.sample_rate, self.duration_s)
+        auto = getattr(self, "amp_mode", "") == "auto"
         if self.amp:
             from ..amp import amplify
-            mono = amplify(mono, self.sample_rate, key.event_type, key.intensity)
+            mono = amplify(mono, self.sample_rate, key.event_type, key.intensity, auto=auto)
         if self.stereo:
             from ..stereo import widen
-            mono = widen(mono, self.sample_rate, key.event_type, self.width)
+            mono = widen(mono, self.sample_rate, key.event_type, self.width, auto=auto)
         if self.level == "peak":
             mono = normalize_peak(mono, peak_for(key.intensity))
         else:

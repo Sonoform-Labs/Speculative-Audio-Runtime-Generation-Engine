@@ -10,8 +10,10 @@ namespace Sarge
         public float minSpeed = 0.4f;
         public float rayDistance = 2f;
         public float stabilityAlpha = 0.4f;
-        public string defaultMaterial = "grass";
+        public string eventType = "";
+        public string defaultMaterial = "";
         public string intensity = "normal";
+        public string context = "";
 
         public bool showMarkers = true;
         public float markerSize = 0.28f;
@@ -73,10 +75,10 @@ namespace Sarge
                 new SfxPrediction
                 {
                     source = "motion",
-                    eventType = "footstep",
-                    material = surface,
+                    eventType = eventType ?? "",
+                    material = surface ?? "",
                     intensity = intensity,
-                    context = "default",
+                    context = SargeService.Instance.ContextOr(context),
                     etaS = horizon,
                     confidence = _stab,
                 },

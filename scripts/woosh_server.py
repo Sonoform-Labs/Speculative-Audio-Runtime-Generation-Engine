@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE.parent / "src"))
 
 from model_server import _recv, _send
 from sarge import startup
-from sarge.prompts import build as build_prompt
+from sarge.prompts import STYLES, WOOSH_PREFIX, compose
 from sarge.types import CacheKey, seed_for
 
 WOOSH_HOME = os.environ.get("WOOSH_HOME", r"F:\AI\cache\woosh")
@@ -650,7 +650,7 @@ def finish(x, event, intensity, amp, stereo, level="peak", shape=None):
         from sarge.post import process
         y = x[:, 0] if x.ndim == 2 and x.shape[1] == 1 else x
         y = np.ascontiguousarray(y[:max(1, len(y) - int(END_CUT_S * SR))], dtype=np.float32)
-        return process(y, SR, event, intensity, level=level, amp_mode="punch" if amp == "punch" else (
+        return process(y, SR, event, intensity, level=level, amp_mode=amp if amp in ("punch", "auto") else (
             "full" if amp else "off"), stereo=bool(stereo), shape=shape)
     from sarge.generators.stable_audio import _natural
     from sarge.loudness import normalize_peak, peak_for
@@ -659,10 +659,10 @@ def finish(x, event, intensity, amp, stereo, level="peak", shape=None):
     y = _natural(np.ascontiguousarray(y, dtype=np.float32), SR)
     if amp:
         from sarge.amp import amplify
-        y = amplify(y, SR, event, intensity)
+        y = amplify(y, SR, event, intensity, auto=amp == "auto")
     if stereo:
         from sarge.stereo import widen
-        y = widen(y, SR, event)
+        y = widen(y, SR, event, auto=amp == "auto")
     return normalize_peak(y, peak_for(intensity)).astype(np.float32)
 
 
@@ -674,10 +674,15 @@ def physics_shape(phys):
     return {"shape": shape(phys)}
 
 
-def render_key(gen, key, variant, frames):
-    prompt = build_prompt(key.event_type, key.material, key.intensity, key.context, key.phys)
-    return render(gen, prompt, seed_for(key, int(variant)), shape=physics_shape(key.phys).get("shape"),
-                  frames=frames_for(key.event_type, frames))
+def prompt_for(key, style="tuned", prompt=None):
+    if isinstance(prompt, str) and prompt.strip():
+        return prompt
+    return compose(style, key, WOOSH_PREFIX)
+
+
+def render_key(gen, key, variant, frames, style="tuned", prompt=None):
+    return render(gen, prompt_for(key, style, prompt), seed_for(key, int(variant)),
+                  shape=physics_shape(key.phys).get("shape"), frames=frames_for(key.event_type, frames))
 
 
 def finish_key(raw, key, amp, stereo, level="peak"):
@@ -740,9 +745,13 @@ def main():
     ap.add_argument("--mod-cache", action=argparse.BooleanOptionalAction, default=None)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8771)
-    ap.add_argument("--amp", nargs="?", const="full", choices=("full", "punch"), default=None,
-                    help="amplifier stage: --amp or --amp full is attack emphasis plus saturation, --amp punch is the "
-                         "attack emphasis alone")
+    ap.add_argument("--amp", nargs="?", const="full", choices=("full", "punch", "auto"), default=None,
+                    help="amplifier stage: --amp or --amp full is attack emphasis plus saturation by sound family, "
+                         "--amp punch is the attack emphasis alone, --amp auto sets attack emphasis, saturation and "
+                         "stereo width from the rendered clip (sarge.amp.auto_params)")
+    ap.add_argument("--prompts", choices=STYLES, default="tuned",
+                    help="tuned: the sarge.prompts.build phrasebook; generic: a prompt made only from the request "
+                         "fields (sarge.prompts.generic); a prompt sent with the request wins over both")
     ap.add_argument("--stereo", action="store_true")
     ap.add_argument("--level", choices=("peak", "loudness"), default="peak",
                     help="peak sets each clip's peak per intensity; loudness sets its 400 ms loudness per intensity "
@@ -797,7 +806,7 @@ def main():
                                    req.get("context", "default"), req.get("phys", ""))
                     t = time.perf_counter()
                     with lock:
-                        raw = render_key(gen, key, req.get("variant", 0), frames)
+                        raw = render_key(gen, key, req.get("variant", 0), frames, args.prompts, req.get("prompt"))
                     y = finish_key(raw, key, args.amp, args.stereo, level=args.level)
                 except (ConnectionError, OSError):
                     raise

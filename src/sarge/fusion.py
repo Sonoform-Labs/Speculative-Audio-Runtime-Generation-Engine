@@ -20,7 +20,7 @@ class PredictionFusion:
         self.min_ev = float(min_ev)
         self.gen_cost_ms = float(gen_cost_ms)
         self.latency_saved_ms = float(latency_saved_ms)
-        self.owner = dict(owner) if owner else {}
+        self.owner = owner if callable(owner) else (dict(owner) if owner else {})
 
     def _p(self, source: str, raw: float) -> float:
         if self.calibration is None:
@@ -28,6 +28,8 @@ class PredictionFusion:
         return self.calibration.calibrate(source, raw)
 
     def _is_owner(self, source: str, key: CacheKey) -> bool:
+        if callable(self.owner):
+            return bool(self.owner(source, key))
         return self.owner.get(key.event_type) == source
 
     def _ev(self, p_use: float) -> float:

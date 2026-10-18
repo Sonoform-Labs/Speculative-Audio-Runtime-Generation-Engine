@@ -21,11 +21,12 @@ namespace Sarge
         public int dspBufferSize = 0;
         public bool logTimings = false;
         public bool resendPredictions = false;
-        public string[] persistentPredictionSources = { "equip" };
+        public string[] persistentPredictionSources = new string[0];
         public bool failFastOffline = false;
         public bool localPlayback = false;
         public int eventConnections = 1;
         public bool controlConnection = false;
+        public string context = "default";
 
         public static Action<SargeService> Setup;
 
@@ -59,6 +60,7 @@ namespace Sarge
             public List<SfxPrediction> predictions;
             public float predictNow;
             public string eventType, material, intensity, context;
+            public string eventClass, prompt;
             public string physJson, physSig, havePhys;
             public List<int> have;
             public bool playedLocally;
@@ -274,9 +276,15 @@ namespace Sarge
                     _physLearn.Enqueue(new KeyValuePair<string, string>(preds[i].physSig + "|" + (preds[i].intensity ?? "normal"), ack.phys_keys[i]));
         }
 
+        public string ContextOr(string own)
+        {
+            if (!string.IsNullOrEmpty(own)) return own;
+            return string.IsNullOrEmpty(context) ? "default" : context;
+        }
+
         public void Play(string eventType, string material, AudioSource source, string intensity = "normal")
         {
-            Request(eventType, material, intensity, "default",
+            Request(eventType, material, intensity, ContextOr(null),
                 clip => { if (source != null) source.PlayOneShot(clip); }, null);
         }
 
@@ -286,16 +294,18 @@ namespace Sarge
         }
 
         public void Request(string eventType, string material, string intensity, string context, string physJson, string physSig,
-            Action<AudioClip> onReady, Action onFailed)
+            Action<AudioClip> onReady, Action onFailed, string eventClass = null, string prompt = null)
         {
             if (!_running) { onFailed?.Invoke(); return; }
             var item = new WorkItem
             {
                 isContext = false,
                 eventType = eventType,
-                material = material,
+                material = material ?? "",
                 intensity = intensity,
-                context = context,
+                context = ContextOr(context),
+                eventClass = eventClass,
+                prompt = prompt,
                 physJson = physJson,
                 physSig = physSig,
                 onReady = onReady,
@@ -542,7 +552,8 @@ namespace Sarge
                     }
                     else
                     {
-                        var r = client.Event(item.eventType, item.material, item.intensity, item.context, item.physJson, item.have, item.havePhys);
+                        var r = client.Event(item.eventType, item.material, item.intensity, item.context, item.physJson, item.have, item.havePhys,
+                            item.eventClass, item.prompt);
                         if (logTimings) item.tReply = Now();
                         _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, channels = r.meta.channels, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned, physKey = r.meta.phys_key, metaOnly = r.meta.meta_only });
                     }
