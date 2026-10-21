@@ -45,6 +45,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
 WOOSH_COST_MS = {"dflow": 50.0, "flow": 1010.0}
 WRITER_STYLES = ("v1", "named", "texture", "title", "caption")
+WRITER_GROUND = ("off", "anchors", "words", "caption")
 
 
 def cache_dir_of(args):
@@ -256,12 +257,14 @@ def main(argv=None) -> int:
     ap.add_argument("--scene", action="store_true",
                     help="scene record: the server quantises the optional 'scene' object Unity sends (who made the "
                          "sound, the object, the action, the room) into the key; the seed ignores it (docs/llm-layer.md)")
-    ap.add_argument("--writer", choices=["off", "llama", "ollama", "store"], default="off",
+    ap.add_argument("--writer", choices=["off", "llama", "ollama", "store", "ground"], default="off",
                     help="prompt writer (docs/llm-layer.md): llama spawns a CPU-only llama-server for --writer-model "
                          "after READY and writes one prompt per key in the background, saved per key in --writer-store; "
                          "ollama talks to an Ollama server already running on --writer-port; store serves a baked "
-                         "prompt file (--writer-store FILE) with no model at all. Until a key has a written prompt it "
-                         "plays the --prompts builder, a game-sent prompt always wins. Off by default")
+                         "prompt file (--writer-store FILE) with no model at all; ground writes each prompt from the "
+                         "real recording captions nearest to the key (--writer-ground words or caption), with no "
+                         "language model. Until a key has a written prompt it plays the --prompts builder, a "
+                         "game-sent prompt always wins. Off by default")
     ap.add_argument("--writer-model", default="gemma4:e2b-it-qat",
                     help="--writer llama/ollama: a GGUF file or an Ollama tag found under OLLAMA_MODELS, F:\\OllamaModels "
                          "or G:\\sarge\\llm\\ollama_models (default gemma4:e2b-it-qat, Apache-2.0)")
@@ -281,6 +284,18 @@ def main(argv=None) -> int:
                          "in the title; texture adds sound words on the character of the sound and new examples; "
                          "title gives Woosh the title and sound words only; caption writes the action as one plain "
                          "caption. Every style writes to a separate writer id and store. Default v1")
+    ap.add_argument("--writer-ground", choices=list(WRITER_GROUND), default="off",
+                    help="caption grounding (docs/llm-layer.md): retrieve real recording captions near the key from "
+                         "--writer-ground-index on the CPU. anchors gives the nearest captions to the language model "
+                         "as style anchors (--writer llama/ollama); words writes the request words and the sound "
+                         "words the captions share, caption the request words in front of the nearest caption (both "
+                         "--writer ground, no model). Every mode writes to a separate writer id and store. Off by "
+                         "default")
+    ap.add_argument("--writer-ground-index", default=None,
+                    help="--writer-ground: the caption index folder (index.json, captions.json, emb.npy, embedder/); "
+                         "default G:\\sarge\\captions\\index")
+    ap.add_argument("--writer-ground-k", type=int, default=None,
+                    help="--writer-ground: captions per key (default 4 anchors, 8 for words, 1 for caption)")
     ap.add_argument("--writer-when", default="seen,predict,manifest",
                     help="--writer: which keys get written: seen (fired), predict (predicted), manifest (sent ahead)")
     ap.add_argument("--writer-swap", choices=["revalidate", "next-miss"], default="revalidate",
@@ -450,6 +465,9 @@ def main(argv=None) -> int:
 
 def make_writer(args):
     if args.writer == "off":
+        if args.writer_ground != "off":
+            raise SystemExit("--writer-ground %s needs --writer ground (words, caption) or --writer llama/ollama "
+                             "(anchors)" % args.writer_ground)
         return None
     from sarge import writer as prompt_writer
     when = tuple(w.strip() for w in args.writer_when.split(",") if w.strip())
@@ -471,8 +489,10 @@ def make_writer(args):
                                 threads=args.writer_threads, affinity=affinity, store=store, when=when,
                                 readonly=args.writer_readonly, style=args.writer_style,
                                 log_path=os.path.join(store if os.path.isdir(store) or not os.path.splitext(store)[1]
-                                                      else os.path.dirname(store), "llama-server.log"))
-    except FileNotFoundError as e:
+                                                      else os.path.dirname(store), "llama-server.log"),
+                                ground=args.writer_ground, ground_index=args.writer_ground_index,
+                                ground_k=args.writer_ground_k)
+    except (FileNotFoundError, ValueError) as e:
         raise SystemExit("--writer %s: %s" % (args.writer, e))
     if args.writer != "store":
         os.makedirs(store, exist_ok=True)

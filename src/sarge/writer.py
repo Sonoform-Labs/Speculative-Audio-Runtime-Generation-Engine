@@ -322,7 +322,7 @@ def _clean(text):
     return " ".join(str(text or "").replace("\n", " ").split()).strip(" ,.;")
 
 
-def parse_slots(raw):
+def parse_slots(raw, optional=()):
     try:
         d = json.loads(raw)
     except (TypeError, ValueError):
@@ -330,7 +330,7 @@ def parse_slots(raw):
     if not isinstance(d, dict):
         return None
     out = {k: _clean(d.get(k)) if isinstance(d.get(k), str) else "" for k in SLOTS}
-    return out if all(out.values()) else None
+    return out if all(v for k, v in out.items() if k not in optional) else None
 
 
 def tail_words(key):
@@ -381,7 +381,7 @@ def check(slots, text, key, style=None):
     inw = _input_words(text)
     for name in SLOTS:
         if not _clean(slots.get(name)):
-            if not (name == "sound" and st["collide"]):
+            if not (name == "sound" and st["collide"]) and name not in st.get("optional", ()):
                 flags.append("empty:" + name)
             continue
         ws = _words(slots[name])
@@ -593,7 +593,8 @@ def repair(slots, flags, text, style=None):
                 s[arg] = (head[:1].upper() + head[1:] if arg == "source" else head) + ", " + s[arg]
         else:
             return None
-    return s if all(v for k, v in s.items() if not (k == "sound" and st["collide"])) else None
+    return s if all(v for k, v in s.items() if not (k == "sound" and st["collide"])
+                    and k not in st.get("optional", ())) else None
 
 
 REPAIR_PASSES = 3
@@ -601,7 +602,7 @@ REPAIR_PASSES = 3
 
 def judge(raw, key, text, style=None):
     st = style_of(style)
-    slots = parse_slots(raw)
+    slots = parse_slots(raw, st.get("optional", ()))
     if slots is None:
         return {"failed": True, "flags": ["format"], "raw": raw}
     flags = check(slots, text, key, st)
@@ -641,6 +642,8 @@ def writer_id(ident, style=None):
     if st["name"] != DEFAULT_STYLE:
         payload.update(style=st["name"], named=st["named"], form=st["form"], banned=st["banned"].pattern,
                        collide=COLLIDE.pattern if st["collide"] else "", rules=STYLE_RULES)
+        if st.get("optional"):
+            payload["optional"] = list(st["optional"])
     from .world import CONTACT_WORDS
     payload["contact_words"] = CONTACT_WORDS
     return hashlib.sha1(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
@@ -1053,9 +1056,11 @@ def ok_record(rec):
 
 class PromptWriter:
     def __init__(self, backend=None, store_dir=os.path.join(".cache", "writer"), when=WHEN, readonly=False,
-                 store_file=None, log=None, queue_cap=4096, retry_s=30.0, style=None):
+                 store_file=None, log=None, queue_cap=4096, retry_s=30.0, style=None, ground=None):
         self.backend = backend
-        self.style = style_of(style)["name"]
+        self.spec = style_of(style)
+        self.style = self.spec["name"]
+        self.ground = ground
         self.store_dir = store_dir
         self.store_file = store_file
         self.when = frozenset(when)
@@ -1082,9 +1087,10 @@ class PromptWriter:
     def describe(self):
         if self.backend is None:
             return "store %s" % (self.store_file or self.store_dir)
-        return "%s %s%s%s" % (self.backend.name, os.path.basename(getattr(self.backend, "model", "")),
-                              "" if self.style == DEFAULT_STYLE else " style " + self.style,
-                              " (read-only)" if self.readonly else "")
+        return "%s %s%s%s%s" % (self.backend.name, os.path.basename(getattr(self.backend, "model", "")),
+                                "" if self.style == DEFAULT_STYLE else " style " + self.style,
+                                "" if self.ground is None else " ground " + self.ground.mode,
+                                " (read-only)" if self.readonly else "")
 
     def setup(self):
         if self.store_file:
@@ -1092,7 +1098,10 @@ class PromptWriter:
             self.id = str(self.store.meta.get("writer_id") or "")
         else:
             ident = self.backend.ident()
-            self.id = writer_id(ident, self.style)
+            if self.ground is not None:
+                self.spec = self.ground.style(self.spec)
+                ident = dict(ident, ground=self.ground.ident())
+            self.id = writer_id(ident, self.spec)
             self.store = PromptStore.for_writer(self.store_dir, self.id, ident, readonly=self.readonly)
         self.ready.set()
         return self.store
@@ -1180,12 +1189,19 @@ class PromptWriter:
     def write(self, key):
         text = key_text(key)
         t0 = time.perf_counter()
-        raw = self.backend.complete(messages(text, self.style))
+        info = None
+        if self.ground is not None:
+            raw, info = self.ground.answer(key, text, self.backend, self.spec)
+        else:
+            raw = self.backend.complete(messages(text, self.spec))
         ms = (time.perf_counter() - t0) * 1000.0
-        rec = judge(raw, key, text, self.style)
+        rec = judge(raw, key, text, self.spec)
         rec.update(key=key_fields(key), text=text, ms=round(ms, 1), t=round(time.time(), 3), attempt=1)
         if self.style != DEFAULT_STYLE:
             rec["style"] = self.style
+        if info is not None:
+            rec["ground"] = info
+            rec["style"] = self.spec["name"]
         self.times_ms = (self.times_ms + [ms])[-200:]
         return rec
 
@@ -1269,16 +1285,28 @@ class PromptWriter:
 
 
 def build(kind, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DEFAULT_AFFINITY,
-          store=os.path.join(".cache", "writer"), when=WHEN, readonly=False, log_path=None, log=None, style=None):
+          store=os.path.join(".cache", "writer"), when=WHEN, readonly=False, log_path=None, log=None, style=None,
+          ground=None, ground_index=None, ground_k=None):
     style_of(style)
     if kind in (None, "", "off"):
         return None
     if kind == "store":
         return PromptWriter(None, store_file=store, when=when, readonly=True, log=log)
-    if kind == "llama":
+    grounder = None
+    if ground not in (None, "", "off"):
+        from .ground import Grounder
+        grounder = Grounder(ground, ground_index, threads=threads, k=ground_k)
+    if kind == "ground":
+        from .ground import GroundBackend
+        if grounder is None or grounder.mode == "anchors":
+            raise ValueError("--writer ground writes without a model and needs --writer-ground words or caption")
+        backend = GroundBackend(grounder)
+    elif grounder is not None and grounder.mode != "anchors":
+        raise ValueError("--writer-ground %s needs no model: use --writer ground" % grounder.mode)
+    elif kind == "llama":
         backend = LlamaBackend(model, binary, port, threads, affinity, log_path=log_path)
     elif kind == "ollama":
         backend = OllamaBackend(model, port, threads)
     else:
-        raise ValueError("unknown writer backend %r (off, llama, ollama, store)" % kind)
-    return PromptWriter(backend, store_dir=store, when=when, readonly=readonly, log=log, style=style)
+        raise ValueError("unknown writer backend %r (off, llama, ollama, store, ground)" % kind)
+    return PromptWriter(backend, store_dir=store, when=when, readonly=readonly, log=log, style=style, ground=grounder)
