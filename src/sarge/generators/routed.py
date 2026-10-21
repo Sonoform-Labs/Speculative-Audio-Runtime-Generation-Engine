@@ -151,13 +151,14 @@ class RoutedGenerator(Generator):
             self.guns.generate(WARM_KEY, variant=0)
             stage("gun warm 2", t)
 
-    def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
+    def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None) -> AudioClip:
         side = self.route(key)
         self.counts[side] += 1
+        kw = {"prompt": prompt} if prompt else {}
         if side == "guns":
-            return self.guns.generate(key, variant=variant)
+            return self.guns.generate(key, variant=variant, **kw)
         with self._rest_lock:
-            return self.rest.generate(key, variant=variant)
+            return self.rest.generate(key, variant=variant, **kw)
 
     def generate_batch(self, items: list) -> list:
         out = [None] * len(items)

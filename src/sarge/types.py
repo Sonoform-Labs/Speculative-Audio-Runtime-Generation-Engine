@@ -13,6 +13,9 @@ SAMPLE_RATE = 48_000
 
 def seed_for(key, variant: int = 0) -> int:
     s = str(key)
+    scene = getattr(key, "scene", "")
+    if scene:
+        s = s[:-len("|scene=" + scene)]
     cls = getattr(key, "cls", "")
     if cls:
         s = s[:-len("|class=" + cls)]
@@ -43,11 +46,13 @@ class CacheKey:
     context: str = "default"
     phys: str = ""
     cls: str = ""
+    scene: str = ""
 
     def __str__(self) -> str:
         base = f"{self.event_type}|{self.material}|{self.intensity}|{self.context}"
         base = f"{base}|{self.phys}" if self.phys else base
-        return f"{base}|class={self.cls}" if self.cls else base
+        base = f"{base}|class={self.cls}" if self.cls else base
+        return f"{base}|scene={self.scene}" if self.scene else base
 
 
 @dataclass(slots=True)

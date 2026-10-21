@@ -23,6 +23,7 @@ engine_lock = threading.Lock()
 INFLIGHT_WAIT_S = 0.5
 
 MAX_PREBAKE_CONTEXTS = 256
+MAX_MANIFEST_KEYS = 4096
 RAPID_HZ = 1.5
 MOTION_SOURCE = "motion"
 KIND_WINDOW_S = 10.0
@@ -111,6 +112,8 @@ class _Handler(socketserver.BaseRequestHandler):
             return self._on_predict(body)
         if msg_type == MsgType.STATS:
             return self._on_stats(body)
+        if msg_type == MsgType.MANIFEST:
+            return self._on_manifest(body)
         raise FrameError("unknown_type", f"unknown msg_type {msg_type}", fatal=False)
 
     def _float_field(self, body, name, default):
@@ -194,6 +197,11 @@ class _Handler(socketserver.BaseRequestHandler):
                 b = None
             if b is not None:
                 key = replace(key, intensity=inten, phys=b)
+        if getattr(self.server, "scene", False) and isinstance(body.get("scene"), dict):
+            from ..scene import quantise
+            s = quantise(body["scene"], phys if isinstance(phys, dict) else None, key.event_type)
+            if s:
+                key = replace(key, scene=s)
         _register_prompt(self.server, key, body.get("prompt"))
         return key
 
@@ -201,6 +209,8 @@ class _Handler(socketserver.BaseRequestHandler):
         srv = self.server
         if key.phys and getattr(srv, "world", False):
             srv.last_phys[(key.event_type, key.material, key.context)] = (key.phys, key.intensity)
+        if key.scene and getattr(srv, "scene", False):
+            srv.last_scene[(key.event_type, key.material, key.context)] = key.scene
         rapid = _rapid(srv, key.event_type)
         if getattr(srv, "read_class", False):
             srv.last_class[key.event_type] = key.cls
@@ -241,11 +251,14 @@ class _Handler(socketserver.BaseRequestHandler):
             key = self._key_from(body)
         except (KeyError, TypeError):
             raise FrameError("bad_fields", "event needs event_type and material", fatal=False)
+        if getattr(self.server, "writer", None) is not None:
+            _writer_seen(self.server, key)
         self._await_inflight(key)
         t1 = time.perf_counter()
         eng = self.server.engine
         with engine_lock:
             t2 = time.perf_counter()
+            rev = _rev(self.server, key)
             claimed = getattr(self.server, "concurrent_gen", False) and eng.claim_realtime(key)
             if claimed:
                 intent = self._note(key)
@@ -262,8 +275,9 @@ class _Handler(socketserver.BaseRequestHandler):
         if served == "realtime":
             self.server.last_gen_t = time.monotonic()
         have = body.get("have")
-        meta_only = (isinstance(have, list) and served in ("cached", "realtime") and variant_id in have
-                     and str(body.get("have_phys", "")) == key.phys)
+        meta_only =(isinstance(have, list) and served in ("cached", "realtime") and variant_id in have
+                     and str(body.get("have_phys", "")) == key.phys
+                     and str(body.get("have_scene", "")) == key.scene and _have_rev(body) == rev)
         pcm = b"" if meta_only else wire.encode_pcm(samples, self.pcm)
         n = int(samples.shape[0])
         ch = 1 if samples.ndim == 1 else int(samples.shape[1])
@@ -282,6 +296,10 @@ class _Handler(socketserver.BaseRequestHandler):
         }
         if key.phys:
             meta["phys_key"] = key.phys
+        if key.scene:
+            meta["scene_key"] = key.scene
+        if rev:
+            meta["prompt_rev"] = rev
         if meta_only:
             meta["meta_only"] = True
         t4 = time.perf_counter()
@@ -315,6 +333,8 @@ class _Handler(socketserver.BaseRequestHandler):
                                           cls=_cls(srv, et)), True)
             raw.append(("intent", pk, srv.intent_lead_s, prob))
             pending.append((pk, prob))
+            if getattr(srv, "writer", None) is not None:
+                _writer_want(srv, pk, "predict", srv.intent_lead_s)
         proposals = srv.fusion.fuse(raw)
         if proposals:
             srv.engine.register_predictions(proposals)
@@ -343,6 +363,14 @@ class _Handler(socketserver.BaseRequestHandler):
                 keys.append(ck)
                 if isinstance(k.get("prompt"), str) and k["prompt"]:
                     prompts[str(ck)] = k["prompt"]
+            w = getattr(self.server, "writer", None)
+            if w is not None:
+                with engine_lock:
+                    for k in prompts:
+                        self.server.writer_owned.discard(k)
+                for ck in keys:
+                    if str(ck) not in prompts:
+                        _writer_want(self.server, ck, "manifest")
             with engine_lock:
                 try:
                     self.server.engine.prewarm(keys, prompts or None)
@@ -408,6 +436,9 @@ class _Handler(socketserver.BaseRequestHandler):
                     et = key.event_type or _kind(self.server, src)
                 if et:
                     raw.append((src, _with_phys(self.server, replace(key, event_type=et)), eta, conf))
+        if getattr(self.server, "writer", None) is not None:
+            for _src, k2, eta, _conf in raw:
+                _writer_want(self.server, k2, "predict", eta)
         with engine_lock:
             _pend(self.server, seen)
             proposals = self.server.fusion.fuse(raw)
@@ -428,12 +459,39 @@ class _Handler(socketserver.BaseRequestHandler):
                                "eta_s": [r[2] for r in raw], "queued": ack["queued"],
                                "lead_gated": ack["lead_gated"], "client": id(self)})
 
+    def _on_manifest(self, body):
+        if not isinstance(body, dict) or not isinstance(body.get("keys"), list):
+            raise FrameError("bad_fields", "manifest needs a keys list", fatal=False)
+        keys = body["keys"]
+        if len(keys) > MAX_MANIFEST_KEYS:
+            raise FrameError("bad_fields", f"too many manifest keys (> {MAX_MANIFEST_KEYS})", fatal=False)
+        parsed = []
+        for k in keys:
+            if not isinstance(k, dict) or "event_type" not in k or "material" not in k:
+                raise FrameError("bad_fields", "each manifest key needs event_type and material", fatal=False)
+            parsed.append(self._key_from(k))
+        w = getattr(self.server, "writer", None)
+        counts = {"known": 0, "queued": 0}
+        if w is not None:
+            for key in parsed:
+                got = _writer_want(self.server, key, "manifest")
+                if got in counts:
+                    counts[got] += 1
+        self._send(MsgType.MANIFEST_ACK, {"type": "manifest_ack", "keys": len(parsed), "known": counts["known"],
+                                          "queued": counts["queued"], "writer": w is not None})
+
     def _on_stats(self, body):
         with engine_lock:
             stats = dict(self.server.engine.stats)
             wasted = int(self.server.engine.wasted())
             cached = len(self.server.engine.cache)
-        self._send(MsgType.STATS_REPLY, {"type": "stats_reply", "stats": stats, "wasted": wasted, "cached_keys": cached})
+            pending = len(self.server.writer_pending)
+        reply = {"type": "stats_reply", "stats": stats, "wasted": wasted, "cached_keys": cached}
+        w = getattr(self.server, "writer", None)
+        if w is not None:
+            reply["writer"] = dict(w.stats, state=w.state, id=w.id[:12], stored=len(w.store or ()),
+                                   swaps_pending=pending)
+        self._send(MsgType.STATS_REPLY, reply)
 
     def _on_ping(self, body):
         t = body.get("t") if isinstance(body, dict) else None
@@ -462,7 +520,11 @@ def _register_prompt(server, key, prompt):
     if not isinstance(pm, dict):
         return
     k = str(key)
+    owned = getattr(server, "writer_owned", None)
     with engine_lock:
+        if owned is not None:
+            owned.discard(k)
+            server.writer_pending.pop(key, None)
         if pm.get(k) == prompt:
             return
         had = k in pm
@@ -470,6 +532,8 @@ def _register_prompt(server, key, prompt):
         if had or key in eng.cache:
             eng.cache.pop(key, None)
             eng.recent.pop(key, None)
+            if owned is not None:
+                _bump_rev(server, key)
 
 
 def _rapid(server, event_type):
@@ -520,6 +584,10 @@ def _cls(server, event_type, given=""):
 
 
 def _with_phys(server, key, intensity=False):
+    if getattr(server, "scene", False) and not key.scene:
+        s = server.last_scene.get((key.event_type, key.material, key.context))
+        if s:
+            key = replace(key, scene=s)
     if key.phys or not getattr(server, "world", False):
         return key
     hit = server.last_phys.get((key.event_type, key.material, key.context))
@@ -578,6 +646,221 @@ def _wake_deepen(server):
         ev.set()
 
 
+def _prompts(server):
+    eng = server.engine
+    g = getattr(eng.gen, "inner", eng.gen)
+    pm = getattr(g, "prompts", None)
+    return pm if isinstance(pm, dict) else None
+
+
+def _writer_route(server, key):
+    eng = server.engine
+    g = getattr(eng.gen, "inner", eng.gen)
+    route = getattr(g, "route", None)
+    if callable(route):
+        try:
+            return "sa3" if route(key) == "guns" else "woosh"
+        except Exception:
+            return "woosh"
+    return "sa3" if str(getattr(g, "name", "")).startswith("stableaudio") else "woosh"
+
+
+def _rev(server, key):
+    revs = getattr(server, "prompt_rev", None)
+    return int(revs.get(key, 0)) if revs else 0
+
+
+def _have_rev(body):
+    try:
+        return int(body.get("have_rev", 0) or 0)
+    except (TypeError, ValueError):
+        return -1
+
+
+def _bump_rev(server, key):
+    revs = getattr(server, "prompt_rev", None)
+    if revs is not None:
+        revs[key] = revs.get(key, 0) + 1
+
+
+def _busy(eng, key):
+    return bool(eng.cache.get(key)) or key in eng.claims or any(k == key for k, _v in eng.inflight)
+
+
+def _writer_set(server, key, prompt, evict):
+    eng = server.engine
+    pm = _prompts(server)
+    k = str(key)
+    pm[k] = prompt
+    server.writer_owned.add(k)
+    server.writer_pending.pop(key, None)
+    if evict and eng.cache.get(key):
+        eng.cache.pop(key, None)
+        eng.recent.pop(key, None)
+        _bump_rev(server, key)
+
+
+def _writer_deliver(server, key, rec):
+    prompt = rec.get(_writer_route(server, key)) if isinstance(rec, dict) else None
+    pm = _prompts(server)
+    if not prompt or pm is None:
+        return False
+    k = str(key)
+    if pm.get(k) == prompt:
+        return False
+    eng = server.engine
+    with engine_lock:
+        cur = pm.get(k)
+        if cur == prompt or (cur is not None and k not in server.writer_owned):
+            return False
+        if not _busy(eng, key):
+            _writer_set(server, key, prompt, False)
+            return True
+        server.writer_pending[key] = prompt
+    _wake_deepen(server)
+    return True
+
+
+def _writer_want(server, key, why, eta=None):
+    w = getattr(server, "writer", None)
+    if w is None:
+        return None
+    pm = _prompts(server)
+    k = str(key)
+    if pm is not None and k in pm and k not in server.writer_owned:
+        return "game"
+    return w.want(key, why, eta)
+
+
+def _writer_seen(server, key):
+    _writer_want(server, key, "seen")
+    if key not in server.writer_pending:
+        return
+    if getattr(server, "deepening", False) and server.writer_swap == "revalidate":
+        return
+    eng = server.engine
+    with engine_lock:
+        prompt = server.writer_pending.get(key)
+        if prompt is None or key in eng.claims or any(k == key for k, _v in eng.inflight):
+            return
+        cur = _prompts(server).get(str(key))
+        if cur is not None and str(key) not in server.writer_owned:
+            server.writer_pending.pop(key, None)
+            return
+        _writer_set(server, key, prompt, True)
+
+
+def _accepts_prompt(gen):
+    import inspect
+    try:
+        return "prompt" in inspect.signature(gen.generate).parameters
+    except (TypeError, ValueError):
+        return False
+
+
+def _writer_step(server):
+    eng = server.engine
+    pm = _prompts(server)
+    with engine_lock:
+        if eng.claims or not server.writer_pending or pm is None:
+            return False
+        pick = None
+        for key, prompt in list(server.writer_pending.items()):
+            if not any(k == key for k, _v in eng.inflight):
+                pick = (key, prompt)
+                break
+        if pick is None:
+            return False
+        key, prompt = pick
+        k = str(key)
+        cur = pm.get(k)
+        if cur is not None and k not in server.writer_owned:
+            server.writer_pending.pop(key, None)
+            return False
+        if (server.writer_swap != "revalidate" or not eng.cache.get(key)
+                or not _accepts_prompt(eng.gen)):
+            _writer_set(server, key, prompt, server.writer_swap != "revalidate" or not _accepts_prompt(eng.gen))
+            return False
+        n_old = len(eng.cache.get(key, ()))
+        server.writer_rendering = key
+    t = time.perf_counter()
+    try:
+        clip = eng.gen.generate(key, variant=0, prompt=prompt)
+    except Exception:
+        with engine_lock:
+            if server.writer_pending.get(key) == prompt:
+                _writer_set(server, key, prompt, True)
+        return True
+    finally:
+        server.writer_rendering = None
+    server.last_gen_t = time.monotonic()
+    ms = (time.perf_counter() - t) * 1e3
+    with engine_lock:
+        if server.writer_pending.get(key) != prompt:
+            return True
+        if key in eng.claims or any(kk == key for kk, _v in eng.inflight):
+            return True
+        cur = pm.get(k)
+        if cur is not None and k not in server.writer_owned:
+            server.writer_pending.pop(key, None)
+            return True
+        _writer_set(server, key, prompt, False)
+        if eng.cache.get(key):
+            eng.cache[key] = [clip]
+            eng.recent.pop(key, None)
+            _bump_rev(server, key)
+        else:
+            eng.cache[key] = [clip]
+        eng.generated.add(key)
+        eng.stats["writer_swaps"] = eng.stats.get("writer_swaps", 0) + 1
+        eng.stats["gpu_ms"] += eng.cost_ms(key)
+        if n_old > 1:
+            server.writer_fill[key] = n_old
+    if getattr(server, "event_log", None) is not None:
+        _log(server, {"type": "writer_swap", "t": time.time(), "key": k, "ms": ms, "old_clips": n_old})
+    return True
+
+
+def _writer_fill_step(server):
+    eng = server.engine
+    with engine_lock:
+        if eng.claims or not server.writer_fill:
+            return False
+        item = None
+        for key, want in list(server.writer_fill.items()):
+            have = len(eng.cache.get(key, ()))
+            if not eng.cache.get(key) or have >= want or key in server.writer_pending:
+                server.writer_fill.pop(key, None)
+                continue
+            held = {c.variant_id for c in eng.cache[key]}
+            v = next((i for i in range(want) if i not in held and (key, i) not in eng.inflight), None)
+            if v is None:
+                server.writer_fill.pop(key, None)
+                continue
+            item = (key, v)
+            eng.inflight.add(item)
+            break
+        if item is None:
+            return False
+    try:
+        clip = eng.gen.generate(item[0], variant=item[1])
+    except Exception:
+        with engine_lock:
+            eng.inflight.discard(item)
+        raise
+    server.last_gen_t = time.monotonic()
+    with engine_lock:
+        eng.commit_clips([item], [clip], "spec_gen")
+    return True
+
+
+def _writer_written(server, key, rec):
+    _writer_deliver(server, key, rec)
+    if getattr(server, "event_log", None) is not None:
+        _log(server, {"type": "writer", "t": time.time(), "key": str(key), "ms": rec.get("ms"),
+                      "repaired": bool(rec.get("repaired")), "route": _writer_route(server, key)})
+
+
 def _idle(server, seconds):
     ev = getattr(server, "deepen_wake", None)
     if ev is None:
@@ -608,6 +891,9 @@ def _deepen_loop(server):
                     batch, stat = planner(max_items=getattr(server, "deepen_batch", 1))
             if held:
                 _idle(server, 0.5)
+                continue
+            if not batch and getattr(server, "writer", None) is not None and (
+                    _writer_step(server) or _writer_fill_step(server)):
                 continue
             if batch:
                 tg = time.perf_counter()
@@ -661,6 +947,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
           event_log: str | None = None, predict_fixes: bool = False, pool_fix: bool = False,
           concurrent_gen: bool = False, keep_warm_ms: float = 0.0, sibling_on_miss: bool = False,
           cache_async: bool = False, rapid_hz: float = RAPID_HZ, read_class: bool = False, clock=None,
+          scene: bool = False, writer=None, writer_swap: str = "revalidate", writer_yield: bool = True,
           **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
@@ -690,6 +977,9 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
                 inner.generate_batch([(CacheKey("warmup", "grass", "normal"), v) for v in range(int(deepen_batch))])
         except Exception:
             pass
+    if writer is not None and writer_yield and callable(getattr(getattr(writer, "backend", None), "pause", None)):
+        from ..writer import Yielding
+        engine.gen = Yielding(engine.gen, writer.backend)
     server = SfxServer((host, port), engine, default_pcm=pcm, recv_timeout=recv_timeout)
     server.world = bool(world)
     server.last_phys = {}
@@ -706,6 +996,17 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.kind_pending = {}
     server.kind_score = {}
     server.kind_targets = {}
+    server.scene = bool(scene)
+    server.last_scene = {}
+    server.writer = writer
+    server.writer_swap = writer_swap if writer_swap in ("revalidate", "next-miss") else "revalidate"
+    server.writer_owned = set() if writer is not None else None
+    server.writer_pending = {}
+    server.writer_fill = {}
+    server.writer_rendering = None
+    server.prompt_rev = {} if writer is not None else None
+    if writer is not None:
+        writer.on_written = lambda key, rec: _writer_written(server, key, rec)
     server.event_log_lock = threading.Lock()
     server.event_log = open(event_log, "a", encoding="utf-8") if event_log else None
     if pool_fix:

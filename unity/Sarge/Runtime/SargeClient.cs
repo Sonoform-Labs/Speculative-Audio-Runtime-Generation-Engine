@@ -34,7 +34,19 @@ namespace Sarge
         public string intent;
         public int learned;
         public string phys_key;
+        public string scene_key;
+        public int prompt_rev;
         public bool meta_only;
+    }
+
+    [Serializable]
+    public class ManifestAck
+    {
+        public string type;
+        public int keys;
+        public int known;
+        public int queued;
+        public bool writer;
     }
 
     [Serializable]
@@ -75,6 +87,7 @@ namespace Sarge
         public string physSig;
         public string after;
         public string eventClass;
+        public string scene;
     }
 
     public class SfxProtocolException : Exception
@@ -99,7 +112,7 @@ namespace Sarge
 
         const byte HELLO = 1, WELCOME = 2, CONTEXT = 3, CONTEXT_ACK = 4, EVENT = 5, AUDIO = 6,
                    PREBAKE = 7, PREBAKE_ACK = 8, STATS = 9, STATS_REPLY = 10, PING = 11, PONG = 12,
-                   PREDICT = 13, PREDICT_ACK = 14, ERROR = 255;
+                   PREDICT = 13, PREDICT_ACK = 14, MANIFEST = 15, MANIFEST_ACK = 16, ERROR = 255;
 
         TcpClient _tcp;
         NetworkStream _stream;
@@ -157,9 +170,11 @@ namespace Sarge
         }
 
         public AudioResult Event(string eventType, string material, string intensity, string context, string physJson,
-            System.Collections.Generic.IList<int> have = null, string havePhys = null, string eventClass = null, string prompt = null)
+            System.Collections.Generic.IList<int> have = null, string havePhys = null, string eventClass = null, string prompt = null,
+            string scene = null, string haveScene = null, int haveRev = 0)
         {
-            if (string.IsNullOrEmpty(physJson) && have == null && string.IsNullOrEmpty(eventClass) && string.IsNullOrEmpty(prompt))
+            if (string.IsNullOrEmpty(physJson) && have == null && string.IsNullOrEmpty(eventClass) && string.IsNullOrEmpty(prompt)
+                && string.IsNullOrEmpty(scene))
                 return Event(eventType, material, intensity, context);
             var sb = new StringBuilder();
             sb.Append("{\"type\":\"event\",\"event_type\":").Append(Quote(eventType));
@@ -169,12 +184,15 @@ namespace Sarge
             if (!string.IsNullOrEmpty(eventClass)) sb.Append(",\"class\":").Append(Quote(eventClass));
             if (!string.IsNullOrEmpty(prompt)) sb.Append(",\"prompt\":").Append(Quote(prompt));
             if (!string.IsNullOrEmpty(physJson)) sb.Append(",\"phys\":").Append(physJson);
+            if (!string.IsNullOrEmpty(scene)) sb.Append(",\"scene\":").Append(scene);
             if (have != null)
             {
                 sb.Append(",\"have\":[");
                 for (int i = 0; i < have.Count; i++) { if (i > 0) sb.Append(','); sb.Append(have[i].ToString(CultureInfo.InvariantCulture)); }
                 sb.Append(']');
                 sb.Append(",\"have_phys\":").Append(Quote(havePhys ?? ""));
+                if (!string.IsNullOrEmpty(haveScene)) sb.Append(",\"have_scene\":").Append(Quote(haveScene));
+                if (haveRev > 0) sb.Append(",\"have_rev\":").Append(haveRev.ToString(CultureInfo.InvariantCulture));
             }
             sb.Append('}');
             WriteFrame(EVENT, sb.ToString());
@@ -218,6 +236,7 @@ namespace Sarge
                 sb.Append(",\"eta_s\":").Append(F(p.etaS));
                 sb.Append(",\"confidence\":").Append(F(p.confidence));
                 if (!string.IsNullOrEmpty(p.physJson)) sb.Append(",\"phys\":").Append(p.physJson);
+                if (!string.IsNullOrEmpty(p.scene)) sb.Append(",\"scene\":").Append(p.scene);
                 if (!string.IsNullOrEmpty(p.after)) sb.Append(",\"after\":").Append(Quote(p.after));
                 sb.Append('}');
             }
@@ -225,6 +244,18 @@ namespace Sarge
             WriteFrame(PREDICT, sb.ToString());
             var f = ReadFrame();
             try { return JsonUtility.FromJson<PredictAck>(f.json); }
+            catch (Exception) { return null; }
+        }
+
+        public ManifestAck Manifest(System.Collections.Generic.IList<string> keys)
+        {
+            var sb = new StringBuilder();
+            sb.Append("{\"type\":\"manifest\",\"keys\":[");
+            for (int i = 0; i < keys.Count; i++) { if (i > 0) sb.Append(','); sb.Append(keys[i]); }
+            sb.Append("]}");
+            WriteFrame(MANIFEST, sb.ToString());
+            var f = ReadFrame();
+            try { return JsonUtility.FromJson<ManifestAck>(f.json); }
             catch (Exception) { return null; }
         }
 

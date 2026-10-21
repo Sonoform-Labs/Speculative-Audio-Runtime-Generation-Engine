@@ -66,7 +66,8 @@ class SfxClient:
         return body
 
     def event(self, event_type: str, material: str, intensity: str = "normal", context: str = "default",
-              phys=None, have=None, have_phys: str = "", cls: str = "", prompt: str = ""):
+              phys=None, have=None, have_phys: str = "", cls: str = "", prompt: str = "", scene=None,
+              have_scene: str = "", have_rev: int = 0):
         req = {"type": "event", "event_type": event_type, "material": material,
                "intensity": intensity, "context": context}
         if cls:
@@ -75,9 +76,15 @@ class SfxClient:
             req["prompt"] = prompt
         if phys is not None:
             req["phys"] = phys
+        if scene is not None:
+            req["scene"] = scene
         if have is not None:
             req["have"] = list(have)
             req["have_phys"] = str(have_phys or "")
+            if have_scene:
+                req["have_scene"] = str(have_scene)
+            if have_rev:
+                req["have_rev"] = int(have_rev)
         _, body, pcm = self._round_trip(MsgType.EVENT, req)
         samples = wire.decode_pcm(pcm, body.get("format", self.pcm))
         ch = int(body.get("channels", 1) or 1)
@@ -96,6 +103,10 @@ class SfxClient:
     def predict(self, predictions, now: float = 0.0) -> dict:
         _, body, _ = self._round_trip(MsgType.PREDICT, {
             "type": "predict", "now": now, "predictions": list(predictions)})
+        return body
+
+    def manifest(self, keys) -> dict:
+        _, body, _ = self._round_trip(MsgType.MANIFEST, {"type": "manifest", "keys": list(keys)})
         return body
 
     def stats(self) -> dict:

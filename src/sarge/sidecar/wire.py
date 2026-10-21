@@ -35,6 +35,8 @@ class MsgType(IntEnum):
     PONG = 12
     PREDICT = 13
     PREDICT_ACK = 14
+    MANIFEST = 15
+    MANIFEST_ACK = 16
     ERROR = 255
 
 

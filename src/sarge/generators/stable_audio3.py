@@ -472,7 +472,7 @@ class StableAudio3Generator(Generator):
             return audio.detach().to(torch.float32).cpu().numpy()
         return np.asarray(audio, dtype=np.float32)
 
-    def _guard(self, key: CacheKey, variant: int, mono: np.ndarray) -> np.ndarray:
+    def _guard(self, key: CacheKey, variant: int, mono: np.ndarray, text: str | None = None) -> np.ndarray:
         bad, m = is_static(mono if mono.ndim == 1 else mono.mean(axis=1), self.sample_rate)
         self._count("static_checks")
         if not bad:
@@ -482,7 +482,7 @@ class StableAudio3Generator(Generator):
         best, best_flat = mono, m["flat"]
         base = _seed(key, variant)
         steps = self._steps_for(key)
-        prompt = self._prompt(key)
+        prompt = text if text else self._prompt(key)
         for attempt in range(1, self.max_static_retries + 1):
             self._count("static_retries")
             with self._lock, torch.no_grad(), self._schedule(), self._noise():
@@ -507,21 +507,22 @@ class StableAudio3Generator(Generator):
             return self.detail_steps
         return self.steps
 
-    def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
+    def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None) -> AudioClip:
         self._ensure_loaded()
         import torch
+        text = prompt if prompt else self._prompt(key)
         with self._lock, torch.no_grad(), self._schedule(), self._noise():
             audio = self._model.generate(
                 duration=self.gen_duration_s,
                 steps=self._steps_for(key),
                 cfg_scale=self.cfg_scale,
                 seed=_seed(key, variant),
-                **self._inputs([self._prompt(key)]),
+                **self._inputs([text]),
                 **self._extra(),
             )
         mono = self._finish(self._numpy(audio), key)
         if self.static_guard:
-            mono = self._guard(key, variant, mono)
+            mono = self._guard(key, variant, mono, text)
         return AudioClip(mono, self.sample_rate, variant_id=variant)
 
     def generate_batch(self, items: list) -> list:

@@ -12,6 +12,7 @@ namespace Sarge
         public string context = "";
         public string eventClass = "";
         public string prompt = "";
+        public string madeBy = "";
         public AudioClip authoredFallback;
 
         void Reset()
@@ -41,7 +42,7 @@ namespace Sarge
             svc.Request(ev, mat ?? "", intensity, svc.ContextOr(context), null, null,
                 clip => { if (src != null) src.PlayOneShot(clip); },
                 () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); },
-                eventClass, prompt);
+                eventClass, prompt, svc.sendScene ? SargeScene.ForEmitter(this, madeBy) : null);
         }
     }
 }

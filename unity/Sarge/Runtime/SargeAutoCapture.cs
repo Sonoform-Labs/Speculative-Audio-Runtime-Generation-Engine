@@ -19,12 +19,21 @@ namespace Sarge
         public float speedGainMaxDb = 6f;
 
         float _last;
+        float _born;
         Collider _col;
+        Rigidbody _rb;
 
         void Awake()
         {
             if (source == null) source = GetComponent<AudioSource>();
             _col = GetComponent<Collider>();
+            _rb = GetComponentInParent<Rigidbody>();
+            _born = Time.time;
+        }
+
+        public string Scene()
+        {
+            return SargeService.Instance.sendScene ? SargeScene.ForPhysics(this, _rb, _born) : null;
         }
 
         void OnCollisionEnter(Collision c)
@@ -37,10 +46,11 @@ namespace Sarge
             string mat = MaterialOf(c.collider) ?? defaultMaterial ?? "";
             string intensity = IntensityFor(v);
             var src = source;
+            string scene = Scene();
             if (!sendPhysics && !speedGain)
             {
                 SargeService.Instance.Request(eventType, mat, intensity, Context, null, null,
-                    clip => { if (src != null) src.PlayOneShot(clip); }, null, eventClass);
+                    clip => { if (src != null) src.PlayOneShot(clip); }, null, eventClass, null, scene);
                 return;
             }
             float vol = speedGain ? SpeedGain(NormalSpeed(c)) : 1f;
@@ -48,7 +58,7 @@ namespace Sarge
             string phys = sendPhysics ? SargePhysics.FromCollision(c, self) : null;
             string sig = sendPhysics ? SargePhysics.Signature(self, c.collider) : null;
             SargeService.Instance.Request(eventType, mat, intensity, Context, phys, sig,
-                clip => { if (src != null) src.PlayOneShot(clip, vol); }, null, eventClass);
+                clip => { if (src != null) src.PlayOneShot(clip, vol); }, null, eventClass, null, scene);
         }
 
         public string Context => SargeService.Instance.ContextOr(context);

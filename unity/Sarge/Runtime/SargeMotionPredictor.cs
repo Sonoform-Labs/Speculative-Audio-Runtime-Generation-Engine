@@ -81,10 +81,18 @@ namespace Sarge
                     context = SargeService.Instance.ContextOr(context),
                     etaS = horizon,
                     confidence = _stab,
+                    scene = StepScene(),
                 },
             };
             SargeService.Instance.SendPredictions(preds, Time.time);
             _emittedStep = _stepCount;
+        }
+
+        string StepScene()
+        {
+            if (!SargeService.Instance.sendScene) return null;
+            var steps = transform.root.GetComponentInChildren<SargeFootsteps>();
+            return steps != null ? SargeScene.ForActor(steps, "step") : null;
         }
 
         string SurfaceAt(Vector3 worldPos, out Vector3 hitPoint)

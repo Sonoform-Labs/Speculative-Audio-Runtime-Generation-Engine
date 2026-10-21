@@ -252,6 +252,38 @@ def main(argv=None) -> int:
                          "--short-clips) and woosh sets the peak")
     ap.add_argument("--world", action="store_true",
                     help="physics context: the server buckets the phys block Unity sends into the key and the prompt")
+    ap.add_argument("--scene", action="store_true",
+                    help="scene record: the server quantises the optional 'scene' object Unity sends (who made the "
+                         "sound, the object, the action, the room) into the key; the seed ignores it (docs/llm-layer.md)")
+    ap.add_argument("--writer", choices=["off", "llama", "ollama", "store"], default="off",
+                    help="prompt writer (docs/llm-layer.md): llama spawns a CPU-only llama-server for --writer-model "
+                         "after READY and writes one prompt per key in the background, saved per key in --writer-store; "
+                         "ollama talks to an Ollama server already running on --writer-port; store serves a baked "
+                         "prompt file (--writer-store FILE) with no model at all. Until a key has a written prompt it "
+                         "plays the --prompts builder, a game-sent prompt always wins. Off by default")
+    ap.add_argument("--writer-model", default="gemma4:e2b-it-qat",
+                    help="--writer llama/ollama: a GGUF file or an Ollama tag found under OLLAMA_MODELS, F:\\OllamaModels "
+                         "or G:\\sarge\\llm\\ollama_models (default gemma4:e2b-it-qat, Apache-2.0)")
+    ap.add_argument("--writer-bin", default=None,
+                    help="--writer llama: the llama-server binary (default SARGE_LLAMA_SERVER, else "
+                         "F:\\Ollama\\lib\\ollama\\llama-server.exe)")
+    ap.add_argument("--writer-port", type=int, default=11540, help="--writer llama/ollama: loopback port")
+    ap.add_argument("--writer-threads", type=int, default=4, help="--writer: CPU threads for the model (default 4)")
+    ap.add_argument("--writer-affinity", default="0xEFF",
+                    help="--writer llama: CPU affinity mask set on the llama-server process (default 0xEFF, core 8 off)")
+    ap.add_argument("--writer-store", default=os.path.join(REPO, ".cache", "writer"),
+                    help="--writer: folder of the prompt store (prompts_<writer id>.json), or the file to serve with "
+                         "--writer store")
+    ap.add_argument("--writer-when", default="seen,predict,manifest",
+                    help="--writer: which keys get written: seen (fired), predict (predicted), manifest (sent ahead)")
+    ap.add_argument("--writer-swap", choices=["revalidate", "next-miss"], default="revalidate",
+                    help="--writer: revalidate renders take 0 with the written prompt in the background and swaps it "
+                         "in when it lands; next-miss drops the template takes so the next hit renders it")
+    ap.add_argument("--writer-readonly", action="store_true",
+                    help="--writer llama/ollama: serve the store, never start the model or write")
+    ap.add_argument("--writer-yield", action=argparse.BooleanOptionalAction, default=True,
+                    help="--writer llama: suspend the llama-server process while the sidecar renders on the GPU, so "
+                         "its CPU threads never compete with a render (on by default with the writer)")
     ap.add_argument("--event-log", default=None, help="write one JSON line per request (timings, served or generated)")
     ap.add_argument("--predict-fixes", action=argparse.BooleanOptionalAction, default=True,
                     help="on by default: a predicted stem maps to the fired event it names (footstep to iron boot "
@@ -355,9 +387,13 @@ def main(argv=None) -> int:
                                ("predict_fixes", args.predict_fixes), ("pool_fix", args.pool_fix),
                                ("concurrent_gen", args.concurrent_gen), ("keep_warm_ms", args.keep_warm_ms),
                                ("sibling_on_miss", args.sibling_on_miss), ("cache_async", args.async_cache_write),
-                               ("read_class", args.generator == "hybrid" and args.route == "class"))
+                               ("read_class", args.generator == "hybrid" and args.route == "class"),
+                               ("scene", args.scene))
              if v}
     extra["rapid_hz"] = args.rapid_hz
+    writer = make_writer(args)
+    if writer is not None:
+        extra.update(writer=writer, writer_swap=args.writer_swap, writer_yield=args.writer_yield)
     cache_dir = None if args.no_cache else args.cache_dir
     cleared = 0
     if cache_dir and os.path.isdir(cache_dir):
@@ -382,8 +418,12 @@ def main(argv=None) -> int:
           f"concurrent-gen={'on' if args.concurrent_gen else 'off'}  "
           f"predict-fixes={'on' if args.predict_fixes else 'off'}  "
           f"prompts={args.prompts} route={args.route} amp={args.amp or 'off'}  "
-          f"cache-write={'async' if args.async_cache_write else 'inline'}",
+          f"cache-write={'async' if args.async_cache_write else 'inline'}"
+          + ("  scene=on" if args.scene else "")
+          + (f"  writer={writer.describe()} swap={args.writer_swap}" if writer is not None else ""),
           flush=True)
+    if writer is not None:
+        writer.start()
     print("ctrl-c to stop", flush=True)
 
     stop = threading.Event()
@@ -394,9 +434,42 @@ def main(argv=None) -> int:
         print("shutting down")
     finally:
         server.deepening = False
+        if writer is not None:
+            writer.stop()
         server.shutdown()
         server.server_close()
     return 0
+
+
+def make_writer(args):
+    if args.writer == "off":
+        return None
+    from sarge import writer as prompt_writer
+    when = tuple(w.strip() for w in args.writer_when.split(",") if w.strip())
+    bad = [w for w in when if w not in prompt_writer.WHEN]
+    if bad:
+        raise SystemExit("--writer-when: unknown trigger %s (choose from %s)" % (
+            ", ".join(bad), ", ".join(prompt_writer.WHEN)))
+    try:
+        affinity = int(str(args.writer_affinity), 0)
+    except ValueError:
+        raise SystemExit("--writer-affinity must be a mask such as 0xEFF")
+    if affinity >> 8 & 1:
+        print("warning: --writer-affinity %s includes core 8" % args.writer_affinity, flush=True)
+    store = args.writer_store
+    if args.writer == "store" and not os.path.isfile(store):
+        raise SystemExit("--writer store needs --writer-store FILE (a prompts_<id>.json), got %s" % store)
+    try:
+        w = prompt_writer.build(args.writer, model=args.writer_model, binary=args.writer_bin, port=args.writer_port,
+                                threads=args.writer_threads, affinity=affinity, store=store, when=when,
+                                readonly=args.writer_readonly,
+                                log_path=os.path.join(store if os.path.isdir(store) or not os.path.splitext(store)[1]
+                                                      else os.path.dirname(store), "llama-server.log"))
+    except FileNotFoundError as e:
+        raise SystemExit("--writer %s: %s" % (args.writer, e))
+    if args.writer != "store":
+        os.makedirs(store, exist_ok=True)
+    return w
 
 
 if __name__ == "__main__":

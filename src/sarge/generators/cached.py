@@ -83,14 +83,14 @@ class CachedGenerator(Generator):
                 pass
         return getattr(self.inner, "steps", 0)
 
-    def _path(self, key: CacheKey, variant: int) -> str:
+    def _path(self, key: CacheKey, variant: int, prompt: str | None = None) -> str:
         g = self.inner
         tag = getattr(g, "post_tag", "")
         sig = "|".join(str(x) for x in (
             CACHE_SCHEMA,
             getattr(g, "name", "?"), getattr(g, "model_name", ""),
             key,
-            self._key_prompt(key),
+            prompt if prompt else self._key_prompt(key),
             getattr(g, "sampler_type", ""),
             self._key_steps(key),
             getattr(g, "cfg_scale", ""),
@@ -103,14 +103,15 @@ class CachedGenerator(Generator):
         h = hashlib.md5(sig.encode()).hexdigest()[:16]
         return os.path.join(self.cache_dir, f"{h}.wav")
 
-    def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
-        path = self._path(key, variant)
+    def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None) -> AudioClip:
+        path = self._path(key, variant, prompt)
         self._settled(path)
         if os.path.exists(path):
             clip = AudioClip.from_wav(path, keep_channels=True)
             clip.variant_id = variant
             return clip
-        clip = self.inner.generate(key, variant=variant)
+        clip = self.inner.generate(key, variant=variant, prompt=prompt) if prompt else self.inner.generate(
+            key, variant=variant)
         self._store(path, clip)
         return clip
 

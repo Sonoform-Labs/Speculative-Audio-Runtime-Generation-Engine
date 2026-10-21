@@ -56,9 +56,10 @@ namespace Sarge
             string mat = _surface ?? defaultMaterial;
             var src = source;
             var svc = SargeService.Instance;
-            svc.Request(eventType, mat ?? "", "normal", svc.ContextOr(context),
+            svc.Request(eventType, mat ?? "", "normal", svc.ContextOr(context), null, null,
                 clip => { if (src != null) src.PlayOneShot(clip); },
-                () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); });
+                () => { if (authoredFallback != null && src != null) src.PlayOneShot(authoredFallback); },
+                null, null, svc.sendScene ? SargeScene.ForActor(this, "step") : null);
         }
 
         void PushContext()

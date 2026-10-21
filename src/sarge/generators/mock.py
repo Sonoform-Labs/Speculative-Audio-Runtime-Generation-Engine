@@ -25,7 +25,7 @@ class MockGenerator(Generator):
         self.duration_s = float(duration_s)
         self.sample_rate = int(sample_rate)
 
-    def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
+    def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None) -> AudioClip:
         prof = _MATERIAL_PROFILE.get(key.material, _MATERIAL_PROFILE["dirt"])
 
         rng = np.random.default_rng(seed_for(key, variant))

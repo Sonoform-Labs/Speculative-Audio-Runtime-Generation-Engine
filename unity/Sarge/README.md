@@ -51,6 +51,12 @@ Two optional fields reach the server on any request:
 - `eventClass` is a routing hint. Under `--route class` a class such as `weapon` sends the sound to the gun model; without that flag it is ignored.
 - `prompt` is text you write for the sound. It goes to whichever model renders it and wins over the server's prompt.
 
+Three more switches on `SargeService`, all off by default, feed the server's prompt writer (`docs/llm-layer.md`):
+
+- `sendScene` attaches a small scene record to events and predictions: who made the sound (player, npc, physics, projectile, world or ui, overridable with `SargeEmitter.madeBy`), the root and object names, the action (step, loop, use) and the room. The server reads it only under `--scene`.
+- `roomProbe` classifies the room around the AudioListener (open, small, medium, large, corridor) with seven raycasts every 0.5 s, or from an AudioReverbZone preset.
+- `sendManifest` sends every emitter and footstep key of a scene when it loads, so prompts can be written before the first hit.
+
 `SargeMotionPredictor.eventType` and `SargeAimPredictor.eventType` default to empty. The server then predicts the event that has landed most often on the surfaces that predictor named, so a step called `Footstep_Concrete` or an impact called `BulletHit` is learned from play. Set the field when you know the name, so the very first step can be predicted too.
 
 ## Impulse probe

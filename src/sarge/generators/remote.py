@@ -65,12 +65,12 @@ class RemoteGenerator(Generator):
         _send(self._sock, obj, pcm)
         return _recv(self._sock)
 
-    def generate(self, key: CacheKey, *, variant: int = 0) -> AudioClip:
+    def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None) -> AudioClip:
         req = {"type": "gen", "event_type": key.event_type, "material": key.material,
                "intensity": key.intensity, "context": key.context, "variant": int(variant)}
         if key.phys:
             req["phys"] = key.phys
-        prompt = self.prompts.get(str(key))
+        prompt = prompt or self.prompts.get(str(key))
         if prompt:
             req["prompt"] = prompt
         for attempt in (0, 1):

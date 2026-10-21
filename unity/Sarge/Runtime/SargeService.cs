@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
 
 namespace Sarge
@@ -27,6 +29,10 @@ namespace Sarge
         public int eventConnections = 1;
         public bool controlConnection = false;
         public string context = "default";
+        public bool sendScene = false;
+        public bool sendManifest = false;
+        public bool roomProbe = false;
+        public int manifestChunk = 100;
 
         public static Action<SargeService> Setup;
 
@@ -56,12 +62,16 @@ namespace Sarge
         {
             public bool isContext;
             public bool isPredict;
+            public bool isManifest;
             public ContextArgs ctx;
             public List<SfxPrediction> predictions;
+            public List<string> manifest;
             public float predictNow;
             public string eventType, material, intensity, context;
             public string eventClass, prompt;
             public string physJson, physSig, havePhys;
+            public string sceneJson, haveScene;
+            public int haveRev;
             public List<int> have;
             public bool playedLocally;
             public int lane;
@@ -80,6 +90,8 @@ namespace Sarge
             public string intent;
             public int learned;
             public string physKey;
+            public string sceneKey;
+            public int promptRev;
             public bool metaOnly;
         }
 
@@ -120,6 +132,10 @@ namespace Sarge
         readonly Dictionary<string, List<int>> _variants = new Dictionary<string, List<int>>();
         readonly Dictionary<string, int> _rotate = new Dictionary<string, int>();
         readonly Dictionary<string, string> _physMap = new Dictionary<string, string>();
+        readonly Dictionary<string, string> _sceneMap = new Dictionary<string, string>();
+        readonly Dictionary<string, int> _revs = new Dictionary<string, int>();
+        bool _manifestDue = true;
+        const int MaxSceneMap = 4096;
         readonly Dictionary<string, List<Pending>> _lastPreds = new Dictionary<string, List<Pending>>();
         readonly object _predLock = new object();
         readonly ManualResetEventSlim _stop = new ManualResetEventSlim(false);
@@ -142,6 +158,9 @@ namespace Sarge
         public string LastPredicted { get; private set; }
         public string LastIntent { get; private set; }
         public string LastPhysKey { get; private set; }
+        public string LastSceneKey { get; private set; }
+        public int PromptUpgrades { get; private set; }
+        public int ManifestKeysSent { get; private set; }
         public int LearnedEvents { get; private set; }
 
         static double Now() => _clock.Elapsed.TotalMilliseconds;
@@ -151,6 +170,7 @@ namespace Sarge
             if (_instance != null && _instance != this) { Destroy(gameObject); return; }
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
             Setup?.Invoke(this);
             if (dspBufferSize > 0) ApplyDspBuffer();
             _running = true;
@@ -294,7 +314,7 @@ namespace Sarge
         }
 
         public void Request(string eventType, string material, string intensity, string context, string physJson, string physSig,
-            Action<AudioClip> onReady, Action onFailed, string eventClass = null, string prompt = null)
+            Action<AudioClip> onReady, Action onFailed, string eventClass = null, string prompt = null, string scene = null)
         {
             if (!_running) { onFailed?.Invoke(); return; }
             var item = new WorkItem
@@ -308,6 +328,7 @@ namespace Sarge
                 prompt = prompt,
                 physJson = physJson,
                 physSig = physSig,
+                sceneJson = string.IsNullOrEmpty(scene) ? null : scene,
                 onReady = onReady,
                 onFailed = onFailed,
             };
@@ -333,20 +354,21 @@ namespace Sarge
             return best;
         }
 
-        static string Suffix(string context, string physKey)
+        static string Suffix(string context, string physKey, string sceneKey = null)
         {
             string s = string.IsNullOrEmpty(context) || context == "default" ? "" : "|" + context;
-            return string.IsNullOrEmpty(physKey) ? s : s + "|" + physKey;
+            s = string.IsNullOrEmpty(physKey) ? s : s + "|" + physKey;
+            return string.IsNullOrEmpty(sceneKey) ? s : s + "|scene=" + sceneKey;
         }
 
-        static string BaseKey(string e, string m, string i, string context, string physKey)
+        static string BaseKey(string e, string m, string i, string context, string physKey, string sceneKey = null)
         {
-            return e + "|" + m + "|" + i + Suffix(context, physKey);
+            return e + "|" + m + "|" + i + Suffix(context, physKey, sceneKey);
         }
 
-        static string ClipKey(string e, string m, string i, string context, string physKey, int variant)
+        static string ClipKey(string e, string m, string i, string context, string physKey, int variant, string sceneKey = null)
         {
-            return e + "|" + m + "|" + i + "|" + variant + Suffix(context, physKey);
+            return e + "|" + m + "|" + i + "|" + variant + Suffix(context, physKey, sceneKey);
         }
 
         void PlayLocal(WorkItem item)
@@ -355,18 +377,22 @@ namespace Sarge
             if (!string.IsNullOrEmpty(item.physJson) &&
                 (string.IsNullOrEmpty(item.physSig) || !_physMap.TryGetValue(item.physSig + "|" + item.intensity, out physKey)))
                 return;
-            string baseKey = BaseKey(item.eventType, item.material, item.intensity, item.context, physKey);
+            string sceneKey = "";
+            if (item.sceneJson != null && !_sceneMap.TryGetValue(item.sceneJson, out sceneKey)) return;
+            string baseKey = BaseKey(item.eventType, item.material, item.intensity, item.context, physKey, sceneKey);
             if (!_variants.TryGetValue(baseKey, out var ids) || ids.Count == 0) return;
             _rotate.TryGetValue(baseKey, out int next);
             int variant = ids[next % ids.Count];
             _rotate[baseKey] = next + 1;
-            if (!_clipCache.TryGetValue(ClipKey(item.eventType, item.material, item.intensity, item.context, physKey, variant), out var node) ||
+            if (!_clipCache.TryGetValue(ClipKey(item.eventType, item.material, item.intensity, item.context, physKey, variant, sceneKey), out var node) ||
                 node.Value.clip == null)
                 return;
             _lru.Remove(node);
             _lru.AddLast(node);
             item.have = new List<int>(ids);
             item.havePhys = physKey;
+            item.haveScene = sceneKey;
+            _revs.TryGetValue(baseKey, out item.haveRev);
             item.playedLocally = true;
             LocalCount++;
             LastServed = "local";
@@ -378,7 +404,78 @@ namespace Sarge
         void Update()
         {
             _lastNow = Time.time;
+            if (roomProbe) SargeScene.Tick(Time.unscaledTime);
+            if (_manifestDue && sendManifest && _running)
+            {
+                _manifestDue = false;
+                SendManifest();
+            }
             Drain();
+        }
+
+        void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+            SargeScene.Clear();
+            _manifestDue = true;
+        }
+
+        public void SendManifest()
+        {
+            var keys = new List<string>();
+            var seen = new HashSet<string>();
+            foreach (var e in FindObjectsOfType<SargeEmitter>())
+            {
+                if (string.IsNullOrEmpty(e.eventType)) continue;
+                Add(keys, seen, ManifestKey(e.eventType, e.material, e.intensity, ContextOr(e.context), e.eventClass, e.prompt,
+                    sendScene ? SargeScene.ForEmitter(e, e.madeBy) : null));
+            }
+            var surfaces = new List<string>();
+            foreach (var s in FindObjectsOfType<SargeSurface>())
+                if (!string.IsNullOrEmpty(s.material) && !surfaces.Contains(s.material)) surfaces.Add(s.material);
+            foreach (var f in FindObjectsOfType<SargeFootsteps>())
+            {
+                string scene = sendScene ? SargeScene.ForActor(f, "step") : null;
+                foreach (var m in surfaces) Add(keys, seen, ManifestKey(f.eventType, m, "normal", ContextOr(f.context), null, null, scene));
+                if (!string.IsNullOrEmpty(f.defaultMaterial))
+                    Add(keys, seen, ManifestKey(f.eventType, f.defaultMaterial, "normal", ContextOr(f.context), null, null, scene));
+            }
+            int chunk = Math.Max(1, manifestChunk);
+            for (int i = 0; i < keys.Count; i += chunk)
+                Enqueue(_control, new WorkItem { isManifest = true, manifest = keys.GetRange(i, Math.Min(chunk, keys.Count - i)) });
+            ManifestKeysSent += keys.Count;
+        }
+
+        static void Add(List<string> keys, HashSet<string> seen, string key)
+        {
+            if (seen.Add(key)) keys.Add(key);
+        }
+
+        public static string ManifestKey(string eventType, string material, string intensity, string context, string eventClass,
+            string prompt, string scene)
+        {
+            var sb = new StringBuilder(200);
+            sb.Append("{\"event_type\":").Append(Json(eventType ?? ""));
+            sb.Append(",\"material\":").Append(Json(material ?? ""));
+            sb.Append(",\"intensity\":").Append(Json(string.IsNullOrEmpty(intensity) ? "normal" : intensity));
+            sb.Append(",\"context\":").Append(Json(string.IsNullOrEmpty(context) ? "default" : context));
+            if (!string.IsNullOrEmpty(eventClass)) sb.Append(",\"class\":").Append(Json(eventClass));
+            if (!string.IsNullOrEmpty(prompt)) sb.Append(",\"prompt\":").Append(Json(prompt));
+            if (!string.IsNullOrEmpty(scene)) sb.Append(",\"scene\":").Append(scene);
+            return sb.Append('}').ToString();
+        }
+
+        static string Json(string s)
+        {
+            var sb = new StringBuilder(s.Length + 2);
+            sb.Append('"');
+            foreach (char ch in s)
+            {
+                if (ch == '"') sb.Append("\\\"");
+                else if (ch == '\\') sb.Append("\\\\");
+                else if (ch < ' ') sb.Append("\\u").Append(((int)ch).ToString("x4", CultureInfo.InvariantCulture));
+                else sb.Append(ch);
+            }
+            return sb.Append('"').ToString();
         }
 
         void LateUpdate()
@@ -402,6 +499,24 @@ namespace Sarge
                     {
                         LastPhysKey = res.physKey;
                         if (!string.IsNullOrEmpty(it.physSig)) _physMap[it.physSig + "|" + it.intensity] = res.physKey;
+                    }
+                    if (it.sceneJson != null)
+                    {
+                        if (_sceneMap.Count >= MaxSceneMap) _sceneMap.Clear();
+                        _sceneMap[it.sceneJson] = res.sceneKey ?? "";
+                        if (!string.IsNullOrEmpty(res.sceneKey)) LastSceneKey = res.sceneKey;
+                    }
+                    if (res.promptRev > 0 || _revs.Count > 0)
+                    {
+                        string bk = BaseKey(it.eventType, it.material, it.intensity, it.context, res.physKey, res.sceneKey);
+                        _revs.TryGetValue(bk, out int known);
+                        if (res.promptRev != known)
+                        {
+                            if (res.promptRev > known && (known > 0 || _variants.ContainsKey(bk))) PromptUpgrades++;
+                            DropBase(bk);
+                            if (res.promptRev > 0) _revs[bk] = res.promptRev;
+                            else _revs.Remove(bk);
+                        }
                     }
                     if (res.served == "cached") CachedCount++;
                     else if (res.served == "realtime") RealtimeCount++;
@@ -430,7 +545,7 @@ namespace Sarge
         {
             if (res.samples == null || res.samples.Length == 0) return null;
             var it = res.item;
-            string key = ClipKey(it.eventType, it.material, it.intensity, it.context, res.physKey, res.variantId);
+            string key = ClipKey(it.eventType, it.material, it.intensity, it.context, res.physKey, res.variantId, res.sceneKey);
             if (_clipCache.TryGetValue(key, out var node))
             {
                 if (node.Value.clip != null)
@@ -449,7 +564,7 @@ namespace Sarge
             var entry = new Entry
             {
                 key = key,
-                baseKey = BaseKey(it.eventType, it.material, it.intensity, it.context, res.physKey),
+                baseKey = BaseKey(it.eventType, it.material, it.intensity, it.context, res.physKey, res.sceneKey),
                 variant = res.variantId,
                 clip = clip,
             };
@@ -472,11 +587,29 @@ namespace Sarge
             if (res.samples == null || res.samples.Length == 0) return null;
             var it = res.item;
             int ch = Math.Max(1, res.channels);
-            var clip = AudioClip.Create(ClipKey(it.eventType, it.material, it.intensity, it.context, res.physKey, res.variantId) + "|" + res.served,
+            var clip = AudioClip.Create(ClipKey(it.eventType, it.material, it.intensity, it.context, res.physKey, res.variantId, res.sceneKey) + "|" + res.served,
                 res.samples.Length / ch, ch, res.sampleRate, false);
             clip.SetData(res.samples, 0);
             Destroy(clip, clip.length + 5f);
             return clip;
+        }
+
+        void DropBase(string baseKey)
+        {
+            var node = _lru.First;
+            while (node != null)
+            {
+                var next = node.Next;
+                if (node.Value.baseKey == baseKey)
+                {
+                    _lru.Remove(node);
+                    _clipCache.Remove(node.Value.key);
+                    if (node.Value.clip != null) Destroy(node.Value.clip);
+                }
+                node = next;
+            }
+            _variants.Remove(baseKey);
+            _rotate.Remove(baseKey);
         }
 
         void Unlist(Entry e)
@@ -550,24 +683,28 @@ namespace Sarge
                         var c = item.ctx;
                         client.Context(c.timeS, c.equipped, c.surfaces, c.region, c.gpu);
                     }
+                    else if (item.isManifest)
+                    {
+                        client.Manifest(item.manifest);
+                    }
                     else
                     {
                         var r = client.Event(item.eventType, item.material, item.intensity, item.context, item.physJson, item.have, item.havePhys,
-                            item.eventClass, item.prompt);
+                            item.eventClass, item.prompt, item.sceneJson, item.haveScene, item.haveRev);
                         if (logTimings) item.tReply = Now();
-                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, channels = r.meta.channels, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned, physKey = r.meta.phys_key, metaOnly = r.meta.meta_only });
+                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, channels = r.meta.channels, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned, physKey = r.meta.phys_key, sceneKey = r.meta.scene_key, promptRev = r.meta.prompt_rev, metaOnly = r.meta.meta_only });
                     }
                 }
                 catch (SfxProtocolException pe)
                 {
-                    if (got && item != null && !item.isContext && !item.isPredict) _results.Enqueue(new Result { ok = false, item = item });
+                    if (got && item != null && !item.isContext && !item.isPredict && !item.isManifest) _results.Enqueue(new Result { ok = false, item = item });
                     if (pe.Fatal) { lane.connected = false; SafeClose(lane); _stop.Wait(reconnectDelayMs); }
                 }
                 catch (Exception)
                 {
                     lane.connected = false;
                     SafeClose(lane);
-                    if (got && item != null && !item.isContext && !item.isPredict) _results.Enqueue(new Result { ok = false, item = item });
+                    if (got && item != null && !item.isContext && !item.isPredict && !item.isManifest) _results.Enqueue(new Result { ok = false, item = item });
                     _stop.Wait(reconnectDelayMs);
                 }
                 finally
@@ -614,6 +751,7 @@ namespace Sarge
 
         void OnDestroy()
         {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
             if (_instance == this) Shutdown();
         }
 

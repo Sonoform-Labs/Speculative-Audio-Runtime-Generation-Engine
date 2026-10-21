@@ -23,6 +23,7 @@ namespace Sarge
         public static Func<Collider, string> MaterialResolver;
         public static Func<Collider, string> EventResolver;
         public static Func<RaycastHit, string> PhysResolver;
+        public static Func<RaycastHit, string> SceneResolver;
 
         string _candidate;
         float _since;
@@ -73,6 +74,7 @@ namespace Sarge
                 after = resolved != null || string.IsNullOrEmpty(after) ? null : after,
                 physJson = phys,
                 physSig = sig,
+                scene = SceneResolver != null && SargeService.Instance.sendScene ? SceneResolver(hit) : null,
             };
             SargeService.Instance.SendPredictions(new List<SfxPrediction>(1) { p }, Time.time);
             Sent++;

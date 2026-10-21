@@ -38,6 +38,10 @@ Read exactly N bytes in a loop, since a single `recv` can return short. A `recv`
 | 10 | stats_reply  | server to client |
 | 11 | ping         | client to server |
 | 12 | pong         | server to client |
+| 13 | predict      | client to server |
+| 14 | predict_ack  | server to client |
+| 15 | manifest     | client to server |
+| 16 | manifest_ack | server to client |
 | 255| error        | server to client |
 
 ## Bodies
@@ -75,6 +79,10 @@ Optional fields on an event, a prediction (opcode 13) or a prewarm key, all igno
 - `"prompt": "..."` is text the game supplies for that key. It goes to whichever model renders the key (SA3 medium or Woosh) and wins over the server's prompt builder. The server remembers it for the key, so predictions and later events of the same key use it too. Sending a different prompt for a key drops the clips cached for it. It never changes the seed.
 - `"class": "weapon"` is an audio-free routing hint, read only under `--route class`, where a class listed in `--gun-class` (default `weapon`) goes to SA3 medium and everything else to Woosh. The class is part of the key there, but the seed ignores it.
 - A prediction may send `"event_type": ""`. The server then uses the event that has landed most often on that source's predicted surfaces (a learned kind per `source`, see docs/generic.md), and drops the prediction until one has.
+- `"scene": {"src": "npc", "who": "Orc_Brute", "obj": "Club_Wooden", "act": "use", "room": "open"}` describes who made the sound, the object, the action and the room (docs/llm-layer.md). Only `--scene` reads it; the server quantises it into the key, answers with `"scene_key"` and leaves the seed alone. An EVENT that sends `have` can add `"have_scene"` (the `scene_key` of the held takes) and `"have_rev"` (their prompt revision); a reply is meta-only only when both match.
+- Under `--writer` a reply carries `"prompt_rev"` once the key's prompt has been upgraded; a client holding older takes of that key should drop them.
+
+`{"type":"manifest","keys":[{"event_type":"door_creak","material":"wood","scene":{...}}, ...]}` lists keys the game can fire (at most 4096, and the 64 KB JSON limit applies, so send them in chunks). The server queues them for the prompt writer and answers `{"type":"manifest_ack","keys":2,"known":0,"queued":2,"writer":true}`; without a writer it answers with `queued` 0 and `writer` false. Older servers answer with a non-fatal `unknown_type` error.
 
 Error codes `bad_frame`, `bad_version`, and `oversized` are fatal and close the connection. `bad_json`, `bad_fields`, `unknown_type`, and `internal` are not, and the connection stays usable.
 

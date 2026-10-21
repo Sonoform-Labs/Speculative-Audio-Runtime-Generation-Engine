@@ -173,6 +173,7 @@ namespace Sarge
                     confidence = confidence,
                     physJson = phys,
                     physSig = phys != null ? SargePhysics.Signature(_col, hit.collider) : null,
+                    scene = capture.Scene(),
                 },
             };
             SargeService.Instance.SendPredictions(preds, Time.time);
