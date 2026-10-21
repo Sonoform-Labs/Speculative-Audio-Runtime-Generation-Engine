@@ -44,6 +44,7 @@ HYBRID_GUNS = {"model_name": "medium", "sampler_type": "pingpong", "steps": 8, "
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
 WOOSH_COST_MS = {"dflow": 50.0, "flow": 1010.0}
+WRITER_STYLES = ("v1", "named", "texture", "title", "caption")
 
 
 def cache_dir_of(args):
@@ -274,6 +275,12 @@ def main(argv=None) -> int:
     ap.add_argument("--writer-store", default=os.path.join(REPO, ".cache", "writer"),
                     help="--writer: folder of the prompt store (prompts_<writer id>.json), or the file to serve with "
                          "--writer store")
+    ap.add_argument("--writer-style", choices=list(WRITER_STYLES), default="v1",
+                    help="--writer llama/ollama: how the writer is instructed and how its fields become a prompt "
+                         "(docs/llm-layer.md). v1 is the shipped writer; named keeps the words of the event name "
+                         "in the title; texture adds sound words on the character of the sound and new examples; "
+                         "title gives Woosh the title and sound words only; caption writes the action as one plain "
+                         "caption. Every style writes to a separate writer id and store. Default v1")
     ap.add_argument("--writer-when", default="seen,predict,manifest",
                     help="--writer: which keys get written: seen (fired), predict (predicted), manifest (sent ahead)")
     ap.add_argument("--writer-swap", choices=["revalidate", "next-miss"], default="revalidate",
@@ -462,7 +469,7 @@ def make_writer(args):
     try:
         w = prompt_writer.build(args.writer, model=args.writer_model, binary=args.writer_bin, port=args.writer_port,
                                 threads=args.writer_threads, affinity=affinity, store=store, when=when,
-                                readonly=args.writer_readonly,
+                                readonly=args.writer_readonly, style=args.writer_style,
                                 log_path=os.path.join(store if os.path.isdir(store) or not os.path.splitext(store)[1]
                                                       else os.path.dirname(store), "llama-server.log"))
     except FileNotFoundError as e:

@@ -34,8 +34,64 @@ WATER_DIR = os.path.join(GATE, "_water")
 PAGE = os.path.join(GATE, "page")
 BASE_ARMS = ("phrasebook", "caption", "llm")
 VARIANTS = ("llm_nosound", "llm_named")
-ALL_ARMS = BASE_ARMS + VARIANTS
+STYLE_ARM = {s: "llm" if s == wr.DEFAULT_STYLE else "wr_" + s for s in wr.STYLES}
+STYLE_ARMS = tuple(a for a in STYLE_ARM.values() if a != "llm")
+ALL_ARMS = BASE_ARMS + VARIANTS + STYLE_ARMS
 ARMS = BASE_ARMS
+FRESH = (
+    dict(id="handgun_fire", event_type="handgun_fire", material="glock", type="gunshot_pistol"),
+    dict(id="carbine_shot", event_type="carbine_shot", material="carbine", type="gunshot_rifle"),
+    dict(id="gunfire_revolver", event_type="gunfire", material="", type="gunshot_pistol",
+         scene={"src": "npc", "who": "Bandit_Gunslinger", "obj": "Revolver_Colt", "act": "use", "room": "open"}),
+    dict(id="shotgun_shot", event_type="shotgun_shot", material="", type="gunshot_shotgun",
+         scene={"src": "player", "obj": "Shotgun_Pump", "act": "use", "room": "open"}),
+    dict(id="hunting_rifle_shot", event_type="hunting_rifle_shot", material="", type="gunshot_rifle",
+         scene={"src": "player", "obj": "Rifle_Hunting_Bolt", "act": "use", "room": "open"}),
+    dict(id="rocket_explosion", event_type="rocket_explosion", material="missile", type="explosion",
+         approx="fireworks stand in for a rocket explosion"),
+    dict(id="detonate_tank", event_type="detonate", material="", intensity="hard", type="explosion",
+         approx="fireworks stand in for a gas tank detonation",
+         scene={"src": "world", "obj": "Gas_Tank_Propane", "act": "break", "room": "open"}),
+    dict(id="footstep_mud", event_type="Footstep_Mud", material="mud", type="footstep"),
+    dict(id="walk_carpet", event_type="walk_carpet", material="carpet", type="footstep"),
+    dict(id="step_marble", event_type="step", material="marble", type="footstep",
+         scene={"src": "player", "act": "step", "room": "medium"}),
+    dict(id="npc_footstep_sand", event_type="npc_footstep", material="sand", type="footstep",
+         scene={"src": "npc", "who": "Guard_Patrol", "act": "step", "room": "open"}),
+    dict(id="jar_smash", event_type="jar_smash", material="glass", type="glass_break"),
+    dict(id="beer_bottle_break", event_type="beer_bottle_break", material="glass", type="glass_break"),
+    dict(id="mirror_break", event_type="mirror_break", material="glass", type="glass_break",
+         scene={"src": "projectile", "obj": "Mirror_Wall", "act": "break", "room": "small"}),
+    dict(id="barn_door_open", event_type="barn_door_open", material="wood", type="door_open"),
+    dict(id="swing_open_cellar", event_type="swing_open", material="", type="door_open",
+         scene={"src": "player", "obj": "Door_Cellar", "act": "use", "room": "small"}),
+    dict(id="locker_slam", event_type="locker_slam", material="metal", type="door_slam",
+         approx="house door slams stand in for a locker door"),
+    dict(id="door_shut_bedroom", event_type="door_shut", material="wood", intensity="hard", type="door_slam",
+         scene={"src": "npc", "who": "Innkeeper", "obj": "Door_Bedroom", "act": "use", "room": "medium"}),
+    dict(id="guard_dog_bark", event_type="guard_dog_bark", material="dog", type="dog_bark"),
+    dict(id="woof_shepherd", event_type="woof", material="", type="dog_bark",
+         scene={"src": "npc", "who": "Dog_Shepherd", "act": "use", "room": "open"}),
+    dict(id="uppercut", event_type="uppercut", material="jaw", type="punch",
+         approx="foley punches stand in for an uppercut"),
+    dict(id="brawl_punch", event_type="brawl_punch", material="body", type="punch",
+         scene={"src": "npc", "who": "Bar_Brawler", "obj": "Fist_L", "act": "hit", "room": "medium"}),
+    dict(id="switch_flip", event_type="switch_flip", material="plastic", type="ui_click",
+         approx="mouse and button clicks stand in for a wall switch"),
+    dict(id="key_press_keypad", event_type="key_press", material="plastic", type="ui_click",
+         scene={"src": "player", "obj": "Keypad_Security", "act": "use", "room": "small"}),
+    dict(id="bus_horn", event_type="bus_horn", material="bus", type="horn", approx="car horns stand in for a bus horn"),
+    dict(id="honk_van", event_type="honk", material="", type="horn", approx="car horns stand in for a van horn",
+         scene={"src": "npc", "who": "Delivery_Driver", "obj": "Van_Delivery", "act": "use", "room": "open"}),
+    dict(id="parry_katana", event_type="parry", material="steel", type="sword",
+         approx="sword clashes and draws (the sword set)",
+         scene={"src": "npc", "who": "Samurai_Duelist", "obj": "Katana", "act": "hit", "room": "open"}),
+    dict(id="dagger_clash", event_type="dagger_clash", material="iron", type="sword",
+         approx="sword clashes and draws (the sword set)"),
+    dict(id="dive_splash", event_type="dive_splash", material="water", type="splash", water=True),
+    dict(id="plop_pond", event_type="plop", material="water", type="splash", water=True,
+         scene={"src": "world", "obj": "Pond_Lily", "act": "hit", "room": "open"}),
+)
 CAPTION = "template:caption+tt"
 FIRST, SEEDS, TAKES = 40, 20, 4
 AMP = "full"
@@ -70,15 +126,33 @@ ARM_TEXT = {"phrasebook": "the shipped phrasebook (--prompts tuned, the default)
                    "composed in the SA3 or the Woosh form; a rejected answer keeps the phrasebook",
             "llm_nosound": "diagnostic, no flag: the writer's source and action without its sound field, same tails",
             "llm_named": "diagnostic, no flag: the writer's prompt with the request's material and event words put "
-                         "in front whenever the writer's source line lacks one of them"}
-TIERS = {arm: "%s_%s" % ("abcde"[i], arm) for i, arm in enumerate(ALL_ARMS)}
-SET_TEXT = {"bench": "the 40 scene-bearing bench scenarios", "generic": "the 35 plain requests of the generic run"}
+                         "in front whenever the writer's source line lacks one of them",
+            "wr_named": "--writer llama --writer-style named: v1 instructions and examples plus the naming rule (the "
+                        "source keeps the request's event and material words, the validator puts them in front when "
+                        "missing); hollow and static kept",
+            "wr_texture": "--writer-style texture: the naming rule, a sound field on the character of the sound with no "
+                          "generic collision words, four new examples (none an impact, none from an eval set); v1 form",
+            "wr_title": "--writer-style title: texture's instructions and examples; Woosh gets source, sound and the "
+                        "tails without the action, SA3 the v1 form",
+            "wr_caption": "--writer-style caption: texture's rules with the action as one plain caption carrying the "
+                          "event's words; Woosh gets action and sound, SA3 'TrackType: SFX, {Source}. {Action}, "
+                          "{sound}, ...'"}
+TIERS = {arm: "%s_%s" % ("abcdefghijklmnopqrstuvwxyz"[i], arm) for i, arm in enumerate(ALL_ARMS)}
+SET_TEXT = {"bench": "the 40 scene-bearing bench scenarios", "generic": "the 35 plain requests of the generic run",
+            "fresh": "the 30 fresh scenarios (llm_eval.FRESH)"}
 GROUP_TEXT = {"all": "every judged scenario", "demo": "demo scenarios, both sets", "unseen": "unseen scenarios, both sets",
               "bench": "scene-bearing bench scenarios", "bench_demo": "bench, demo", "bench_unseen": "bench, unseen",
               "generic": "plain requests of the generic run", "generic_demo": "generic run, demo",
               "generic_unseen": "generic run, unseen", "guns": "gunshots", "footsteps": "footsteps",
               "sa3_rows": "rows SA3 medium renders", "woosh_rows": "rows Woosh renders", "water": "water judge rows",
-              "all_plus_water": "every judged scenario plus the water rows"}
+              "all_plus_water": "every judged scenario plus the water rows", "fresh": "fresh requests",
+              "fresh_unseen": "fresh requests", "known": "known scenarios, both sets",
+              "known_unseen": "known unseen scenarios, both sets", "water_fresh": "water judge rows, fresh",
+              "water_known": "water judge rows, known", "unseen_plus_water": "unseen scenarios plus their water rows",
+              "demo_plus_water": "demo scenarios plus their water rows"}
+SELECT_STYLES = tuple("wr_" + s for s in ("named", "texture", "title", "caption"))
+RULE = {"guns": -0.10, "water": -0.15, "demo": -0.10, "margin": 0.02, "tie": 0.005}
+GOAL = {"demo": -0.05, "guns": -0.10, "water": -0.10}
 
 
 def sid_of(kind, name):
@@ -89,10 +163,27 @@ def stem_of(sid):
     return re.sub(r"[^a-z]", "", sid) + "-s"
 
 
-def build_scenarios():
+def fresh_rows():
     out = []
-    with open(SCENES, encoding="utf-8") as fh:
-        bench = json.load(fh)
+    for f in FRESH:
+        sc = scenes.quantise(f["scene"], None, f["event_type"]) if f.get("scene") else ""
+        k = CacheKey(f["event_type"], f["material"], f.get("intensity", "normal"), f.get("context", "default"),
+                     scene=sc)
+        sid = "f_" + re.sub(r"[^a-z0-9]+", "_", f["id"].lower()).strip("_")
+        out.append({"sid": sid, "set": "fresh", "group": "unseen", "name": f["id"], "key": wr.key_fields(k),
+                    "type": f["type"], "approx": f.get("approx"), "no_judge": None,
+                    "water": stem_of(sid) if f.get("water") else None, "water_approx": None,
+                    "note": f.get("note", ""), "scene_in": f.get("scene")})
+    return out
+
+
+def build_scenarios(which="known"):
+    if which not in ("known", "fresh", "all"):
+        raise SystemExit("scenario set %r: known, fresh or all" % which)
+    out, bench = [], []
+    if which != "fresh":
+        with open(SCENES, encoding="utf-8") as fh:
+            bench = json.load(fh)
     for r in bench:
         phys = r.get("phys")
         b = bucket(phys, r["event_type"]) if isinstance(phys, dict) else ""
@@ -104,7 +195,7 @@ def build_scenarios():
                     "approx": BENCH_APPROX.get(r["id"]), "no_judge": BENCH_NO_JUDGE.get(r["id"]),
                     "water": stem_of(sid) if r["id"] in BENCH_WATER else None,
                     "water_approx": BENCH_WATER.get(r["id"]), "note": r.get("note", "")})
-    for et, mat, g in ge.KEY_SETS["old"]:
+    for et, mat, g in ge.KEY_SETS["old"] if which != "fresh" else ():
         k = CacheKey(et, mat, ge.INTENSITY, ge.CONTEXT)
         kk = ge.kid(et, mat)
         sid = sid_of("generic", kk)
@@ -112,6 +203,8 @@ def build_scenarios():
                     "type": ge.VOCAB.get(kk), "approx": ge.APPROX.get(kk), "no_judge": ge.NO_JUDGE.get(kk),
                     "water": stem_of(sid) if kk in ge.WATER else None,
                     "water_approx": ge.APPROX.get(kk) if kk in ge.WATER else None, "note": ""})
+    if which in ("fresh", "all"):
+        out += fresh_rows()
     for r in out:
         k = wr.key_of(r["key"])
         r["model"] = "sa3" if side_for(k, ROUTE) == "guns" else "woosh"
@@ -143,7 +236,7 @@ def caption_prompt(k, model):
 def cmp_pairs(arms):
     out = [(x, "phrasebook") for x in arms if x != "phrasebook"]
     out += [(x, "caption") for x in arms if x not in ("phrasebook", "caption")]
-    out += [(x, "llm") for x in arms if x in VARIANTS]
+    out += [(x, "llm") for x in arms if (x in VARIANTS or x in STYLE_ARMS) and "llm" in arms]
     return tuple(out)
 
 
@@ -197,12 +290,10 @@ def scen_path(work):
     return os.path.join(work, "scenarios.json")
 
 
-def cmd_write(a):
-    rows = build_scenarios()
-    os.makedirs(a.work, exist_ok=True)
-    store_dir = os.path.join(a.work, "writer")
-    pw = wr.build("llama", model=a.model, port=a.port, threads=a.threads, store=store_dir,
-                  log_path=os.path.join(a.work, "writer_server.log"))
+def write_style(rows, style, a):
+    pw = wr.build("llama", model=a.model, port=a.port, threads=a.threads, store=os.path.join(a.work, "writer"),
+                  log_path=os.path.join(a.work, "writer_server%s.log" % (
+                      "" if style == wr.DEFAULT_STYLE else "_" + style)), style=style)
     pw.setup()
     t0 = time.perf_counter()
     todo = [r for r in rows if str(wr.key_of(r["key"])) not in pw.store]
@@ -210,36 +301,72 @@ def cmd_write(a):
     if todo:
         pw.backend.start()
         load_s = time.perf_counter() - t0
-        print("writer %s ready in %.1f s, affinity %s, id %s" % (
-            os.path.basename(pw.backend.model), load_s, hex(pw.backend.seen_affinity or 0), pw.id[:12]), flush=True)
+        print("writer %s style %s ready in %.1f s, affinity %s, id %s" % (
+            os.path.basename(pw.backend.model), style, load_s, hex(pw.backend.seen_affinity or 0), pw.id[:12]),
+            flush=True)
     for r in todo:
         k = wr.key_of(r["key"])
         rec = pw.write(k)
         pw.store.put(str(k), rec)
-        print("%-30s %6.0f ms %-5s %s" % (r["sid"], rec["ms"], "FAIL" if rec.get("failed") else
-                                         ("fix" if rec.get("repaired") else "ok"),
-                                         rec.get(r["model"]) or rec.get("after") or rec.get("flags")), flush=True)
+        print("%-8s %-30s %6.0f ms %-5s %s" % (style, r["sid"], rec["ms"], "FAIL" if rec.get("failed") else
+                                              ("fix" if rec.get("repaired") else "ok"),
+                                              rec.get(r["model"]) or rec.get("after") or rec.get("flags")), flush=True)
     if todo:
         pw.store.flush()
         pw.backend.close()
+    return pw, load_s, [r["sid"] for r in todo]
+
+
+def writer_info(rec):
+    rec = rec or {}
+    return {"ok": wr.ok_record(rec), "repaired": bool(rec.get("repaired")), "flags": rec.get("flags"),
+            "after": rec.get("after"), "slots": rec.get("slots"), "orig": rec.get("orig"), "raw": rec.get("raw"),
+            "ms": rec.get("ms"), "woosh": rec.get("woosh"), "sa3": rec.get("sa3")}
+
+
+def cmd_write(a):
+    rows = build_scenarios(a.set)
+    os.makedirs(a.work, exist_ok=True)
+    styles = {}
+    for style in a.styles:
+        styles[style] = write_style(rows, style, a)
     for r in rows:
         k = wr.key_of(r["key"])
-        rec = pw.store.get(str(k))
-        ok = wr.ok_record(rec)
-        r["prompts"] = {"phrasebook": phrase_prompt(k, r["model"]), "caption": caption_prompt(k, r["model"]),
-                        "llm": rec[r["model"]] if ok else phrase_prompt(k, r["model"])}
-        r["writer"] = {"ok": ok, "repaired": bool(rec and rec.get("repaired")), "flags": (rec or {}).get("flags"),
-                       "slots": (rec or {}).get("slots"), "orig": (rec or {}).get("orig"), "raw": (rec or {}).get("raw"),
-                       "ms": (rec or {}).get("ms"), "woosh": (rec or {}).get("woosh"), "sa3": (rec or {}).get("sa3")}
-    ms = sorted(r["writer"]["ms"] for r in rows if r["writer"]["ms"] is not None)
-    meta = {"writer_id": pw.id, "store": pw.store.path, "model": getattr(pw.backend, "model", None),
-            "load_s": load_s, "written_now": len(todo), "route": ROUTE, "amp": AMP,
-            "ms_p50": float(np.median(ms)) if ms else None,
-            "failed": [r["sid"] for r in rows if not r["writer"]["ok"]],
-            "repaired": [r["sid"] for r in rows if r["writer"]["repaired"]]}
+        r["prompts"] = {"phrasebook": phrase_prompt(k, r["model"]), "caption": caption_prompt(k, r["model"])}
+        r["writers"] = {}
+        for style, (pw, _l, _n) in styles.items():
+            arm = STYLE_ARM[style]
+            rec = pw.store.get(str(k))
+            info = writer_info(rec)
+            r["prompts"][arm] = rec[r["model"]] if info["ok"] else phrase_prompt(k, r["model"])
+            r["writers"][arm] = dict(info, style=style, writer_id=pw.id)
+            if style == wr.DEFAULT_STYLE:
+                r["writer"] = {x: info[x] for x in info if x != "after"}
+    smeta = {}
+    for style, (pw, load_s, now) in styles.items():
+        arm = STYLE_ARM[style]
+        ms = sorted(r["writers"][arm]["ms"] for r in rows if r["writers"][arm]["ms"] is not None)
+        ms_now = sorted(r["writers"][arm]["ms"] for r in rows if r["sid"] in set(now))
+        smeta[style] = {"arm": arm, "writer_id": pw.id, "store": pw.store.path, "load_s": load_s,
+                        "written_now": len(now),
+                        "ms_p50": float(np.median(ms)) if ms else None,
+                        "ms_p95": float(np.percentile(ms, 95)) if ms else None,
+                        "ms_now_p50": float(np.median(ms_now)) if ms_now else None,
+                        "ms_now_p95": float(np.percentile(ms_now, 95)) if ms_now else None,
+                        "failed": [r["sid"] for r in rows if not r["writers"][arm]["ok"]],
+                        "repaired": [r["sid"] for r in rows if r["writers"][arm]["repaired"]]}
+    first = styles[a.styles[0]][0]
+    lead = smeta[a.styles[0]]
+    meta = {"writer_id": first.id, "store": first.store.path, "model": getattr(first.backend, "model", None),
+            "load_s": lead["load_s"], "written_now": lead["written_now"], "route": ROUTE, "amp": AMP,
+            "ms_p50": lead["ms_p50"], "failed": lead["failed"], "repaired": lead["repaired"], "set": a.set,
+            "styles": smeta}
     dump({"meta": meta, "rows": rows}, scen_path(a.work))
-    print("saved %s: %d scenarios, %d written now, %d rejected, %d repaired" % (
-        scen_path(a.work), len(rows), len(todo), len(meta["failed"]), len(meta["repaired"])), flush=True)
+    for style, m in smeta.items():
+        print("style %-8s id %s: %d scenarios, %d written now, p50 %.0f ms, %d rejected, %d repaired" % (
+            style, m["writer_id"][:12], len(rows), m["written_now"], m["ms_p50"] or 0, len(m["failed"]),
+            len(m["repaired"])), flush=True)
+    print("saved", scen_path(a.work), flush=True)
     return 0
 
 
@@ -499,10 +626,13 @@ def groups_of(J):
     ks = list(J)
     g = {"all": ks, "demo": [k for k in ks if J[k]["group"] == "demo"],
          "unseen": [k for k in ks if J[k]["group"] == "unseen"]}
-    for s in ("bench", "generic"):
+    for s in ("bench", "generic", "fresh"):
         g[s] = [k for k in ks if J[k]["set"] == s]
         for grp in ("demo", "unseen"):
             g["%s_%s" % (s, grp)] = [k for k in ks if J[k]["set"] == s and J[k]["group"] == grp]
+    if g["fresh"] and len(g["fresh"]) < len(ks):
+        g["known_unseen"] = [k for k in g["unseen"] if J[k]["set"] != "fresh"]
+        g["known"] = [k for k in ks if J[k]["set"] != "fresh"]
     g["guns"] = [k for k in ks if J[k]["type"].startswith("gunshot")]
     g["footsteps"] = [k for k in ks if J[k]["type"] == "footstep"]
     g["sa3_rows"] = [k for k in ks if J[k]["model"] == "sa3"]
@@ -585,7 +715,7 @@ def cmd_report(a):
     G = {n: ge.group_stats(m, J, rng) for n, m in groups_of(J).items()}
     if W:
         G["water"] = ge.group_stats(list(W), W, rng)
-        for s in ("bench", "generic"):
+        for s in ("bench", "generic", "fresh"):
             m = [k for k in W if W[k]["set"] == s]
             if m:
                 G["water_" + s] = ge.group_stats(m, W, rng)
@@ -593,10 +723,11 @@ def cmd_report(a):
         G["all_plus_water"] = ge.group_stats(list(AW), AW, rng)
         UW = dict({k: J[k] for k in J if J[k]["group"] == "unseen"},
                   **{"water:" + k: r for k, r in W.items() if r["kind"] == "unseen"})
-        G["unseen_plus_water"] = ge.group_stats(list(UW), UW, rng)
         DW = dict({k: J[k] for k in J if J[k]["group"] == "demo"},
                   **{"water:" + k: r for k, r in W.items() if r["kind"] == "demo"})
-        G["demo_plus_water"] = ge.group_stats(list(DW), DW, rng)
+        for g, m in (("unseen_plus_water", UW), ("demo_plus_water", DW)):
+            if m:
+                G[g] = ge.group_stats(list(m), m, rng)
     res = {"meta": dict(S["meta"], first_seed=a.first_seed, seeds=a.seeds, boot=ge.BOOT, refs=V["meta"].get("manifest")),
            "per": per, "water": water, "groups": G, "clips": facts,
            "prompts": {r["sid"]: {"set": r["set"], "group": r["group"], "name": r["name"], "model": r["model"],
@@ -606,16 +737,21 @@ def cmd_report(a):
     dump(res, os.path.join(a.work, "report%s.json" % tag(a)))
     lines = []
     say = lines.append
-    say("LLM PROMPT WRITER ON SOUND: %d scenarios (%s; %s), variants %d-%d, route %s, --amp %s, stereo" % (
-        len(rows), SET_TEXT["bench"], SET_TEXT["generic"], a.first_seed, a.first_seed + a.seeds - 1, ROUTE, AMP))
+    say("LLM PROMPT WRITER ON SOUND: %d scenarios (%s), variants %d-%d, route %s, --amp %s, stereo" % (
+        len(rows), "; ".join(SET_TEXT[s] for s in SET_TEXT if any(r["set"] == s for r in rows)), a.first_seed,
+        a.first_seed + a.seeds - 1, ROUTE, AMP))
     say("writer %s (id %s), rejected %s, repaired %s" % (os.path.basename(str(S["meta"].get("model"))),
                                                          str(S["meta"].get("writer_id"))[:12],
                                                          S["meta"]["failed"] or "none", S["meta"]["repaired"] or "none"))
+    for style, m in (S["meta"].get("styles") or {}).items():
+        if m["arm"] in ARMS:
+            say("style %s as arm %s: writer id %s, %d rejected, %d repaired of the written scenarios" % (
+                style, m["arm"], m["writer_id"][:12], len(m["failed"]), len(m["repaired"])))
     say("cons = min over valid held-out judges of min(rate / real, 1); deltas paired on seed, 95%% CI from %d draws; "
         "McNemar a/p/c = AST/PANNs/CLAP seeds gained/lost" % ge.BOOT)
     say("")
     say("PER SCENARIO (identity judges)")
-    say("%-34s %-16s %-6s %-6s %-18s %-18s %-18s" % ("scenario", "type", "group", "model", "phrasebook", "caption", "llm"))
+    say("%-34s %-16s %-6s %-6s %s" % ("scenario", "type", "group", "model", " ".join("%-18s" % x for x in ARMS)))
     for k, r in per.items():
         say("%-34s %-16s %-6s %-6s %s" % (k, r["type"] + ("*" if r["approx"] else ""), r["group"], r["model"], " ".join(
             "%-18s" % fmt_ci(r["cons"][arm], r["cons_ci"][arm], False) for arm in ARMS)))
@@ -732,6 +868,236 @@ def cmd_combine(a):
     return 0
 
 
+def cmd_subset(a):
+    S = load(scen_path(a.source))
+    keep = [r for r in S["rows"] if (r["set"] == "fresh") == (a.set == "fresh")]
+    if not keep:
+        raise SystemExit("no %s rows in %s" % (a.set, scen_path(a.source)))
+    p = scen_path(a.work)
+    new = {"meta": dict(S["meta"], subset=a.set, source=scen_path(a.source)), "rows": keep}
+    if os.path.isfile(p) and load(p) != json.loads(json.dumps(new)):
+        raise SystemExit("%s holds other scenarios; pick a new work folder" % p)
+    os.makedirs(a.work, exist_ok=True)
+    dump(new, p)
+    print("subset %s: %d of %d rows to %s" % (a.set, len(keep), len(S["rows"]), p), flush=True)
+    return 0
+
+
+def rule_numbers(G, arm):
+    d = {n: G[g]["cmp"]["%s vs phrasebook" % arm]["delta"]
+         for n, g in (("U", "unseen"), ("D", "demo"), ("G", "guns"), ("W", "water"), ("A", "all_plus_water"))}
+    d["Q"] = (d["U"] + d["D"]) / 2.0
+    return d
+
+
+def pick_style(num, rejected, styles=SELECT_STYLES):
+    elig = [s for s in styles if num[s]["G"] >= RULE["guns"] and num[s]["W"] >= RULE["water"]
+            and num[s]["D"] >= RULE["demo"]]
+    if not elig:
+        return None, elig, []
+    best = max(num[s]["Q"] for s in elig)
+    tied = [s for s in elig if num[s]["Q"] >= best - RULE["tie"]]
+    pick = sorted(tied, key=lambda s: (-num[s]["A"], rejected.get(s, 0), styles.index(s)))[0]
+    return pick, elig, tied
+
+
+def decide_selection(num, rejected, styles=SELECT_STYLES):
+    pick, elig, tied = pick_style(num, rejected, styles)
+    go = pick is not None and num[pick]["Q"] >= num["llm"]["Q"] + RULE["margin"]
+    return {"pick": pick, "eligible": elig, "tied": tied, "confirm": go}
+
+
+def cmd_select(a):
+    rep = load(os.path.join(a.work, "report%s.json" % tag(a)))
+    G = rep["groups"]
+    styles = [s for s in SELECT_STYLES if s in ARMS]
+    meta = {m["arm"]: m for m in (rep["meta"].get("styles") or {}).values()}
+    rejected = {s: len(meta[s]["failed"]) for s in styles if s in meta}
+    num = {arm: rule_numbers(G, arm) for arm in ["llm"] + styles}
+    dec = decide_selection(num, rejected, tuple(styles))
+    n = {k: len(G[g]["keys"]) for k, g in (("U", "unseen"), ("D", "demo"), ("G", "guns"), ("W", "water"),
+                                            ("A", "all_plus_water"))}
+    lines = ["SELECTION, block S: variants %d-%d, %s; computed by llm_eval.py select from %s" % (
+        a.first_seed, a.first_seed + a.seeds - 1, ", ".join(sorted({r["set"] for r in rep["prompts"].values()})),
+        os.path.join(a.work, "report%s.json" % tag(a))),
+        "rows: U %(U)d unseen identity, D %(D)d demo identity, G %(G)d guns, W %(W)d water, A %(A)d" % n,
+        "every number is the arm minus the phrasebook, mean over rows, paired on seed", "",
+        "%-11s %-13s %8s %8s %8s %8s %8s %8s  %s" % ("arm", "writer id", "U", "D", "G", "W", "A", "Q", "eligible")]
+    for arm in ["llm"] + styles:
+        x = num[arm]
+        wid = (meta.get(arm) or {}).get("writer_id", "")[:12]
+        el = "reference" if arm == "llm" else ("yes" if arm in dec["eligible"] else "no")
+        lines.append("%-11s %-13s %+8.4f %+8.4f %+8.4f %+8.4f %+8.4f %+8.4f  %s" % (
+            arm, wid, x["U"], x["D"], x["G"], x["W"], x["A"], x["Q"], el))
+    lines.append("")
+    lines.append("bars: G >= %.2f, W >= %.2f, D >= %.2f; margin Q_pick >= Q_llm + %.2f; tie within %.3f goes to "
+                 "higher A, then fewer rejected prompts, then the order %s" % (
+                     RULE["guns"], RULE["water"], RULE["demo"], RULE["margin"], RULE["tie"], ", ".join(styles)))
+    lines.append("rejected prompts over the written scenarios: %s" % ", ".join(
+        "%s %d" % (s, rejected.get(s, 0)) for s in styles))
+    lines.append("styles within the tie band of the best eligible Q: %s" % (", ".join(dec["tied"]) or "none"))
+    if dec["pick"] is None:
+        lines.append("RESULT: no style is eligible; nothing is rendered for confirmation, the writer stays at v1 "
+                     "and off")
+    else:
+        lines.append("best eligible style: %s, Q %+.4f against Q_llm %+.4f, margin %+.4f" % (
+            dec["pick"], num[dec["pick"]]["Q"], num["llm"]["Q"], num[dec["pick"]]["Q"] - num["llm"]["Q"]))
+        lines.append("RESULT: PICK %s, goes on to confirmation" % dec["pick"] if dec["confirm"] else
+                     "RESULT: %s misses the margin over v1; nothing is rendered for confirmation, the writer stays "
+                     "at v1 and off" % dec["pick"])
+    text = "\n".join(lines) + "\n"
+    with open(a.out, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    dump(dict(dec, numbers=num, rows=n, rejected=rejected, report=os.path.join(a.work, "report%s.json" % tag(a))),
+         os.path.splitext(a.out)[0] + ".json")
+    print(text)
+    print("saved", a.out)
+    return 0
+
+
+def part_first(work):
+    import glob
+    firsts = {load(p)["meta"]["first_seed"] for p in glob.glob(os.path.join(work, "render_*.json"))}
+    if len(firsts) != 1:
+        raise SystemExit("%s: render files disagree on the first seed (%s)" % (work, sorted(firsts)))
+    return firsts.pop()
+
+
+def goal_verdict(G, pick):
+    pv = "%s vs phrasebook" % pick
+    u, d, g, w = (G[n]["cmp"][pv] for n in ("unseen", "demo", "guns", "water"))
+    out = {"C1 unseen": {"delta": u["delta"], "ci": u["ci"], "rows": len(G["unseen"]["keys"]),
+                         "pass": u["delta"] > 0 and u["ci"][0] > 0, "bar": "delta > 0 and its 95% lower bound > 0"},
+           "C2 demo": {"delta": d["delta"], "ci": d["ci"], "rows": len(G["demo"]["keys"]),
+                       "pass": d["delta"] >= GOAL["demo"], "bar": "delta >= %.2f" % GOAL["demo"]},
+           "C3 guns": {"delta": g["delta"], "ci": g["ci"], "rows": len(G["guns"]["keys"]),
+                       "pass": g["delta"] >= GOAL["guns"], "bar": "delta >= %.2f" % GOAL["guns"]},
+           "C4 water": {"delta": w["delta"], "ci": w["ci"], "rows": len(G["water"]["keys"]),
+                        "pass": w["delta"] >= GOAL["water"], "bar": "delta >= %.2f" % GOAL["water"]}}
+    return out, all(c["pass"] for c in out.values())
+
+
+def fmt_judges(c):
+    return " ".join("%s +%d/-%d p%.3f" % (f, x["gain"], x["loss"], x["p"]) for f, x in c["judges"].items())
+
+
+CONFIRM_GROUPS = ("unseen", "demo", "guns", "water", "fresh", "known_unseen", "water_fresh", "water_known", "all",
+                  "all_plus_water", "unseen_plus_water", "footsteps", "sa3_rows", "woosh_rows")
+
+
+def cmd_confirm(a):
+    pick = a.pick
+    if pick not in ARMS or "phrasebook" not in ARMS or "caption" not in ARMS:
+        raise SystemExit("--arms must hold phrasebook, caption and the pick %s" % pick)
+    CMP = cmp_pairs(ARMS)
+    ge.RUN, ge.CMP = ARMS, CMP
+    rng = np.random.default_rng(ge.BOOT_SEED)
+    J, W = joined(a.parts)
+    rows, facts, span = {}, {}, {}
+    for work in a.parts:
+        rr = scenarios(work)
+        f0 = part_first(work)
+        n = {len(next(iter(J[r["sid"]]["arms"]["phrasebook"].values()))) for r in rr if r["sid"] in J}
+        span[work] = {"first_seed": f0, "seeds": sorted(n), "rows": len(rr), "sets": sorted({r["set"] for r in rr})}
+        for r in rr:
+            if r["sid"] in rows:
+                raise SystemExit("%s is in two parts" % r["sid"])
+            rows[r["sid"]] = r
+        facts.update(clip_facts(rr, render_rows(work)))
+    G = {n: ge.group_stats(m, J, rng) for n, m in groups_of(J).items()}
+    if W:
+        G["water"] = ge.group_stats(list(W), W, rng)
+        for s, keep in (("fresh", lambda r: r["set"] == "fresh"), ("known", lambda r: r["set"] != "fresh")):
+            m = [k for k in W if keep(W[k])]
+            if m and len(m) < len(W):
+                G["water_" + s] = ge.group_stats(m, W, rng)
+        AW = dict(J, **{"water:" + k: r for k, r in W.items()})
+        G["all_plus_water"] = ge.group_stats(list(AW), AW, rng)
+        UW = dict({k: J[k] for k in J if J[k]["group"] == "unseen"},
+                  **{"water:" + k: r for k, r in W.items() if r["kind"] == "unseen"})
+        G["unseen_plus_water"] = ge.group_stats(list(UW), UW, rng)
+    verdict, meets = goal_verdict(G, pick)
+    per = {k: {"set": r["set"], "group": r["group"], "type": r["type"], "approx": r["approx"], "model": r["model"],
+               "cons": {arm: cons(J, k, arm) for arm in ARMS}, "cons_ci": r["cons_ci"],
+               "cmp": {"%s vs %s" % (x, y): ge.paired_key(r, x, y, rng) for x, y in CMP},
+               "identity": r["identity"], "shape": r["shape"], "judges": r["variants"]} for k, r in J.items()}
+    water = {k: {"set": r["set"], "kind": r["kind"], "approx": r["approx"], "model": r["model"],
+                 "cons": {arm: cons(W, k, arm) for arm in ARMS}, "cons_ci": r["cons_ci"],
+                 "cmp": {"%s vs %s" % (x, y): ge.paired_key(r, x, y, rng) for x, y in CMP}, "judges": r["variants"]}
+             for k, r in W.items()}
+    res = {"pick": pick, "arms": list(ARMS), "parts": span, "goal": verdict, "meets_goal": meets, "groups": G,
+           "per": per, "water": water, "clips": facts,
+           "prompts": {k: {"set": r["set"], "group": r["group"], "name": r["name"], "model": r["model"],
+                           "text": r["text"], "prompts": r["prompts"], "writers": r.get("writers")}
+                       for k, r in rows.items()}}
+    lines = []
+    say = lines.append
+    say("CONFIRMATION of %s against the phrasebook and the caption template, paired on seed" % pick)
+    for work, s in span.items():
+        say(" part %s: %s, %d scenarios, variants %d-%d" % (work, "+".join(s["sets"]), s["rows"], s["first_seed"],
+                                                            s["first_seed"] + max(s["seeds"]) - 1))
+    say("arms %s; llm is v1, context only; cons = min over valid held-out judges of min(rate / real, 1); 95%% CI from "
+        "%d draws, rows and seeds resampled; judges a/p/c = AST/PANNs/CLAP seeds gained/lost with the McNemar sign p"
+        % (", ".join(ARMS), ge.BOOT))
+    say("")
+    say("GOAL VERDICT (%s minus the phrasebook)" % pick)
+    for name, c in verdict.items():
+        say(" %-10s %2d rows  %-26s  bar %-40s %s" % (name, c["rows"], fmt_ci(c["delta"], c["ci"]), c["bar"],
+                                                      "PASS" if c["pass"] else "FAIL"))
+    say(" RESULT: %s" % ("the pick meets the goal" if meets else "the pick does not meet the goal"))
+    say("")
+    say("POOLED (mean of cons over rows [95% CI])")
+    for g in [x for x in CONFIRM_GROUPS if x in G] + [x for x in G if x not in CONFIRM_GROUPS]:
+        s = G[g]
+        say(" %s, %d rows: %s" % (GROUP_TEXT.get(g, g), len(s["keys"]), "  ".join(
+            "%s %s" % (arm, fmt_ci(s["arms"][arm]["mean"], s["arms"][arm]["ci"], False)) for arm in ARMS)))
+        for name, c in s["cmp"].items():
+            say("    %-26s %-26s p %.3f  rows up/down %d/%d (sign p %.3f)  judges %s" % (
+                name, fmt_ci(c["delta"], c["ci"]), c["p_boot"], c["up"], c["down"], c["sign_p"], fmt_judges(c)))
+    for title, table in (("PER SCENARIO (identity judges)", per), ("WATER JUDGE", water)):
+        say("")
+        say(title)
+        say("%-30s %-16s %-6s %-6s %-6s %s" % ("scenario", "type", "set", "group", "model",
+                                               " ".join("%-18s" % x for x in ARMS)))
+        for k, r in sorted(table.items(), key=lambda kv: (kv[1]["set"], kv[0])):
+            say("%-30s %-16s %-6s %-6s %-6s %s" % (k, (r.get("type") or "water") + ("*" if r["approx"] else ""),
+                                                   r["set"], r.get("group", r.get("kind")), r["model"], " ".join(
+                "%-18s" % fmt_ci(r["cons"][arm], r["cons_ci"][arm], False) for arm in ARMS)))
+            for x, y in CMP:
+                c = r["cmp"]["%s vs %s" % (x, y)]
+                say("%32s %-26s %-26s p %.3f  %s" % ("", "%s vs %s" % (x, y), fmt_ci(c["delta"], c["ci"]), c["p_boot"],
+                                                    ge.fmt_mc(c["mcnemar"])))
+    lose = [k for k, r in per.items() if r["cons"][pick] < r["cons"]["phrasebook"] - 1e-9 or
+            r["cons"][pick] < r["cons"]["caption"] - 1e-9]
+    say("")
+    say("WHERE %s LOSES (under the phrasebook or the caption template): CLAP top-1, shape medians, prompts" % pick)
+    for k in sorted(lose, key=lambda k: per[k]["cons"][pick] - max(per[k]["cons"]["phrasebook"],
+                                                                     per[k]["cons"]["caption"])):
+        r, cl = per[k], facts[k]
+        say(" %s %s (%s, %s): %s" % (k, r["type"], r["set"], r["model"], "  ".join(
+            "%s %.2f" % (o, r["cons"][o]) for o in ARMS)))
+        for o in ARMS:
+            say("    %-11s CLAP %s" % (o, fmt_ident(r["identity"][o])))
+            say("    %-11s %s; -40 dB after %.2f s, length %.2f s" % ("", fmt_shape(r["shape"][o]), cl[o]["t40"] or 0,
+                                                                      cl[o]["len"] or 0))
+            say("    %-11s prompt: %s" % ("", rows[k]["prompts"][o]))
+    wl = [k for k, r in water.items() if r["cons"][pick] < max(r["cons"]["phrasebook"], r["cons"]["caption"]) - 1e-9]
+    if wl:
+        say("")
+        say("WATER ROWS WHERE %s LOSES" % pick)
+        for k in wl:
+            say(" %s: %s" % (k, "  ".join("%s %.2f" % (o, water[k]["cons"][o]) for o in ARMS)))
+            for o in ARMS:
+                say("    %-11s prompt: %s" % (o, rows[k]["prompts"][o]))
+    text = "\n".join(lines) + "\n"
+    dump(res, a.out)
+    with open(os.path.splitext(a.out)[0] + ".txt", "w", encoding="utf-8") as fh:
+        fh.write(text)
+    print(text)
+    print("saved", a.out)
+    return 0
+
+
 PAGE_TEXT = {"title": "Prompt Writer Listening", "id": "llm", "intro": """<h1>Prompt writer: blind listening</h1>
 <p>Use headphones. Each row is one moment a game sends, rendered on the models that ship: SA3 medium for whatever the
 route calls a gun, Woosh DFlow for everything else. The options are three prompt sources for the same request on the
@@ -744,30 +1110,52 @@ requests of the generic run, where the writer saw only the event and the materia
 Mark the option that sounds most like the moment and the one that sounds least like it, or press "none sound right".
 Picks stay in this browser. Reveal names the prompt source behind each option, the model, the prompt and the judge
 score where a validated judge exists; Download saves your picks with the key.</p>"""}
+PAGE2_TEXT = {"title": "Prompt Writer Round Two", "id": "llm2", "intro": """<h1>Prompt writer, round two: blind listening</h1>
+<p>Use headphones. Each row is one moment a game sends, rendered on the models that ship: SA3 medium for whatever the
+route calls a gun, Woosh DFlow for everything else. The options are three prompt sources for the same request on the
+same seeds: the shipped phrasebook, the universal caption template, and the prompt the small CPU language model wrote
+from the scenario under its new general rules. Two sources that wrote the same text share one option, so a row has two
+or three options. Every option plays %TAKES% takes. On the 75 known scenarios they are variants 100 to 103; the last
+section holds 30 fresh requests that no run had rendered before, at variants 0 to 3. Letters are shuffled per row.</p>
+<p>The bench sections and half of the fresh requests carry the scene record (who or what made the sound, the object,
+what it touched, the room); the facts under each title are what the writer read. The other rows are plain requests,
+where the writer saw only the event and the material. Levels are what the game plays. Mark the option that sounds most
+like the moment and the one that sounds least like it, or press "none sound right". Picks stay in this browser. Reveal
+names the prompt source behind each option, the model, the prompt and the judge score where a validated judge exists;
+Download saves your picks with the key.</p>"""}
+PAGES = {"llm": PAGE_TEXT, "llm2": PAGE2_TEXT}
 PAGE_SECTIONS = (("bench", "demo", "Demo moments with the scene record"), ("bench", "unseen", "Other moments with the scene record"),
-                 ("generic", "demo", "Demo requests, plain keys"), ("generic", "unseen", "Unseen requests, plain keys"))
+                 ("generic", "demo", "Demo requests, plain keys"), ("generic", "unseen", "Unseen requests, plain keys"),
+                 ("fresh", "unseen", "Fresh requests, never rendered before"))
 
 
 def row_title(r):
     k = r["key"]
     head = "%s | %s" % (k["event_type"], k["material"]) if k["material"] else k["event_type"]
-    if r["set"] != "bench":
+    if r["set"] == "generic" or not r.get("scene_in", r["set"] == "bench"):
         return head, ""
     facts = "; ".join(ln for ln in r["text"].split("\n")[1:])
     return head, facts
 
 
+def page_rows(a):
+    out = []
+    for work in a.parts or [a.work]:
+        meta = {(x["cid"], x["v"]): x for x in render_rows(work)}
+        first = part_first(work) if a.parts else a.first_seed
+        out += [(r, work, meta, first) for r in scenarios(work)]
+    return out
+
+
 def cmd_page(a):
-    rep = load(os.path.join(a.work, "report%s.json" % tag(a)))
-    rows = scenarios(a.work)
-    meta = {(x["cid"], x["v"]): x for x in render_rows(a.work)}
+    rep = load(a.report or os.path.join(a.work, "report%s.json" % tag(a)))
     out = a.out
     if os.path.isdir(out):
         shutil.rmtree(out)
     os.makedirs(os.path.join(out, "a"))
     key, info, n_rows, n_clips = {}, {}, 0, 0
     sec = {(s, g): [] for s, g, _t in PAGE_SECTIONS}
-    for r in rows:
+    for r, work, meta, first in page_rows(a):
         sid = r["sid"]
         opts = {}
         for arm in ARMS:
@@ -777,15 +1165,15 @@ def cmd_page(a):
         for i, cid in enumerate(order):
             arms = opts[cid]
             clips, nums = [], []
-            for v in range(a.first_seed, a.first_seed + a.takes):
-                y = np.load(npy_path(a.work, cid, v))
+            for v in range(first, first + a.takes):
+                y = np.load(npy_path(work, cid, v))
                 x = meta[(cid, v)]
                 nm = ge.h(a.seed + sid + cid + str(v))[:12] + ".wav"
                 AudioClip(np.ascontiguousarray(y, dtype=np.float32), int(x["sr"])).to_wav(os.path.join(out, "a", nm))
                 n_clips += 1
                 nums.append(x)
                 clips.append("<audio controls preload='none' src='a/%s' aria-label='%s take %d'></audio>" % (
-                    nm, ge.LETTERS[i], v - a.first_seed + 1))
+                    nm, ge.LETTERS[i], v - first + 1))
             letter = ge.LETTERS[i]
             key["%s|%s" % (sid, letter)] = arms
             judged_ = []
@@ -799,7 +1187,7 @@ def cmd_page(a):
                                                            wk["cons_ci"][arms[0]][1]))
             info["%s|%s" % (sid, letter)] = "%s | %s, amp %s | %s | takes (variants %d-%d): -40 dB after %s s, length %s s | prompt: %s" % (
                 ", ".join(arms), ge.MODEL_NAME[r["model"]], AMP, "; ".join(judged_) or "no validated judge for this sound",
-                a.first_seed, a.first_seed + a.takes - 1, " / ".join("%.2f" % n["t40"] for n in nums),
+                first, first + a.takes - 1, " / ".join("%.2f" % n["t40"] for n in nums),
                 " / ".join("%.2f" % n["len"] for n in nums), nums[0]["prompt"])
             blocks.append("<div class='opt' data-s='%s' data-l='%s'><div class='let'>%s</div><div class='takes'>%s</div>"
                           "<div class='btns'><button data-v='best'>best</button><button data-v='worst'>worst</button>"
@@ -811,8 +1199,9 @@ def cmd_page(a):
             "right</button><span class='st'></span></p></section>" % (sid, html.escape(head), sub, "".join(blocks), sid))
         n_rows += 1
     body = "".join("<h2>%s</h2>%s" % (t, "".join(sec[(s, g)])) for s, g, t in PAGE_SECTIONS if sec[(s, g)])
-    payload = base64.b64encode(json.dumps({"key": key, "info": info, "arms": ARM_TEXT}, ensure_ascii=True).encode()).decode()
-    page = ge.fill_page(PAGE_TEXT, body, payload, n_rows, "sarge_llm_page_" + a.seed, a.takes)
+    arm_text = {x: ARM_TEXT[x] for x in ARMS} if a.parts else ARM_TEXT
+    payload = base64.b64encode(json.dumps({"key": key, "info": info, "arms": arm_text}, ensure_ascii=True).encode()).decode()
+    page = ge.fill_page(PAGES[a.intro], body, payload, n_rows, "sarge_llm_page_" + a.seed, a.takes)
     page = page.replace("</style>", ".facts{font-size:13px;margin:0 0 6px;overflow-wrap:anywhere}</style>", 1)
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(page)
@@ -826,7 +1215,7 @@ def main(argv=None):
                                              "models that ship: write, render, judge, report, blind page")
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name in ("write", "variants", "render-woosh", "render-sa3", "routes", "judge-vocab", "judge-water", "report",
-                 "page", "combine"):
+                 "page", "combine", "subset", "select", "confirm"):
         p = sub.add_parser(name)
         p.add_argument("--arms", nargs="+", choices=ALL_ARMS, default=list(BASE_ARMS))
         p.add_argument("--tag", default="")
@@ -839,6 +1228,10 @@ def main(argv=None):
             p.add_argument("--model", default=wr.DEFAULT_MODEL)
             p.add_argument("--port", type=int, default=11546)
             p.add_argument("--threads", type=int, default=4)
+            p.add_argument("--styles", nargs="+", choices=list(wr.STYLES), default=[wr.DEFAULT_STYLE],
+                           help="writer styles to write, each in a separate server session and store")
+            p.add_argument("--set", choices=["known", "fresh", "all"], default="known",
+                           help="known: the 40 bench scenes and 35 generic requests; fresh: llm_eval.FRESH; all: both")
         if name in ("render-woosh", "render-sa3"):
             p.add_argument("--only", nargs="+", default=None)
         if name == "judge-vocab":
@@ -846,6 +1239,19 @@ def main(argv=None):
         if name == "page":
             p.add_argument("--out", default=PAGE)
             p.add_argument("--seed", default="llm1")
+            p.add_argument("--parts", nargs="+", default=None,
+                           help="work folders whose rows all go on one page, each part at the first seed it was rendered from")
+            p.add_argument("--report", default=None, help="report json with per and water by scenario")
+            p.add_argument("--intro", choices=sorted(PAGES), default="llm")
+        if name == "subset":
+            p.add_argument("--source", required=True, help="work folder whose scenarios.json is filtered")
+            p.add_argument("--set", choices=["known", "fresh"], required=True)
+        if name == "select":
+            p.add_argument("--out", required=True, help="selection.txt; the same name with .json gets the numbers")
+        if name == "confirm":
+            p.add_argument("--parts", nargs="+", required=True, help="work folders with disjoint rows")
+            p.add_argument("--pick", required=True, choices=list(STYLE_ARMS))
+            p.add_argument("--out", required=True)
         if name == "combine":
             p.add_argument("--parts", nargs="+", required=True, help="work folders whose judged seeds are pooled per row")
             p.add_argument("--out", required=True)
@@ -855,7 +1261,8 @@ def main(argv=None):
     a.water_dir = os.path.abspath(os.path.join(ROOT, a.water_dir))
     return {"write": cmd_write, "variants": cmd_variants, "render-woosh": cmd_render_woosh, "render-sa3": cmd_render_sa3, "routes": cmd_routes,
             "judge-vocab": cmd_judge_vocab, "judge-water": cmd_judge_water, "report": cmd_report,
-            "page": cmd_page, "combine": cmd_combine}[a.cmd](a)
+            "page": cmd_page, "combine": cmd_combine, "subset": cmd_subset, "select": cmd_select,
+            "confirm": cmd_confirm}[a.cmd](a)
 
 
 if __name__ == "__main__":

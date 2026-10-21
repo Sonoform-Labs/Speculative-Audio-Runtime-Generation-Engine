@@ -51,6 +51,52 @@ EXAMPLES = (
      {"source": "Drawer open", "action": "a wooden desk drawer pulled open on its runners",
       "sound": "wooden slide, soft rumble"}),
 )
+STYLE_SYSTEM = (
+    "You write the text for a sound effect generator. You get facts about one moment in a game: the event name a "
+    "developer typed, what made it happen, the objects involved with their materials, how they touched, and the "
+    "space. The event name says which sound the developer wants, and the other facts only add detail to it. Describe "
+    "what a microphone right next to the sound would record.\n"
+    "Answer with three fields.\n"
+    "source: 2 to 5 words naming the sound like a sound library title. Keep the words of the event name in it, and add "
+    "the object or the material when that helps.\n"
+    "{action}\n"
+    "{sound}\n"
+    "Rules.\n"
+    "Never rename the event or describe a different event from the one it names.\n"
+    "Names were typed by developers. Read them as hints and turn them into plain nouns; ignore numbers and editor "
+    "words such as cube, prefab, clone, mesh or fx.\n"
+    "Use what you know about how real things sound.{texture}\n"
+    "Describe one occurrence. For a continuous sound, describe its steady texture.\n"
+    "Write only about the sound and what produces it: no colours, light, smells, feelings, story, music or "
+    "intentions.\n"
+    "Leave out size, weight, loudness, distance, echo, reverb and duration, because the game sets those.\n"
+    "Never add an object or an event that the facts do not mention.\n"
+    "Leave out who controls the action (player, enemy, npc); keep the kind of animal, being or object that makes "
+    "the sound."
+)
+ACTION_PLAIN = ("action: 4 to 14 words saying what physically happens to which objects and materials during that "
+                "event.")
+ACTION_CAPTION = ("action: 5 to 14 words, one plain caption of the kind a sound library prints under a clip, saying "
+                  "what makes the sound and what it does, using the words of the event name.")
+SOUND_PLAIN = "sound: 2 to 6 words describing the sound itself, the way a sound designer would."
+SOUND_CHARACTER = ("sound: 2 to 6 words on the character of the sound itself, the way a sound designer hears it: "
+                   "how it starts, its pitch and texture, and how it ends.")
+TEXTURE_RULE = (" In the sound field, say what sets this sound apart; avoid generic collision words such as thud, "
+                "bang, slap or bump, which only say that something was struck, and use each word once.")
+NEW_EXAMPLES = (
+    ("event: zipper\nmaterial: nylon",
+     {"source": "Nylon zipper", "action": "a nylon zipper drawn quickly along its teeth",
+      "sound": "fast ratcheting buzz, gritty rasp"}),
+    ("event: purr\nmade by: npc (cat tabby)\naction: use\nroom: small",
+     {"source": "Cat purr", "action": "a tabby cat purring steadily while it rests",
+      "sound": "low rhythmic rumble, soft flutter"}),
+    ("event: kettle whistle\nmade by: world\nobject: kettle enamel\naction: loop\nroom: medium",
+     {"source": "Kettle whistle", "action": "an enamel kettle whistling as steam escapes its spout",
+      "sound": "rising shrill tone, airy steam"}),
+    ("event: quill scratch\nmade by: player\nobject: quill pen\naction: use\nroom: small",
+     {"source": "Quill scratch", "action": "a quill pen scratching across a sheet of parchment",
+      "sound": "dry papery scritch, thin squeak"}),
+)
 SCHEMA = {"type": "object", "properties": {
     "source": {"type": "string", "maxLength": 40},
     "action": {"type": "string", "maxLength": 90},
@@ -85,11 +131,15 @@ PREPS = frozenset(("against", "on", "onto", "into", "in", "from", "across", "ove
                    "through", "with", "of", "by", "near", "beside", "upon"))
 TRAIL = frozenset(("a", "an", "the", "and", "or", "of", "with", "on", "onto", "into", "in", "from", "at", "by", "to",
                    "against", "across", "over", "off", "its", "his", "her", "their"))
-BANNED = re.compile(r"(red|blue|green|yellow|black|white|orange|purple|grey|gray|golden|shadow\w*|glow\w*|shin\w*|"
-                    r"sparkl\w*|spark|sparks|flash\w*|smell\w*|scent\w*|aroma\w*|loud\w*|quiet\w*|deafening|distant|"
-                    r"distance|echo\w*|reverb\w*|huge|tiny|massive|enormous|large|small|big|inflated|hollow|static|"
-                    r"music\w*|melod\w*|player|players|enemy|enemies|npc|npcs)")
+BANNED_HEAD = (r"red|blue|green|yellow|black|white|orange|purple|grey|gray|golden|shadow\w*|glow\w*|shin\w*|"
+               r"sparkl\w*|spark|sparks|flash\w*|smell\w*|scent\w*|aroma\w*|loud\w*|quiet\w*|deafening|distant|"
+               r"distance|echo\w*|reverb\w*|huge|tiny|massive|enormous|large|small|big|inflated|")
+BANNED_TAIL = r"music\w*|melod\w*|player|players|enemy|enemies|npc|npcs"
+BANNED = re.compile("(" + BANNED_HEAD + r"hollow|static|" + BANNED_TAIL + ")")
+BANNED_OPEN = re.compile("(" + BANNED_HEAD + BANNED_TAIL + ")")
 CONTROLLER = re.compile(r"(player|players|enemy|enemies|npc|npcs)")
+COLLIDE = re.compile(r"(thud|thuds|thudding|thump|thumps|thumping|bang|bangs|banging|slap|slaps|slapping|smack|smacks|"
+                     r"whack|whacks|thwack|thwacks|bump|bumps|bumping|impact|impacts|collision|collisions)")
 _TOKEN = re.compile(r"[A-Za-z0-9]+(?:'[A-Za-z]+)?|[^\sA-Za-z0-9]")
 _APPROX = re.compile(r"[A-Za-z]+|[0-9]|[^\sA-Za-z0-9]")
 
@@ -156,9 +206,10 @@ def key_text(key):
     return "\n".join(lines)
 
 
-def messages(text):
-    out = [{"role": "system", "content": SYSTEM}]
-    for user, slots in EXAMPLES:
+def messages(text, style=None):
+    st = style_of(style)
+    out = [{"role": "system", "content": st["system"]}]
+    for user, slots in st["examples"]:
         out.append({"role": "user", "content": user})
         out.append({"role": "assistant", "content": json.dumps(slots)})
     out.append({"role": "user", "content": text})
@@ -177,14 +228,14 @@ def _ngrams(ws, n):
     return {tuple(ws[i:i + n]) for i in range(len(ws) - n + 1)}
 
 
-def _leak_words():
+def _leak_words(examples=EXAMPLES):
     from .prompts import EVENT_VERBS
     from .world import MATERIALS, NOUN_MATERIAL
     vocab = (set(scenes.SOURCES) | set(scenes.ACTS) | set(scenes.ROOMS) | set(MATERIALS) | set(EVENT_VERBS)
              | {"sharp", "crisp", "dull", "soft", "hard", "ball", "box", "pane", "plate", "board", "rod", "cylinder",
                 "floor", "wall", "ground", "wheel", "panel"})
     out = set()
-    for text, _slots in EXAMPLES:
+    for text, _slots in examples:
         for line in text.split("\n"):
             name, _, value = line.partition(": ")
             if name in ("event", "object", "touches", "made by"):
@@ -192,8 +243,79 @@ def _leak_words():
     return frozenset(w for w in out if len(w) > 2 and w not in vocab)
 
 
-EX_WORDS = tuple(_words(slots[k]) for _text, slots in EXAMPLES for k in SLOTS)
+def _ex_words(examples):
+    return tuple(_words(slots[k]) for _text, slots in examples for k in SLOTS)
+
+
+EX_WORDS = _ex_words(EXAMPLES)
 LEAK = _leak_words()
+DEFAULT_STYLE = "v1"
+STYLE_RULES = "named-1"
+
+
+def _style(name, system, examples, named="", form="list", banned=BANNED, collide=False):
+    return {"name": name, "system": system, "examples": examples, "named": named, "form": form, "banned": banned,
+            "collide": collide, "ex_words": _ex_words(examples), "leak": _leak_words(examples)}
+
+
+STYLES = {
+    "v1": dict(_style("v1", SYSTEM, EXAMPLES), ex_words=EX_WORDS, leak=LEAK),
+    "named": _style("named", STYLE_SYSTEM.format(action=ACTION_PLAIN, sound=SOUND_PLAIN, texture=""), EXAMPLES,
+                    "source", "list", BANNED_OPEN),
+    "texture": _style("texture", STYLE_SYSTEM.format(action=ACTION_PLAIN, sound=SOUND_CHARACTER, texture=TEXTURE_RULE),
+                      NEW_EXAMPLES, "source", "list", BANNED_OPEN, True),
+    "title": _style("title", STYLE_SYSTEM.format(action=ACTION_PLAIN, sound=SOUND_CHARACTER, texture=TEXTURE_RULE),
+                    NEW_EXAMPLES, "source", "title", BANNED_OPEN, True),
+    "caption": _style("caption", STYLE_SYSTEM.format(action=ACTION_CAPTION, sound=SOUND_CHARACTER,
+                                                     texture=TEXTURE_RULE), NEW_EXAMPLES, "action", "caption",
+                      BANNED_OPEN, True),
+}
+
+
+def style_of(style=None):
+    if isinstance(style, dict):
+        return style
+    name = style or DEFAULT_STYLE
+    if name not in STYLES:
+        raise ValueError("unknown writer style %r (choose from %s)" % (name, ", ".join(STYLES)))
+    return STYLES[name]
+
+
+def _field_value(text, name):
+    for line in str(text or "").split("\n"):
+        k, _, v = line.partition(": ")
+        if k == name:
+            return v
+    return ""
+
+
+def _request(text):
+    return (_field_value(text, "material") + " " + _field_value(text, "event")).strip()
+
+
+def name_words(text, banned=BANNED_OPEN):
+    out = []
+    for w in _words(_request(text)):
+        if (len(w) >= 3 and w not in STOP and w not in scenes.ACTS and not any(ch.isdigit() for ch in w)
+                and not banned.fullmatch(w) and not CONTROLLER.fullmatch(w) and w not in out):
+            out.append(w)
+    return out
+
+
+def name_phrase(text):
+    return " ".join(w for w in _request(text).split() if not CONTROLLER.fullmatch(w.lower()))
+
+
+def _near(a, b):
+    if a == b:
+        return True
+    s, lo = sorted((a, b), key=len)
+    return (len(s) >= 4 and s in lo) or (len(s) >= 5 and a[:5] == b[:5])
+
+
+def unnamed(slot, text, banned=BANNED_OPEN):
+    have = _words(_clean(slot))
+    return [w for w in name_words(text, banned) if not any(_near(w, x) for x in have)]
 
 
 def _clean(text):
@@ -220,12 +342,20 @@ def tail_words(key):
     return contact, room
 
 
-def compose(slots, key, route):
+def compose(slots, key, route, style=None):
+    form = style_of(style)["form"]
     src, act, snd = (_clean(slots.get(k)) for k in SLOTS)
     contact, room = tail_words(key)
     if route == "sa3":
+        if form == "caption":
+            body = (act[:1].upper() + act[1:], snd, contact, SA3_FRAME, room)
+            return SA3_PREFIX + src[:1].upper() + src[1:] + ". " + ", ".join(p for p in body if p) + "."
         parts = (src[:1].upper() + src[1:], act, snd, contact, SA3_FRAME, room)
         return SA3_PREFIX + ", ".join(p for p in parts if p) + "."
+    if form == "title":
+        return ", ".join(p for p in (src, snd, contact, room) if p)
+    if form == "caption":
+        return ", ".join(p for p in (act, snd, contact, room) if p)
     return ", ".join(p for p in (src, act, snd, contact, room) if p)
 
 
@@ -241,16 +371,18 @@ def _unit(tok):
     return t[:-2] if t.endswith("'s") else t
 
 
-def _banned(tok):
-    return bool(BANNED.fullmatch(_unit(tok)))
+def _banned(tok, rx=BANNED):
+    return bool(rx.fullmatch(_unit(tok)))
 
 
-def check(slots, text, key):
+def check(slots, text, key, style=None):
+    st = style_of(style)
     flags = []
     inw = _input_words(text)
     for name in SLOTS:
         if not _clean(slots.get(name)):
-            flags.append("empty:" + name)
+            if not (name == "sound" and st["collide"]):
+                flags.append("empty:" + name)
             continue
         ws = _words(slots[name])
         grams = list(zip(ws, ws[1:], ws[2:]))
@@ -261,24 +393,30 @@ def check(slots, text, key):
     allw = _words(" ".join(_clean(slots.get(k)) for k in SLOTS))
     for name in SLOTS:
         mine = _ngrams(_words(slots.get(name)), 4)
-        for ex in EX_WORDS:
+        for ex in st["ex_words"]:
             for g in sorted(mine & _ngrams(ex, 4)):
                 if not set(g) <= inw:
                     flags.append("copy:" + " ".join(g))
-    for w in sorted((set(allw) & LEAK) - inw):
+    for w in sorted((set(allw) & st["leak"]) - inw):
         flags.append("leak:" + w)
     head = _words(_clean(slots.get("source")) + " " + _clean(slots.get("action")))
     content = [w for w in head if w not in STOP and len(w) >= 3]
     if not any(any(w[:5] == x[:5] for x in inw if len(x) >= 3) for w in content):
         flags.append("ungrounded")
     toks = [t for k in SLOTS for t in _TOKEN.findall(_clean(slots.get(k)))]
-    for t in sorted({_unit(t) for t in toks if _banned(t)}):
+    for t in sorted({_unit(t) for t in toks if _banned(t, st["banned"])}):
         if t not in inw or CONTROLLER.fullmatch(t):
             flags.append("banned:" + t)
     for w in sorted({w for w in allw if any(ch.isdigit() for ch in w) and w not in inw}):
         flags.append("digits:" + w)
+    if st["collide"]:
+        for t in sorted({_unit(t) for t in _TOKEN.findall(_clean(slots.get("sound"))) if COLLIDE.fullmatch(_unit(t))}):
+            if t not in inw:
+                flags.append("collide:" + t)
+    if st["named"] and _clean(slots.get(st["named"])) and unnamed(slots.get(st["named"]), text, st["banned"]):
+        flags.append("unnamed:" + st["named"])
     for route, limit in BUDGET.items():
-        if approx_tokens(compose(slots, key, route)) > limit:
+        if approx_tokens(compose(slots, key, route, st)) > limit:
             flags.append("long:" + route)
     out = []
     for f in flags:
@@ -422,7 +560,9 @@ def _unloop(slot):
     return slot
 
 
-def repair(slots, flags, text):
+def repair(slots, flags, text, style=None):
+    st = style_of(style)
+    rx = st["banned"]
     s = {k: _clean(slots.get(k)) for k in SLOTS}
     inw = _input_words(text)
     spans = [f.partition(":")[2].split() for f in flags if f.startswith("copy:")]
@@ -440,37 +580,44 @@ def repair(slots, flags, text):
                 s[name] = _remove(s[name], name, lambda t, _w=arg: _w in _words(t))
         elif kind == "banned":
             for name in SLOTS:
-                s[name] = _remove(s[name], name, lambda t: _banned(t) and (
+                s[name] = _remove(s[name], name, lambda t: _banned(t, rx) and (
                     _unit(t) not in inw or bool(CONTROLLER.fullmatch(_unit(t)))), cut=False)
         elif kind == "digits":
             for name in SLOTS:
                 s[name] = _remove(s[name], name, lambda t, _w=arg: _w in _words(t), cut=False)
+        elif kind == "collide":
+            s["sound"] = _remove(s["sound"], "sound", lambda t, _w=arg: _unit(t) == _w)
+        elif kind == "unnamed" and arg in SLOTS:
+            head = name_phrase(text)
+            if head and s[arg]:
+                s[arg] = (head[:1].upper() + head[1:] if arg == "source" else head) + ", " + s[arg]
         else:
             return None
-    return s if all(s.values()) else None
+    return s if all(v for k, v in s.items() if not (k == "sound" and st["collide"])) else None
 
 
 REPAIR_PASSES = 3
 
 
-def judge(raw, key, text):
+def judge(raw, key, text, style=None):
+    st = style_of(style)
     slots = parse_slots(raw)
     if slots is None:
         return {"failed": True, "flags": ["format"], "raw": raw}
-    flags = check(slots, text, key)
+    flags = check(slots, text, key, st)
     rec = {"slots": slots, "flags": flags, "repaired": False}
     if flags:
         fixed, after = slots, flags
         for _ in range(REPAIR_PASSES):
-            fixed = repair(fixed, after, text)
-            after = check(fixed, text, key) if fixed is not None else ["unrepairable"]
+            fixed = repair(fixed, after, text, st)
+            after = check(fixed, text, key, st) if fixed is not None else ["unrepairable"]
             if not after or fixed is None:
                 break
         if after:
             return {"failed": True, "flags": flags, "after": after, "slots": slots, "raw": raw}
         rec = {"slots": fixed, "orig": slots, "flags": flags, "repaired": True}
-    rec["woosh"] = compose(rec["slots"], key, "woosh")
-    rec["sa3"] = compose(rec["slots"], key, "sa3")
+    rec["woosh"] = compose(rec["slots"], key, "woosh", st)
+    rec["sa3"] = compose(rec["slots"], key, "sa3", st)
     rec["raw"] = raw
     return rec
 
@@ -485,11 +632,15 @@ def key_of(fields):
                                                            "cls", "scene")})
 
 
-def writer_id(ident):
-    payload = {"version": VERSION, "system": SYSTEM, "examples": EXAMPLES, "schema": SCHEMA, "seed": SEED,
+def writer_id(ident, style=None):
+    st = style_of(style)
+    payload = {"version": VERSION, "system": st["system"], "examples": st["examples"], "schema": SCHEMA, "seed": SEED,
                "max_tokens": MAX_TOKENS, "temperature": 0, "top_k": 1, "ctx": CTX, "batch": BATCH,
                "room_words": ROOM_WORDS, "sa3_frame": SA3_FRAME, "sa3_prefix": SA3_PREFIX, "budget": BUDGET,
                "ident": ident}
+    if st["name"] != DEFAULT_STYLE:
+        payload.update(style=st["name"], named=st["named"], form=st["form"], banned=st["banned"].pattern,
+                       collide=COLLIDE.pattern if st["collide"] else "", rules=STYLE_RULES)
     from .world import CONTACT_WORDS
     payload["contact_words"] = CONTACT_WORDS
     return hashlib.sha1(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
@@ -902,8 +1053,9 @@ def ok_record(rec):
 
 class PromptWriter:
     def __init__(self, backend=None, store_dir=os.path.join(".cache", "writer"), when=WHEN, readonly=False,
-                 store_file=None, log=None, queue_cap=4096, retry_s=30.0):
+                 store_file=None, log=None, queue_cap=4096, retry_s=30.0, style=None):
         self.backend = backend
+        self.style = style_of(style)["name"]
         self.store_dir = store_dir
         self.store_file = store_file
         self.when = frozenset(when)
@@ -930,8 +1082,9 @@ class PromptWriter:
     def describe(self):
         if self.backend is None:
             return "store %s" % (self.store_file or self.store_dir)
-        return "%s %s%s" % (self.backend.name, os.path.basename(getattr(self.backend, "model", "")),
-                            " (read-only)" if self.readonly else "")
+        return "%s %s%s%s" % (self.backend.name, os.path.basename(getattr(self.backend, "model", "")),
+                              "" if self.style == DEFAULT_STYLE else " style " + self.style,
+                              " (read-only)" if self.readonly else "")
 
     def setup(self):
         if self.store_file:
@@ -939,7 +1092,7 @@ class PromptWriter:
             self.id = str(self.store.meta.get("writer_id") or "")
         else:
             ident = self.backend.ident()
-            self.id = writer_id(ident)
+            self.id = writer_id(ident, self.style)
             self.store = PromptStore.for_writer(self.store_dir, self.id, ident, readonly=self.readonly)
         self.ready.set()
         return self.store
@@ -1027,10 +1180,12 @@ class PromptWriter:
     def write(self, key):
         text = key_text(key)
         t0 = time.perf_counter()
-        raw = self.backend.complete(messages(text))
+        raw = self.backend.complete(messages(text, self.style))
         ms = (time.perf_counter() - t0) * 1000.0
-        rec = judge(raw, key, text)
+        rec = judge(raw, key, text, self.style)
         rec.update(key=key_fields(key), text=text, ms=round(ms, 1), t=round(time.time(), 3), attempt=1)
+        if self.style != DEFAULT_STYLE:
+            rec["style"] = self.style
         self.times_ms = (self.times_ms + [ms])[-200:]
         return rec
 
@@ -1114,7 +1269,8 @@ class PromptWriter:
 
 
 def build(kind, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DEFAULT_AFFINITY,
-          store=os.path.join(".cache", "writer"), when=WHEN, readonly=False, log_path=None, log=None):
+          store=os.path.join(".cache", "writer"), when=WHEN, readonly=False, log_path=None, log=None, style=None):
+    style_of(style)
     if kind in (None, "", "off"):
         return None
     if kind == "store":
@@ -1125,4 +1281,4 @@ def build(kind, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DE
         backend = OllamaBackend(model, port, threads)
     else:
         raise ValueError("unknown writer backend %r (off, llama, ollama, store)" % kind)
-    return PromptWriter(backend, store_dir=store, when=when, readonly=readonly, log=log)
+    return PromptWriter(backend, store_dir=store, when=when, readonly=readonly, log=log, style=style)
