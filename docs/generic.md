@@ -9,6 +9,7 @@ Every switch that changes served audio defaults off. With them off, served audio
 | flag | default | what it does |
 |---|---|---|
 | `--prompts generic` | `tuned` | every prompt on both routes comes from the request fields alone |
+| `--prompts template:NAME[+tt\|-tt]` | `tuned` | one universal sentence from `sarge.prompts.TEMPLATES`, filled from the request fields, on both routes; the suffix forces the SA3 tag on or off |
 | `--route words` | `families` | guns are chosen by whole words of the event name (and firearm words in the material) |
 | `--route class` | `families` | guns are chosen only by a `class` field the game sends; `--gun-class` lists the values (default `weapon`) |
 | `--route single` | `families` | every sound goes to `--single-model` (default `woosh`, or `sa3`) |
@@ -21,7 +22,7 @@ A prompt the game sends always wins, on both routes and under every flag. It rid
 
 `--prompts generic` uses one template for every sound: the event words, the material words, the intensity word, the context words and, with `--world`, the contact words, joined by commas. Words are split on spaces, underscores, capitals and digits and lower-cased, so `Footstep_Concrete`, `PlayerFootstep` and `Fire1` become `footstep concrete`, `player footstep` and `fire 1`. The protocol defaults `default` (context) and `normal` (intensity) add nothing, so an untouched context means no space phrase at all, where the tuned phrasebook reads it as "exterior, open air". A material whose words all appear in the event name is dropped, which keeps `dog_bark|dog` from saying dog twice.
 
-SA3 prompts start with `TrackType: SFX, `. The SA3 report (section 5.1) says every AudioSparx-trained Stable Audio model, SA3 included, was trained with that prefix on sound effects and recommends it at inference, and the official prompting guide lists it as the tag that "tends to produce more semantically reasonable sound effects". The one local measurement is mixed and was taken on small-sfx with the old prompts: the prefix moved CLAP-hard footsteps -8.8 points with the "dry" ending and +11.9 without it (`sarge-research/realism/report_history.md` section 2.2). Woosh gets no prefix. Its README, test scripts and Gradio demo show plain descriptions, and its conditioner lower-cases the text and strips punctuation before encoding.
+SA3 prompts start with `TrackType: SFX, `. The SA3 report (section 5.1) says every AudioSparx-trained Stable Audio model, SA3 included, was trained with that prefix on sound effects and recommends it at inference, and the official prompting guide lists it as the tag that "tends to produce more semantically reasonable sound effects". The one local measurement is mixed and was taken on small-sfx with the old prompts: the prefix moved CLAP-hard footsteps -8.8 points with the "dry" ending and +11.9 without it (`sarge-research/realism/report_history.md` section 2.2). Woosh gets no prefix. Its README, test scripts and Gradio demo show plain descriptions. The DFlow checkpoint loads `TextConditionerA`, whose config sets `text_preprocessing: no_op`, so the text reaches its cased RoBERTa encoder unchanged: capitals and punctuation are real differences on Woosh too.
 
 | request | tuned (default) | generic |
 |---|---|---|
@@ -148,6 +149,76 @@ Two caveats run in the phrasebook's favour. Its demo prompts were picked on thes
 
 The blind page for these renders is `data/_gate/generic/page/index.html` (35 rows, 496 clips, 4 takes per option, the conventions of `data/_gate/feel/world_page`). Each row shows the distinct audio among the six arms plus the no-prefix diagnostic on SA3 rows, so a row has three to six options. Run order: `render-woosh` in `.venv_woosh`, `render-sa3` in `.venv214`, then `verify`, `routes`, `judge-vocab` and `judge-water` in `.venv`, `report` and `page`; the water folders go under `data/_gate/generic/_water` because `water_judge.py` stores paths relative to the repo.
 
+## Universal template on held-out data (2026-10-21)
+
+The phrasebook breaks the rule of zero per-sound prompt tuning, and the bare word list loses guns on SA3 medium, so eight universal sentence templates went behind `--prompts template:NAME` (`sarge.prompts.TEMPLATES`), each with and without the SA3 tag. Each is one sentence filled from the request fields, with no branch on the event or the material. Selection ran on seeds 0 to 19 of the 35 requests above and picked `template:caption+tt`: "A single {intensity} {material} {event} sound, recorded up close." with `TrackType: SFX, ` in front on SA3. A per-model pair (caption on SA3, `template:plain` "{material} {event}" on Woosh) came second. Both picks and the rule for replacing the phrasebook were written down before any held-out clip existed.
+
+The check used data the selection never touched: seeds 20 to 39 of the same 35 requests, plus 23 requests no earlier run had rendered, on seeds 0 to 39. Each fresh request maps to a validated held-out judge type: four guns (`revolver_shot`, `sniper_shot`, `Rifle_Fire|ak47`, `shotgun_blast|12gauge`), two explosions, four footsteps (dirt, grass, tile, a puddle), two glass breaks, a door opening and a door slam, a puppy bark, two punches, two clicks, two horns, a blade clash and a rock dropped into water. The re-rendered phrasebook and word-list clips on seeds 20 to 39 matched the first run's sha1 on 1400 of 1400 rows. The held-out judges chose the same variants in both parts as in the selection run, and so did the water judge.
+
+| request | set | phrasebook | generic | caption | caption minus phrasebook |
+|---|---|---|---|---|---|
+| shoot, pistol | demo | 1.00 | 0.11 | 0.89 | -0.11 [-0.29, +0.00] |
+| shoot, rifle | demo | 0.99 | 0.78 | 0.99 | +0.00 [-0.11, +0.11] |
+| break, window | demo | 0.84 | 0.39 | 0.49 | -0.35 [-0.60, -0.02] |
+| bullet impact, glass | demo | 0.88 | 0.64 | 0.39 | -0.49 [-0.74, -0.27] |
+| footstep, gravel | demo | 1.00 | 1.00 | 1.00 | +0.00 [-0.12, +0.12] |
+| footstep, stone | demo | 0.34 | 0.75 | 0.27 | -0.07 [-0.31, +0.34] |
+| footstep, wood | demo | 0.88 | 0.45 | 0.36 | -0.52 [-0.86, -0.03] |
+| footstep, metal | demo | 0.00 | 0.18 | 0.00 | +0.00 [+0.00, +0.00] |
+| footstep, water | demo | 0.48 | 0.34 | 0.68 | +0.20 [-0.27, +0.63] |
+| splash, water | demo | 0.43 | 0.67 | 0.26 | -0.17 [-0.62, +0.25] |
+| punch, body | demo | 0.62 | 0.61 | 0.87 | +0.25 [-0.24, +0.58] |
+| dog_bark, dog | first run | 0.95 | 0.75 | 1.00 | +0.05 [+0.00, +0.20] |
+| door_creak, wood | first run | 1.00 | 0.65 | 0.88 | -0.12 [-0.35, +0.00] |
+| keyboard_click, plastic | first run | 0.42 | 0.97 | 1.00 | +0.58 [+0.26, +0.84] |
+| footsteps_Concrete, concrete | first run | 0.63 | 1.00 | 0.75 | +0.12 [-0.33, +0.48] |
+| PlayerFootstep, snow | first run | 0.61 | 0.36 | 0.63 | +0.02 [-0.32, +0.47] |
+| shotgun_fire, shotgun | first run | 0.95 | 0.90 | 1.00 | +0.05 [+0.00, +0.19] |
+| sword_clash, steel | first run | 0.93 | 0.99 | 1.00 | +0.07 [+0.00, +0.24] |
+| car_door_slam, car | first run | 0.35 | 0.55 | 0.50 | +0.15 [-0.05, +0.41] |
+| explosion_large, debris | first run | 1.00 | 0.89 | 1.00 | +0.00 [+0.00, +0.00] |
+| glass_shatter, glass | first run | 0.52 | 0.77 | 0.00 | -0.52 [-0.71, -0.26] |
+| car_horn, car | first run | 0.00 | 0.60 | 0.74 | +0.74 [+0.51, +0.97] |
+| Pistol_Shot, 9mm | first run | 1.00 | 0.27 | 1.00 | +0.00 [+0.00, +0.11] |
+| melee_hit, body | first run | 0.23 | 0.00 | 0.86 | +0.62 [+0.23, +0.84] |
+| revolver_shot, revolver | fresh | 0.53 | 1.00 | 0.93 | +0.40 [+0.19, +0.59] |
+| sniper_shot, rifle | fresh | 1.00 | 0.57 | 1.00 | +0.00 [+0.00, +0.16] |
+| Rifle_Fire, ak47 | fresh | 1.00 | 1.00 | 1.00 | +0.00 [+0.00, +0.03] |
+| shotgun_blast, 12gauge | fresh | 1.00 | 0.97 | 1.00 | +0.00 [+0.00, +0.00] |
+| grenade_explode, grenade | fresh | 0.86 | 1.00 | 1.00 | +0.14 [+0.03, +0.27] |
+| barrel_explosion, metal | fresh | 0.30 | 1.00 | 1.00 | +0.70 [+0.50, +0.87] |
+| Player_Walk_Dirt, dirt | fresh | 1.00 | 0.65 | 1.00 | +0.00 [-0.15, +0.10] |
+| boot_step, grass | fresh | 0.75 | 0.58 | 0.68 | -0.07 [-0.27, +0.17] |
+| sneaker_step, tile | fresh | 0.18 | 0.76 | 0.95 | +0.77 [+0.52, +0.94] |
+| puddle_step, water | fresh | 0.00 | 0.75 | 0.98 | +0.98 [+0.78, +1.00] |
+| bottle_smash, glass | fresh | 0.74 | 0.87 | 0.19 | -0.55 [-0.74, -0.35] |
+| window_shatter, glass | fresh | 0.60 | 0.88 | 0.77 | +0.16 [+0.00, +0.40] |
+| cabin_door_open, wood | fresh | 1.00 | 1.00 | 1.00 | +0.00 [-0.09, +0.00] |
+| front_door_slam, wood | fresh | 0.56 | 0.88 | 0.85 | +0.29 [+0.09, +0.50] |
+| puppy_bark, puppy | fresh | 0.80 | 0.85 | 0.82 | +0.02 [-0.15, +0.20] |
+| face_punch, flesh | fresh | 0.39 | 0.70 | 0.54 | +0.16 [-0.16, +0.47] |
+| boxing_punch, glove | fresh | 0.47 | 0.74 | 0.62 | +0.16 [-0.12, +0.43] |
+| button_press, plastic | fresh | 0.77 | 1.00 | 1.00 | +0.23 [+0.01, +0.44] |
+| mouse_click, plastic | fresh | 1.00 | 1.00 | 0.94 | -0.06 [-0.20, +0.10] |
+| truck_horn, truck | fresh | 0.10 | 0.31 | 0.13 | +0.03 [-0.13, +0.20] |
+| taxi_horn, taxi | fresh | 0.23 | 0.63 | 0.86 | +0.62 [+0.43, +0.81] |
+| blade_clash, steel | fresh | 1.00 | 0.55 | 0.87 | -0.13 [-0.27, +0.05] |
+| rock_into_water, water | fresh | 0.52 | 0.39 | 0.39 | -0.13 [-0.47, +0.22] |
+| water judge: footstep, water | first run | 1.00 | 0.69 | 0.87 | -0.13 [-0.52, +0.00] |
+| water judge: splash, water | first run | 1.00 | 1.00 | 0.52 | -0.48 [-0.83, -0.22] |
+| water judge: water_drip, water | first run | 1.00 | 0.90 | 0.35 | -0.65 [-0.91, -0.39] |
+| water judge: rain_on_roof, metal | first run | 0.00 | 0.32 | 0.17 | +0.17 [+0.00, +0.32] |
+| water judge: puddle_step, water | fresh | 1.00 | 0.30 | 0.90 | -0.10 [-0.31, +0.00] |
+| water judge: rock_into_water, water | fresh | 1.00 | 0.82 | 0.93 | -0.07 [-0.28, +0.00] |
+
+Over the 47 judged requests caption scores 0.75, against 0.66 for the phrasebook and 0.70 for the word list. Against the phrasebook that is +0.09 [-0.01, +0.20], with 25 requests up and 13 down, and every judge sides with caption on the seeds where the two disagree (AST +184/-115, CLAP +174/-131, PANNs +284/-145). The gain sits on names nobody tuned for. The fresh set moves +0.16 [+0.02, +0.32] and the first run's unseen names move +0.14 [-0.04, +0.34], so the 36 unseen names together move +0.15 [+0.04, +0.28]. The demo keys go the other way, -0.11 [-0.30, +0.08] over 11 requests, where the phrasebook carries the selection edge described above. SA3 rows gain +0.13 [+0.01, +0.29]. Guns hold at 0.98 against 0.93, and the fresh revolver, which the phrasebook calls "a short knock on revolver", rises from 0.53 to 0.93. Against the word list caption leads by +0.05 [-0.05, +0.15] overall, by +0.28 [+0.06, +0.51] on guns, and ties it on Woosh rows (0.66 against 0.65). The per-model pair did not keep its selection lead: it trails caption by 0.02 [-0.11, +0.05], so caption on both models is the template, and no per-model flag was added.
+
+Caption loses where Woosh hears "a single ... sound, recorded up close" as a short tick, and glass breaks show it most. Over the five glass requests it averages 0.37, against 0.71 for the phrasebook and 0.71 for the word list. "A single glass shatter sound, recorded up close." scored 0.00 on seeds 20 to 39, as it did on seeds 0 to 19. Its clips sit 41 dB down 100 ms after the peak where real breaks sit 13 dB down, the tail lasts 54 ms against 539 ms in the references, and CLAP calls them swords clashing (9 of 20) or an empty gun clicking (8). The bottle smash (0.19 against 0.74) and the bullet through glass (0.39 against 0.88) also end early (tails of 190 and 206 ms against 539 ms) and CLAP's top label for both is swords clashing. The wood step (0.36 against 0.88) carries 85% of its energy under 500 Hz against 50% in real steps, and CLAP hears a punch on 12 of 20 seeds, as it does for the phrasebook. On the water judge caption falls from 0.83 to 0.62, -0.21 [-0.52, -0.00], one request up and five down. The drip loses most (0.35 against 1.00), and its clips reach -40 dB 0.33 s after the peak where the phrasebook's take 0.76 s, but the phrasebook renders its "Big water splash" sentence for four of the six water requests (the splash, the drip, the puddle step and the rock), so the judge rewards a splash answering a drip. The same sentence gives the puddle step a perfect water score and 0.00 on the footstep judges, where caption scores 0.90 and 0.98. The splash is the honest loss: 0.52 on the water judge and 0.26 on the splash judges against 1.00 and 0.43, with a punch as CLAP's top label on 12 of 20 seeds.
+
+By the rule written before the check, caption does not replace the phrasebook yet. It passes four of five conditions: the pooled delta is +0.09 with its lower bound at -0.01 (the bar was -0.05), fresh requests gain 0.16, guns gain 0.04 (the bar was -0.05), and it beats the word list by 0.05. It fails the water condition, -0.21 against a bar of -0.15. The drip and the puddle step, where the phrasebook plays a splash for something else, carry 60% of that drop, and the other four water requests average -0.13, inside the bar. The water judge has no way to see that mismatch, yet the splash and the glass losses are real and repeat across both seed halves. Caption is already the better choice for any game other than the demo, since both unseen sets gain on the identity judges, and glass breaks and splashes on Woosh are the two things to fix before it becomes the default. Until then it stays behind `--prompts template:caption`.
+
+The blind page is `data/_gate/template/page/index.html`: 58 rows, the phrasebook against caption on each, 4 takes per option (variants 20 to 23 for the first run's requests, 0 to 3 for the fresh ones), 464 clips, letters shuffled per row, picks kept in the browser, Reveal and Download as on the generic page. Run order: `render-woosh` (`.venv_woosh`) and `render-sa3` (`.venv214`) with `--run confirm --keys old --first-seed 20 --seeds 20` and with `--run confirm --keys fresh --seeds 40`, each with a separate `--work` and `--water-dir`; then `routes`, `judge-vocab` and `judge-water` (`.venv`) for each part; then `confirm --parts old=DIR fresh=DIR --out FILE` for the tables above and the loss notes (CLAP top labels, shape medians against the real references, decay), and `tpage --parts old=DIR fresh=DIR --confirm FILE` for the page. Route and water files are numbered from 00 whatever the first seed, so the judges pair arms on the same variant.
+
 ## Prediction
 
 These changes touch only what gets rendered ahead of time. Served clips keep their bits, which the e2e proof above covers since `--predict-fixes` is on in it.
@@ -168,9 +239,10 @@ Scenes keep the values they serialized, so WalkArena still sends grass, stone an
 
 | table | where | runs when | why it stays |
 |---|---|---|---|
-| tuned phrasebook: `SPACES`, `SPACE_ALIASES` (with "walkarena"), `GUNS`, `SURFACE_WORDS`, `STEPS`, `BALLISTIC`, `PROPS`, `BREAKS`, `INT`, `EVENT_VERBS` and the exact-name branches of `build` | `src/sarge/prompts.py:10-119, 220, 279` | `--prompts tuned` (default) | flags-off audio stays bit-identical until the blind page decides; `--prompts generic` retires all of it |
-| `UNSET_WORDS` ("", "default", "normal") | `prompts.py:8` | generic | the protocol's defaults meaning "unset" |
-| `SA3_PREFIX` "TrackType: SFX, " | `prompts.py:6` | generic, SA3 route | the vendor's recommended tag; Woosh has none |
+| tuned phrasebook: `SPACES`, `SPACE_ALIASES` (with "walkarena"), `GUNS`, `SURFACE_WORDS`, `STEPS`, `BALLISTIC`, `PROPS`, `BREAKS`, `INT`, `EVENT_VERBS` and the exact-name branches of `build` | `src/sarge/prompts.py:27-136, 237, 361` | `--prompts tuned` (default) | flags-off audio stays bit-identical until the blind page decides; `--prompts generic` retires all of it |
+| `UNSET_WORDS` ("", "default", "normal") | `prompts.py:10` | generic, template | the protocol's defaults meaning "unset" |
+| `SA3_PREFIX` "TrackType: SFX, " | `prompts.py:8` | generic, template with +tt, SA3 route | the vendor's recommended tag; Woosh has none |
+| `TEMPLATES`, `INTENSITY_ADJ` (soft light, hard heavy) | `prompts.py:13-23` | `--prompts template:NAME` | the sentence frames, the same for every event and material; the intensity words cover the protocol's three levels |
 | `CONTACT_WORDS` | `src/sarge/world.py:49` | generic with `--world` | the one validated word set (79 of 90 seed pairs) |
 | world model: `MATERIALS`, `NOUN_MATERIAL`, the density ladder, `GROUNDS`, `FRAGMENTS`, `BREAK_WORDS` | `world.py:6-56, 88-107, 223-230` | `--world` only | they turn the physics block into the bucket and the decay shape; generic prompts take only its contact class, and `--world` is off by default |
 | `FAMILIES` (substrings) | `src/sarge/amp.py:7` | `--route families` (default), `--amp` / `--amp full` / `--amp punch` | flags-off identity; `--route words/class/single` and `--amp auto` retire it |

@@ -44,7 +44,16 @@ UNSEEN = [("dog_bark", "dog"), ("door_creak", "wood"), ("lightsaber_swing", "pla
           ("coin_pickup", "gold"), ("explosion_large", "debris"), ("glass_shatter", "glass"), ("water_drip", "water"),
           ("rain_on_roof", "metal"), ("creature_growl", "monster"), ("car_horn", "car"), ("Pistol_Shot", "9mm"),
           ("melee_hit", "body")]
-KEYS = [(et, mat, "demo") for et, mat in DEMO] + [(et, mat, "unseen") for et, mat in UNSEEN]
+FRESH = [("revolver_shot", "revolver"), ("sniper_shot", "rifle"), ("Rifle_Fire", "ak47"), ("shotgun_blast", "12gauge"),
+         ("grenade_explode", "grenade"), ("barrel_explosion", "metal"), ("Player_Walk_Dirt", "dirt"),
+         ("boot_step", "grass"), ("sneaker_step", "tile"), ("puddle_step", "water"), ("bottle_smash", "glass"),
+         ("window_shatter", "glass"), ("cabin_door_open", "wood"), ("front_door_slam", "wood"), ("puppy_bark", "puppy"),
+         ("face_punch", "flesh"), ("boxing_punch", "glove"), ("button_press", "plastic"), ("mouse_click", "plastic"),
+         ("truck_horn", "truck"), ("taxi_horn", "taxi"), ("blade_clash", "steel"), ("rock_into_water", "water")]
+KEY_SETS = {"old": [(et, mat, "demo") for et, mat in DEMO] + [(et, mat, "unseen") for et, mat in UNSEEN],
+            "fresh": [(et, mat, "fresh") for et, mat in FRESH]}
+KEYS = KEY_SETS["old"]
+FIRST = 0
 VOCAB = {"shoot|pistol": "gunshot_pistol", "shoot|rifle": "gunshot_rifle", "break|window": "glass_break",
          "bullet impact|glass": "glass_break", "footstep|gravel": "footstep", "footstep|stone": "footstep",
          "footstep|wood": "footstep", "footstep|metal": "footstep", "footstep|water": "footstep",
@@ -52,13 +61,26 @@ VOCAB = {"shoot|pistol": "gunshot_pistol", "shoot|rifle": "gunshot_rifle", "brea
          "keyboard_click|plastic": "ui_click", "footsteps_Concrete|concrete": "footstep",
          "PlayerFootstep|snow": "footstep", "shotgun_fire|shotgun": "gunshot_shotgun", "sword_clash|steel": "sword",
          "car_door_slam|car": "door_slam", "explosion_large|debris": "explosion", "glass_shatter|glass": "glass_break",
-         "car_horn|car": "horn", "Pistol_Shot|9mm": "gunshot_pistol", "melee_hit|body": "punch"}
+         "car_horn|car": "horn", "Pistol_Shot|9mm": "gunshot_pistol", "melee_hit|body": "punch",
+         "revolver_shot|revolver": "gunshot_pistol", "sniper_shot|rifle": "gunshot_rifle",
+         "Rifle_Fire|ak47": "gunshot_rifle", "shotgun_blast|12gauge": "gunshot_shotgun",
+         "grenade_explode|grenade": "explosion", "barrel_explosion|metal": "explosion",
+         "Player_Walk_Dirt|dirt": "footstep", "boot_step|grass": "footstep", "sneaker_step|tile": "footstep",
+         "puddle_step|water": "footstep", "bottle_smash|glass": "glass_break", "window_shatter|glass": "glass_break",
+         "cabin_door_open|wood": "door_open", "front_door_slam|wood": "door_slam", "puppy_bark|puppy": "dog_bark",
+         "face_punch|flesh": "punch", "boxing_punch|glove": "punch", "button_press|plastic": "ui_click",
+         "mouse_click|plastic": "ui_click", "truck_horn|truck": "horn", "taxi_horn|taxi": "horn",
+         "blade_clash|steel": "sword", "rock_into_water|water": "splash"}
 APPROX = {"bullet impact|glass": "glass-break references for a bullet through a pane",
           "keyboard_click|plastic": "mouse and button clicks stand in for a keyboard",
           "car_door_slam|car": "house door slams stand in for a car door",
           "explosion_large|debris": "fireworks stand in for an explosion",
           "melee_hit|body": "foley punches stand in for a melee hit",
-          "rain_on_roof|metal": "water drops stand in for rain on a roof"}
+          "rain_on_roof|metal": "water drops stand in for rain on a roof",
+          "grenade_explode|grenade": "fireworks stand in for a grenade",
+          "barrel_explosion|metal": "fireworks stand in for a barrel explosion",
+          "truck_horn|truck": "car horns stand in for a truck horn",
+          "blade_clash|steel": "sword clashes and draws (the sword set)"}
 NO_JUDGE = {"reload|rifle": "gun mechanism references too thin on the held-out split (6 clips, 4 sources)",
             "lightsaber_swing|plasma": "no reference class", "grappling_hook_fire|rope": "no reference class",
             "campfire_crackle|wood": "crackling fire is a negatives-only set", "ice_crack|ice": "no reference class",
@@ -66,8 +88,10 @@ NO_JUDGE = {"reload|rifle": "gun mechanism references too thin on the held-out s
             "coin_pickup|gold": "shell-drop references too thin (3 clips)",
             "creature_growl|monster": "no reference class"}
 WATER = {"footstep|water": "footstep-water", "splash|water": "splash-water", "water_drip|water": "waterdrip-water",
-         "rain_on_roof|metal": "rainonroof-metal"}
-WEAPON_CLASS = {"shoot|pistol", "shoot|rifle", "reload|rifle", "shotgun_fire|shotgun", "Pistol_Shot|9mm"}
+         "rain_on_roof|metal": "rainonroof-metal", "puddle_step|water": "puddlestep-water",
+         "rock_into_water|water": "rockintowater-water"}
+WEAPON_CLASS = {"shoot|pistol", "shoot|rifle", "reload|rifle", "shotgun_fire|shotgun", "Pistol_Shot|9mm",
+                "revolver_shot|revolver", "sniper_shot|rifle", "Rifle_Fire|ak47", "shotgun_blast|12gauge"}
 ARMS = {"phrasebook": ("tuned", "families", "full"), "phrasebook_words": ("tuned", "words", "full"),
         "generic": ("generic", "families", "full"), "generic_words": ("generic", "words", "full"),
         "generic_class": ("generic", "class", "full"), "generic_all": ("generic", "words", "auto"),
@@ -95,6 +119,15 @@ for _n, (_text, _tt, _space) in TEMPLATES.items():
 TMPL_ARMS = ("phrasebook", "generic") + tuple(a for a in ARMS if a not in OLD_ARMS)
 RUNS = {"old": (OLD_ARMS, MAIN_ARMS), "templates": (TMPL_ARMS, ("phrasebook", "generic") + tuple(
     n + TT_OFF for n in TEMPLATES))}
+PAIR = "caption.plain"
+ARMS[PAIR] = ("template:caption+tt", "families", "full")
+WOOSH_STYLE = {PAIR: "template:plain"}
+ARM_TEXT[PAIR] = ("pick 2, a per-model pair: SA3 gets --prompts template:caption+tt (%r with the 'TrackType: SFX, ' "
+                  "prefix), Woosh gets template:plain (%r), families route, family amplifier" % (
+                      TEMPLATES["caption"][0], TEMPLATES["plain"][0]))
+CONFIRM_ARMS = ("phrasebook", "generic", "caption+tt", PAIR)
+RUNS["confirm"] = (CONFIRM_ARMS, CONFIRM_ARMS)
+RUN_PARTNER = {"confirm": {PAIR: "caption+tt"}}
 RUN, WATER_ARMS = RUNS["old"]
 WATER_ALIAS = {n + TT_ON: n + TT_OFF for n in TEMPLATES}
 TIER_LETTERS = "abcdefghijklmnopqrstuvwxyz"
@@ -121,7 +154,7 @@ def source(arm, et, mat):
     cls = "weapon" if route == "class" and kid(et, mat) in WEAPON_CLASS else ""
     model = "sa3" if side_for(key_of(et, mat, cls), route) == "guns" else "woosh"
     if model == "woosh":
-        style = woosh_style(style)
+        style = WOOSH_STYLE.get(arm) or woosh_style(style)
     return (model, style, amp)
 
 
@@ -143,6 +176,15 @@ def water_tiers():
 
 def water_arm(arm):
     return arm if arm in WATER_ARMS else WATER_ALIAS.get(arm)
+
+
+def seed_range(a):
+    return range(FIRST, FIRST + a.seeds)
+
+
+def water_keys():
+    here = {kid(et, mat) for et, mat, _g in KEYS}
+    return {k: stem for k, stem in WATER.items() if k in here}
 
 
 def plan():
@@ -201,7 +243,7 @@ def facts(y, sr):
 
 def save_take(work, src, et, mat, v, y, sr, takes):
     y = np.ascontiguousarray(y, dtype=np.float32)
-    if v < takes:
+    if v - FIRST < takes:
         p = clip_path(work, src, et, mat, v)
         os.makedirs(os.path.dirname(p), exist_ok=True)
         np.save(p, y)
@@ -223,7 +265,7 @@ def cmd_render_woosh(a):
         k = key_of(et, mat)
         prompt = ws.prompt_for(k, style)
         ms = []
-        for v in range(a.seeds):
+        for v in seed_range(a):
             t = time.perf_counter()
             raw = ws.render_key(gen, k, v, frames, style)
             ms.append((time.perf_counter() - t) * 1000.0)
@@ -235,6 +277,7 @@ def cmd_render_woosh(a):
         print("woosh %-8s %-30s %s  median %.1f ms  %s" % (style, kid(et, mat), "+".join(sorted(amps)),
                                                           float(np.median(ms)), prompt), flush=True)
     dump({"meta": {"model": "woosh-dflow", "options": opts, "frames": frames, "seeds": a.seeds, "takes": a.takes,
+                   "first_seed": FIRST, "keys": a.keys, "run": a.run,
                    "graph_error": gen.stats.get("graph_error"), "seconds": time.perf_counter() - t0},
           "rows": rows}, os.path.join(a.work, "render_woosh.json"))
     print("saved %d rows" % len(rows), flush=True)
@@ -270,7 +313,7 @@ def cmd_render_sa3(a):
         for amp in sorted(amps):
             g.amp, g.amp_mode = True, amp
             ms, retries = [], 0
-            for v in range(a.seeds):
+            for v in seed_range(a):
                 r0 = int(g.static_stats.get("static_retries", 0))
                 t = time.perf_counter()
                 clip = g.generate(k, variant=v)
@@ -283,6 +326,7 @@ def cmd_render_sa3(a):
             print("sa3   %-8s %-30s %-4s median %.1f ms  static retries %d  %s" % (
                 style, kid(et, mat), amp, float(np.median(ms)), retries, prompt), flush=True)
     dump({"meta": {"model": "sa3-medium", "kwargs": {k: v for k, v in kw.items()}, "seeds": a.seeds, "takes": a.takes,
+                   "first_seed": FIRST, "keys": a.keys, "run": a.run,
                    "fast_stats": g.fast_stats(), "seconds": time.perf_counter() - t0},
           "rows": rows}, os.path.join(a.work, "render_sa3%s.json" % ("_" + "_".join(a.styles) if a.styles else "")))
     print("saved %d rows" % len(rows), flush=True)
@@ -380,13 +424,13 @@ def cmd_routes(a):
         for et, mat in keys:
             src = source(arm, et, mat)
             pr[kid(et, mat)] = prompts.get((kid(et, mat), src[0], src[1]))
-            for v in range(a.seeds):
-                link(cut_path(a.work, src, et, mat, v), os.path.join(d, "%s-%s_%02d.wav" % (et, mat, v)))
+            for v in seed_range(a):
+                link(cut_path(a.work, src, et, mat, v), os.path.join(d, "%s-%s_%02d.wav" % (et, mat, v - FIRST)))
         dump({"clusters": [], "sources": [], "steps": None, "prompts": pr,
               "note": "%s; served path rendered in process (woosh_server.render_key + finish_key, StableAudio3Generator "
                       "with run_sidecar HYBRID_GUNS); judged clip = mono 0.6 s _extract window of the finished clip at "
-                      "normalize_loudness target_for('normal'), 44.1 kHz; seeds 0-%d from seed_for" % (
-                          ARM_TEXT[arm], a.seeds - 1)}, os.path.join(d, "route.json"))
+                      "normalize_loudness target_for('normal'), 44.1 kHz; variants %d-%d from seed_for, numbered "
+                      "from 00" % (ARM_TEXT[arm], FIRST, FIRST + a.seeds - 1)}, os.path.join(d, "route.json"))
         made[arm] = len(keys)
     wd = a.water_dir
     if os.path.isdir(wd):
@@ -399,8 +443,8 @@ def cmd_routes(a):
             if not stem:
                 continue
             src = source(arm, et, mat)
-            for v in range(a.seeds):
-                link(cut_path(a.work, src, et, mat, v), os.path.join(d, "%s_%02d.wav" % (stem, v)))
+            for v in seed_range(a):
+                link(cut_path(a.work, src, et, mat, v), os.path.join(d, "%s_%02d.wav" % (stem, v - FIRST)))
     os.makedirs(os.path.join(a.work, "water_empty"), exist_ok=True)
     print("routes %s, water tiers %s" % (made, sorted(os.listdir(wd))), flush=True)
     return 0
@@ -500,7 +544,7 @@ def water_table(W, rng):
     gen = W["generated"]
     out = {}
     tiers = {arm: "gen:tier|" + water_tiers()[water_arm(arm)] for arm in RUN if water_arm(arm)}
-    for k, stem in WATER.items():
+    for k, stem in water_keys().items():
         wk_ = "%s|%s" % tuple(stem.split("-"))
         arms = {}
         for arm, tg in tiers.items():
@@ -888,8 +932,395 @@ def cmd_rank(a):
     return 0
 
 
+PICKS = ("caption+tt", PAIR)
+CMP = (("caption+tt", "phrasebook"), ("caption+tt", "generic"), (PAIR, "phrasebook"), (PAIR, "generic"),
+       (PAIR, "caption+tt"), ("generic", "phrasebook"))
+SHAPE_NOTE = (("decay100_db", "dB 100 ms after peak", "%.1f"), ("low500", "energy under 500 Hz", "%.2f"),
+              ("floor_db", "floor dB", "%.0f"), ("tail_ms", "tail ms", "%.0f"), ("attack_ms", "attack ms", "%.1f"))
+GROUP_TEXT = {"all": "all judged held-out requests", "old_all": "first-run requests, seeds 20-39",
+              "demo": "demo keys, seeds 20-39", "unseen": "first-run unseen names, seeds 20-39",
+              "fresh": "fresh unseen names, seeds 0-39", "unseen_all": "every unseen name (old and fresh)",
+              "guns": "guns, old and fresh", "guns_old": "guns, first run", "guns_fresh": "guns, fresh",
+              "footsteps": "footsteps, old and fresh", "sa3_rows": "rows SA3 renders", "woosh_rows": "rows Woosh renders",
+              "water": "water judge, old and fresh", "all_plus_water": "all judged requests plus the water rows"}
+
+
+def parse_parts(specs):
+    out = []
+    for spec in specs:
+        name, d = spec.split("=", 1)
+        if name not in KEY_SETS:
+            raise SystemExit("unknown key set %r in --parts" % name)
+        out.append((name, d))
+    return out
+
+
+def use_part(name, work):
+    global KEYS, FIRST
+    rows = render_rows(work)
+    KEYS, FIRST = KEY_SETS[name], min(r["v"] for r in rows)
+    return rows
+
+
+def load_part(name, work, rng):
+    rows = use_part(name, work)
+    V = load_json(os.path.join(work, "vocab.json"))
+    merge_vocab(V, work)
+    vt = vocab_table(V, rng)
+    wp = os.path.join(work, "water.json")
+    wt = water_table(load_json(wp), rng) if os.path.isfile(wp) else {}
+    by = {}
+    for r in rows:
+        by.setdefault((r["key"], r["model"], r["style"], r["amp"]), []).append(r)
+    clips = {}
+    for et, mat, _g in KEYS:
+        for arm in RUN:
+            src = source(arm, et, mat)
+            rr = by.get((kid(et, mat),) + src, [])
+            clips.setdefault(kid(et, mat), {})[arm] = {
+                "model": src[0], "style": src[1], "n": len(rr), "prompt": rr[0]["prompt"] if rr else None,
+                "t40": float(np.median([x["t40"] for x in rr])) if rr else None,
+                "len": float(np.median([x["len"] for x in rr])) if rr else None,
+                "static": int(sum(x["static"] for x in rr))}
+    seeds = sorted({r["v"] for r in rows})
+    return {"name": name, "work": work, "V": V, "vt": vt, "wt": wt, "clips": clips, "first": FIRST,
+            "seeds": [seeds[0], seeds[-1]], "n_seeds": len(seeds), "keys": [kid(et, mat) for et, mat, _g in KEYS],
+            "groups": {kid(et, mat): g for et, mat, g in KEYS}}
+
+
+def mcn(ha, hb):
+    out = {}
+    for f in hb:
+        a_, b_ = np.asarray(ha[f], bool), np.asarray(hb[f], bool)
+        g, l = int((a_ & ~b_).sum()), int((~a_ & b_).sum())
+        out[f] = {"gain": g, "loss": l, "p": sign_two(g, l)}
+    return out
+
+
+def paired_key(J, a_, b_, rng):
+    A, B, reals = J["arms"][a_], J["arms"][b_], J["reals"]
+    ci, p = boot_delta(A, B, reals, rng)
+    return {"delta": cons_of(A, reals) - cons_of(B, reals), "ci": ci, "p_boot": p, "mcnemar": mcn(A, B)}
+
+
+def judged_rows(parts):
+    J, W = {}, {}
+    for P in parts:
+        for k, r in P["vt"].items():
+            if not all(arm in r["arms"] for arm in RUN):
+                raise SystemExit("%s lacks an arm in %s" % (k, P["name"]))
+            base = r["arms"]["phrasebook"]
+            J[k] = {"part": P["name"], "group": r["group"], "type": r["type"], "approx": r["approx"],
+                    "reals": {f: j["real"] for f, j in base["judges"].items()},
+                    "arms": {arm: r["arms"][arm]["hits"] for arm in RUN},
+                    "cons_ci": {arm: r["arms"][arm]["cons_ci"] for arm in RUN},
+                    "route": {arm: r["arms"][arm]["route"] for arm in RUN},
+                    "variants": {f: j["variant"] for f, j in base["judges"].items()}}
+        for k, r in P["wt"].items():
+            if not all(arm in r["arms"] for arm in RUN):
+                raise SystemExit("water %s lacks an arm in %s" % (k, P["name"]))
+            base = r["arms"]["phrasebook"]
+            W[k] = {"part": P["name"], "group": "water", "type": "water", "approx": r["approx"], "reals": base["reals"],
+                    "arms": {arm: r["arms"][arm]["hits"] for arm in RUN},
+                    "cons_ci": {arm: r["arms"][arm]["cons_ci"] for arm in RUN},
+                    "variants": base["variants"]}
+    return J, W
+
+
+def group_stats(members, rows, rng):
+    m = len(members)
+    point = {arm: np.array([cons_of(rows[k]["arms"][arm], rows[k]["reals"]) for k in members]) for arm in RUN}
+    draws = {arm: [] for arm in RUN}
+    for k in members:
+        n = len(next(iter(rows[k]["arms"]["phrasebook"].values())))
+        idx = rng.integers(0, n, size=(BOOT, n))
+        for arm in RUN:
+            draws[arm].append(cons_draws(rows[k]["arms"][arm], rows[k]["reals"], idx))
+    draws = {arm: np.vstack(v) for arm, v in draws.items()}
+    kb = rng.integers(0, m, size=(BOOT, m))
+    cols = np.arange(BOOT)[:, None]
+    pb = {arm: draws[arm][kb, cols].mean(1) for arm in RUN}
+    out = {"keys": list(members), "arms": {}, "cmp": {}}
+    for arm in RUN:
+        out["arms"][arm] = {"mean": float(point[arm].mean()), "ci": [float(x) for x in np.percentile(pb[arm], [2.5, 97.5])]}
+    for a_, b_ in CMP:
+        d = pb[a_] - pb[b_]
+        dp = point[a_] - point[b_]
+        fam = {}
+        for k in members:
+            for f, x in mcn(rows[k]["arms"][a_], rows[k]["arms"][b_]).items():
+                y = fam.setdefault(f, [0, 0])
+                y[0] += x["gain"]
+                y[1] += x["loss"]
+        up, down = int((dp > 1e-9).sum()), int((dp < -1e-9).sum())
+        out["cmp"]["%s vs %s" % (a_, b_)] = {
+            "delta": float(dp.mean()), "ci": [float(x) for x in np.percentile(d, [2.5, 97.5])],
+            "p_boot": min(1.0, 2.0 * min(float(np.mean(d <= 0)), float(np.mean(d >= 0)))), "up": up, "down": down,
+            "sign_p": sign_two(up, down), "judges": {f: {"gain": g, "loss": l, "p": sign_two(g, l)}
+                                                     for f, (g, l) in sorted(fam.items())}}
+    return out
+
+
+def confirm_groups(J, W, parts):
+    sa3 = {k for P in parts for k in P["keys"] if P["clips"][k]["phrasebook"]["model"] == "sa3"}
+    ks = list(J)
+    g = {"all": ks, "old_all": [k for k in ks if J[k]["part"] == "old"],
+         "demo": [k for k in ks if J[k]["group"] == "demo"], "unseen": [k for k in ks if J[k]["group"] == "unseen"],
+         "fresh": [k for k in ks if J[k]["group"] == "fresh"],
+         "unseen_all": [k for k in ks if J[k]["group"] in ("unseen", "fresh")],
+         "guns": [k for k in ks if J[k]["type"].startswith("gunshot")],
+         "guns_old": [k for k in ks if J[k]["type"].startswith("gunshot") and J[k]["part"] == "old"],
+         "guns_fresh": [k for k in ks if J[k]["type"].startswith("gunshot") and J[k]["part"] == "fresh"],
+         "footsteps": [k for k in ks if J[k]["type"] == "footstep"],
+         "sa3_rows": [k for k in ks if k in sa3], "woosh_rows": [k for k in ks if k not in sa3]}
+    return {n: m for n, m in g.items() if m}
+
+
+def ident_of(parts, k, route):
+    for P in parts:
+        if k in P["clips"]:
+            return P["V"]["generated"].get("_identity", {}).get("gen:%s|%s" % (route, k))
+    return None
+
+
+def shape_of(parts, k, route):
+    for P in parts:
+        if k in P["clips"]:
+            return P["V"].get("shape", {}).get("gen:%s|%s" % (route, k))
+    return None
+
+
+def clip_of(parts, k):
+    for P in parts:
+        if k in P["clips"]:
+            return P["clips"][k]
+    return {}
+
+
+def fmt_ident(x):
+    return ", ".join("%s %d" % (t, n) for t, n in (x or [])[:3]) or "-"
+
+
+def fmt_shape(sh):
+    if not sh:
+        return "-"
+    return "; ".join("%s %s (real %s)" % (lab, f % sh[n]["gen_median"], f % sh[n]["real_median"])
+                     for n, lab, f in SHAPE_NOTE if n in sh and sh[n].get("gen_median") is not None)
+
+
+def fmt_mc(mc):
+    return " ".join("%s +%d/-%d" % (f[0], x["gain"], x["loss"]) for f, x in sorted(mc.items()))
+
+
+def fmt_ci(v, ci, sign=True):
+    f = "%+.2f [%+.2f, %+.2f]" if sign else "%.2f [%.2f, %.2f]"
+    return f % (v, ci[0], ci[1])
+
+
+RULES = (("a", "all", "phrasebook", "all judged held-out requests: delta vs phrasebook >= 0 and lower bound >= -0.05",
+          lambda x: x["delta"] >= 0 and x["ci"][0] >= -0.05),
+         ("b", "fresh", "phrasebook", "fresh requests: delta vs phrasebook >= 0", lambda x: x["delta"] >= 0),
+         ("c", "guns", "phrasebook", "guns: delta vs phrasebook >= -0.05", lambda x: x["delta"] >= -0.05),
+         ("d", "all", "generic", "all judged held-out requests: delta vs generic > 0", lambda x: x["delta"] > 0),
+         ("e", "water", "phrasebook", "water judge: delta vs phrasebook >= -0.15", lambda x: x["delta"] >= -0.15))
+
+
+def decide(G):
+    pick = PAIR if G["all"]["cmp"]["%s vs caption+tt" % PAIR]["delta"] >= 0.03 else "caption+tt"
+    rules = []
+    for r, g, ref, text, ok in RULES:
+        x = G[g]["cmp"]["%s vs %s" % (pick, ref)] if g in G else None
+        rules.append({"rule": r, "text": text, "measured": x is not None, "pass": bool(x is not None and ok(x)),
+                      "delta": x["delta"] if x else None, "ci": x["ci"] if x else None})
+    return {"pick": pick, "pick2_vs_pick1": G["all"]["cmp"]["%s vs caption+tt" % PAIR], "rules": rules,
+            "replace": all(r["pass"] for r in rules)}
+
+
+def cmd_confirm(a):
+    rng = np.random.default_rng(BOOT_SEED)
+    parts = [load_part(n, d, rng) for n, d in parse_parts(a.parts)]
+    J, W = judged_rows(parts)
+    per_key = {}
+    for k, r in J.items():
+        per_key[k] = {"part": r["part"], "group": r["group"], "type": r["type"], "approx": r["approx"],
+                      "cons": {arm: cons_of(r["arms"][arm], r["reals"]) for arm in RUN}, "cons_ci": r["cons_ci"],
+                      "cmp": {"%s vs %s" % (x, y): paired_key(r, x, y, rng) for x, y in CMP},
+                      "identity": {arm: ident_of(parts, k, r["route"][arm]) for arm in RUN},
+                      "shape": {arm: shape_of(parts, k, r["route"][arm]) for arm in RUN},
+                      "judges": r["variants"]}
+    water = {}
+    for k, r in W.items():
+        water[k] = {"part": r["part"], "approx": r["approx"],
+                    "cons": {arm: cons_of(r["arms"][arm], r["reals"]) for arm in RUN}, "cons_ci": r["cons_ci"],
+                    "cmp": {"%s vs %s" % (x, y): paired_key(r, x, y, rng) for x, y in CMP}, "judges": r["variants"]}
+    G = {n: group_stats(m, J, rng) for n, m in confirm_groups(J, W, parts).items()}
+    if W:
+        G["water"] = group_stats(list(W), W, rng)
+        AW = dict(J, **{"water:" + k: r for k, r in W.items()})
+        G["all_plus_water"] = group_stats(list(AW), AW, rng)
+    clips = {k: v for P in parts for k, v in P["clips"].items()}
+    dec = decide(G)
+    res = {"parts": [{x: P[x] for x in ("name", "work", "first", "seeds", "n_seeds", "keys")} for P in parts],
+           "per_key": per_key, "water": water, "groups": G, "clips": clips, "decision": dec,
+           "validity": {t: by for P in parts[:1] for t, by in (P["V"].get("chosen") or {}).items()}, "boot": BOOT}
+    dump(res, a.out)
+    print("CONFIRM on held-out data: %s" % "; ".join("%s = %d keys, variants %d-%d" % (
+        P["name"], len(P["keys"]), P["seeds"][0], P["seeds"][1]) for P in parts))
+    print("cons = min over valid judges of min(rate / real, 1); deltas paired on seed, 95%% CI from %d draws; McNemar "
+          "a/p/c = AST/PANNs/CLAP seeds gained/lost" % BOOT)
+    print()
+    print("PER REQUEST")
+    print("%-28s %-16s %-6s %-18s %-18s %-18s %-18s" % ("request", "type", "part", "phrasebook", "generic", "caption+tt",
+                                                       PAIR))
+    for k, r in per_key.items():
+        print("%-28s %-16s %-6s %s" % (k, r["type"] + ("*" if r["approx"] else ""), r["group"], " ".join(
+            "%-18s" % fmt_ci(r["cons"][arm], r["cons_ci"][arm], False) for arm in RUN)))
+        for x, y in CMP[:5]:
+            c = r["cmp"]["%s vs %s" % (x, y)]
+            if x == PAIR and clips[k][PAIR]["style"] == clips[k]["caption+tt"]["style"]:
+                continue
+            print("%30s %-28s %-26s p %.3f  %s" % ("", "%s vs %s" % (x, y), fmt_ci(c["delta"], c["ci"]), c["p_boot"],
+                                                  fmt_mc(c["mcnemar"])))
+    print()
+    print("WATER JUDGE")
+    for k, r in water.items():
+        print("%-28s %-6s %s" % (k, r["part"], " ".join("%-18s" % fmt_ci(r["cons"][arm], r["cons_ci"][arm], False)
+                                                       for arm in RUN)))
+        for x, y in CMP[:5]:
+            c = r["cmp"]["%s vs %s" % (x, y)]
+            print("%30s %-28s %-26s p %.3f  %s" % ("", "%s vs %s" % (x, y), fmt_ci(c["delta"], c["ci"]), c["p_boot"],
+                                                  fmt_mc(c["mcnemar"])))
+    print()
+    print("POOLED (mean of cons over requests [95% CI, requests and seeds resampled])")
+    for g, s in G.items():
+        print(" %s, %d requests: %s" % (GROUP_TEXT.get(g, g), len(s["keys"]), "  ".join(
+            "%s %s" % (arm, fmt_ci(s["arms"][arm]["mean"], s["arms"][arm]["ci"], False)) for arm in RUN)))
+        for name, c in s["cmp"].items():
+            print("    %-28s %-26s p %.3f  requests up/down %d/%d (sign p %.3f)  judges %s" % (
+                name, fmt_ci(c["delta"], c["ci"]), c["p_boot"], c["up"], c["down"], c["sign_p"], " ".join(
+                    "%s +%d/-%d p%.3f" % (f, x["gain"], x["loss"], x["p"]) for f, x in c["judges"].items())))
+    for arm in PICKS:
+        for ref in ("phrasebook", "generic"):
+            name = "%s vs %s" % (arm, ref)
+            for title, test in (("LOSSES", lambda c: c["delta"] < 0 and (c["p_boot"] < 0.05 or c["delta"] <= -0.2)),
+                                ("WINS", lambda c: c["delta"] > 0 and (c["p_boot"] < 0.05 or c["delta"] >= 0.2))):
+                hit = [k for k, r in per_key.items() if test(r["cmp"][name]) and not (
+                    arm == PAIR and clips[k][PAIR]["style"] == clips[k]["caption+tt"]["style"])]
+                if not hit:
+                    continue
+                print()
+                print("%s of %s vs %s (p < 0.05 or a move of 0.2 or more): CLAP top-1, shape medians, decay" % (
+                    title, arm, ref))
+                for k in hit:
+                    r, cl = per_key[k], clips[k]
+                    c = r["cmp"][name]
+                    print(" %s %s: %.2f vs %.2f, %s" % (k, r["type"], r["cons"][arm], r["cons"][ref],
+                                                       fmt_ci(c["delta"], c["ci"])))
+                    for x in (arm, ref):
+                        print("    %-12s %-5s CLAP %s" % (x, cl[x]["model"], fmt_ident(r["identity"][x])))
+                        print("    %-12s       %s; -40 dB after %.2f s, length %.2f s" % (
+                            "", fmt_shape(r["shape"][x]), cl[x]["t40"] or 0, cl[x]["len"] or 0))
+                        print("    %-12s       prompt: %s" % ("", cl[x]["prompt"]))
+    print()
+    print("DECISION (preregistered rule): template to test = %s (pick 2 minus pick 1 over all = %s)" % (
+        dec["pick"], fmt_ci(dec["pick2_vs_pick1"]["delta"], dec["pick2_vs_pick1"]["ci"])))
+    for r in dec["rules"]:
+        print("  (%s) %-75s %s  %s" % (r["rule"], r["text"], fmt_ci(r["delta"], r["ci"]) if r["measured"] else "-",
+                                     ("PASS" if r["pass"] else "FAIL") if r["measured"] else "NOT MEASURED"))
+    print("  replace the phrasebook as the default: %s" % ("YES" if dec["replace"] else "NO"))
+    print("saved", a.out)
+    return 0
+
+
+TEMPLATE_PAGE = {"title": "Template Prompts Listening", "id": "template", "intro": """<h1>Universal template: blind listening</h1>
+<p>Use headphones. Each row is one request a game sends (event | material), rendered on the models that ship: SA3 medium
+for whatever the route calls a gun, Woosh DFlow for everything else. The two options are the shipped phrasebook and the
+universal caption template ("A single {intensity} {material} {event} sound, recorded up close.", with the 'TrackType: SFX,'
+tag on SA3). Every option plays %TAKES% takes. Letters are shuffled per row.</p>
+<p>The first two sections are the requests of the first run on variants 20 to 23, which the selection step never heard. The
+last section holds sounds no earlier run rendered, on variants 0 to 3. Levels are what the game plays: every clip is the
+finished clip at the same playback gain. Mark the option that sounds most like the request and the one that sounds least
+like it, or press "none sound right". Picks stay in this browser. Reveal names the flag set behind each option, the
+model, the prompt it got and the judge score where a validated judge exists; Download saves your picks with the key.</p>"""}
+PAGE_SECTIONS = (("demo", "The twelve demo sounds"), ("unseen", "Sounds another game would send (first run)"),
+                 ("fresh", "Fresh sounds no earlier run rendered"))
+
+
+def cmd_tpage(a):
+    rep = load_json(a.confirm)
+    out = a.out
+    if os.path.isdir(out):
+        shutil.rmtree(out)
+    os.makedirs(os.path.join(out, "a"))
+    arms_on_page = tuple(a.arms)
+    key, info, sections, n_rows, n_clips = {}, {}, {g: [] for g, _t in PAGE_SECTIONS}, 0, 0
+    for name, work in parse_parts(a.parts):
+        rows = use_part(name, work)
+        meta = {(r["key"], r["model"], r["style"], r["amp"], r["v"]): r for r in rows}
+        for et, mat, grp in KEYS:
+            k = kid(et, mat)
+            sid = slug(k)
+            opts = {}
+            for arm in arms_on_page:
+                opts.setdefault(source(arm, et, mat), []).append(arm)
+            order = sorted(opts, key=lambda s: h(a.seed + sid + src_name(s)))
+            blocks = []
+            for i, src in enumerate(order):
+                arms = opts[src]
+                clips, nums = [], []
+                for v in range(FIRST, FIRST + a.takes):
+                    y = np.load(clip_path(work, src, et, mat, v))
+                    r = meta[(k,) + src + (v,)]
+                    nm = h(a.seed + sid + src_name(src) + str(v))[:12] + ".wav"
+                    AudioClip(np.ascontiguousarray(y, dtype=np.float32), int(r["sr"])).to_wav(os.path.join(out, "a", nm))
+                    n_clips += 1
+                    nums.append(r)
+                    clips.append("<audio controls preload='none' src='a/%s' aria-label='%s take %d'></audio>" % (
+                        nm, LETTERS[i], v - FIRST + 1))
+                letter = LETTERS[i]
+                key["%s|%s" % (sid, letter)] = arms
+                judged = []
+                pk = rep["per_key"].get(k)
+                if pk:
+                    arm = arms[0]
+                    judged.append("identity %.2f [%.2f, %.2f]" % (pk["cons"][arm], pk["cons_ci"][arm][0],
+                                                                 pk["cons_ci"][arm][1]))
+                wk_ = rep["water"].get(k)
+                if wk_:
+                    arm = arms[0]
+                    judged.append("water %.2f [%.2f, %.2f]" % (wk_["cons"][arm], wk_["cons_ci"][arm][0],
+                                                              wk_["cons_ci"][arm][1]))
+                info["%s|%s" % (sid, letter)] = "%s | %s, amp %s | %s | takes (variants %d-%d): -40 dB after %s s, length %s s | prompt: %s" % (
+                    ", ".join(arms), MODEL_NAME[src[0]], src[2], "; ".join(judged) or "no validated judge for this sound",
+                    FIRST, FIRST + a.takes - 1, " / ".join("%.2f" % n["t40"] for n in nums),
+                    " / ".join("%.2f" % n["len"] for n in nums), nums[0]["prompt"])
+                blocks.append("<div class='opt' data-s='%s' data-l='%s'><div class='let'>%s</div><div class='takes'>%s</div>"
+                              "<div class='btns'><button data-v='best'>best</button><button data-v='worst'>worst</button>"
+                              "</div><div class='rev'></div></div>" % (sid, letter, letter, "".join(clips)))
+            sections[grp].append("<section class='snd' data-s='%s'><h3>%s</h3>%s<p class='row'><button class='none' "
+                                 "data-s='%s'>none sound right</button><span class='st'></span></p></section>" % (
+                                     sid, html.escape(row_label(et, mat)), "".join(blocks), sid))
+            n_rows += 1
+    body = "".join("<h2>%s</h2>%s" % (t, "".join(sections[g])) for g, t in PAGE_SECTIONS if sections[g])
+    texts = {arm: ARM_TEXT[arm] for arm in arms_on_page}
+    payload = base64.b64encode(json.dumps({"key": key, "info": info, "arms": texts}, ensure_ascii=True).encode()).decode()
+    page = fill_page(TEMPLATE_PAGE, body, payload, n_rows, "sarge_template_page_" + a.seed, a.takes)
+    with open(os.path.join(out, "index.html"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(page)
+    dump({"seed": a.seed, "key": key, "info": info}, os.path.join(os.path.dirname(out), "page_key.json"))
+    print("wrote %s (%d rows, %d clips)" % (os.path.join(out, "index.html"), n_rows, n_clips), flush=True)
+    return 0
+
+
 def h(s):
     return hashlib.md5(s.encode()).hexdigest()
+
+
+def fill_page(text, body, payload, n_rows, store, takes):
+    page = TEMPLATE.replace("%TITLE%", text["title"]).replace("%INTRO%", text["intro"]).replace(
+        "%PAGEID%", text["id"])
+    return page.replace("%SECTIONS%", body).replace("%DATA%", payload).replace("%NSOUNDS%", str(n_rows)).replace(
+        "%STORE%", store).replace("%TAKES%", str(takes))
 
 
 def row_label(et, mat):
@@ -952,8 +1383,7 @@ def cmd_page(a):
     body = ("<h2>The twelve demo sounds</h2>%s<h2>Sounds another game would send</h2>%s" % (
         "".join(sections["demo"]), "".join(sections["unseen"])))
     payload = base64.b64encode(json.dumps({"key": key, "info": info, "arms": ARM_TEXT}, ensure_ascii=True).encode()).decode()
-    page = TEMPLATE.replace("%SECTIONS%", body).replace("%DATA%", payload).replace("%NSOUNDS%", str(n_rows)).replace(
-        "%STORE%", "sarge_generic_page_" + a.seed).replace("%TAKES%", str(a.takes))
+    page = fill_page(GENERIC_PAGE, body, payload, n_rows, "sarge_generic_page_" + a.seed, a.takes)
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(page)
     dump({"seed": a.seed, "key": key, "info": info}, os.path.join(os.path.dirname(out), "page_key.json"))
@@ -961,9 +1391,20 @@ def cmd_page(a):
     return 0
 
 
+GENERIC_PAGE = {"title": "Generic Prompts Listening", "id": "generic", "intro": """<h1>Generic prompts: blind listening</h1>
+<p>Use headphones. Each row is one request a game sends (event | material), rendered on the models that ship: SA3 medium
+for whatever the route calls a gun, Woosh DFlow for everything else. The options are the shipped phrasebook, the
+generic flag sets and, on rows SA3 renders, a diagnostic without the 'TrackType: SFX,' prefix; any two that produce the
+same audio for a row share one option, so a row has three to six options. Every option plays %TAKES% takes, the first variants the game rotates through. Letters are shuffled per row.</p>
+<p>Levels are what the game plays: every clip is the finished clip at the same playback gain. Mark the option that sounds
+most like the request and the one that sounds least like it, or press "none sound right". Picks stay in this browser.
+Reveal names the flag sets behind each option, the model, the prompt it got and the judge score where a validated judge
+exists; Download saves your picks with the key.</p>"""}
+
+
 TEMPLATE = """<!doctype html><html lang='en'><head><meta charset='utf-8'>
 <meta name='viewport' content='width=device-width,initial-scale=1'>
-<title>Generic Prompts Listening</title><style>
+<title>%TITLE%</title><style>
 :root{--bg:#f7f7f4;--fg:#1c1c1a;--mute:#66665f;--line:#dcdcd5;--card:#ffffff;--acc:#2456c9;--bad:#b4400c;--ok:#2f7d32}
 @media (prefers-color-scheme: dark){:root:not([data-theme='light']){--bg:#151514;--fg:#ececea;--mute:#9c9c96;--line:#34342f;--card:#1d1d1b;--acc:#8fb0ff;--bad:#fb923c;--ok:#7bc47f}}
 :root[data-theme='dark']{--bg:#151514;--fg:#ececea;--mute:#9c9c96;--line:#34342f;--card:#1d1d1b;--acc:#8fb0ff;--bad:#fb923c;--ok:#7bc47f}
@@ -998,15 +1439,7 @@ body.revealed .rev{display:block}
 @media (max-width:900px){.takes{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:640px){.opt{grid-template-columns:2rem minmax(0,1fr)}.btns{grid-column:2}.takes{grid-template-columns:minmax(0,1fr)}h1{font-size:21px}}
 </style></head><body>
-<h1>Generic prompts: blind listening</h1>
-<p>Use headphones. Each row is one request a game sends (event | material), rendered on the models that ship: SA3 medium
-for whatever the route calls a gun, Woosh DFlow for everything else. The options are the shipped phrasebook, the
-generic flag sets and, on rows SA3 renders, a diagnostic without the 'TrackType: SFX,' prefix; any two that produce the
-same audio for a row share one option, so a row has three to six options. Every option plays %TAKES% takes, the first variants the game rotates through. Letters are shuffled per row.</p>
-<p>Levels are what the game plays: every clip is the finished clip at the same playback gain. Mark the option that sounds
-most like the request and the one that sounds least like it, or press "none sound right". Picks stay in this browser.
-Reveal names the flag sets behind each option, the model, the prompt it got and the judge score where a validated judge
-exists; Download saves your picks with the key.</p>
+%INTRO%
 %SECTIONS%
 <section id='tally'></section>
 <div class='bar'><div><span id='prog'></span><button id='reveal'>Reveal</button><button id='dl'>Download picks</button><button id='clear'>Clear picks</button></div></div>
@@ -1053,8 +1486,8 @@ document.getElementById('dl').onclick=()=>{const picks={};
  Object.entries(store).forEach(([s,v])=>{picks[s]={best:v.best||null,worst:v.worst||null,none:!!v.none,
   best_flag_sets:v.best?arms(s,v.best):null,worst_flag_sets:v.worst?arms(s,v.worst):null}});
  const x=document.createElement('a');
- x.href=URL.createObjectURL(new Blob([JSON.stringify({page:'generic',saved:new Date().toISOString(),revealed:shown,picks:picks,key:D.key},null,1)],{type:'application/json'}));
- x.download='generic_picks.json';document.body.appendChild(x);x.click();x.remove();};
+ x.href=URL.createObjectURL(new Blob([JSON.stringify({page:'%PAGEID%',saved:new Date().toISOString(),revealed:shown,picks:picks,key:D.key},null,1)],{type:'application/json'}));
+ x.download='%PAGEID%_picks.json';document.body.appendChild(x);x.click();x.remove();};
 document.getElementById('clear').onclick=()=>{if(!confirm('Clear every pick on this page?'))return;
  store={};shown=false;save();try{localStorage.removeItem(SK+'_rev')}catch(e){}
  document.body.classList.remove('revealed');document.getElementById('tally').innerHTML='';paint();};
@@ -1067,7 +1500,7 @@ def main(argv=None):
                                              "ship: render, verify against the sidecar, judge, report, blind page")
     sub = ap.add_subparsers(dest="cmd", required=True)
     for name in ("render-woosh", "render-sa3", "verify", "routes", "judge-vocab", "judge-water", "report", "page",
-                 "rank"):
+                 "rank", "confirm", "tpage"):
         p = sub.add_parser(name)
         p.add_argument("--work", default=WORK)
         p.add_argument("--seeds", type=int, default=SEEDS)
@@ -1077,6 +1510,10 @@ def main(argv=None):
                             "generic word list against every universal template with and without the SA3 prefix")
         p.add_argument("--water-dir", default=WATER_DIR,
                        help="tier folders for water_judge.py, which must sit inside the repo")
+        p.add_argument("--keys", choices=sorted(KEY_SETS), default="old",
+                       help="old: the 35 requests of the first run; fresh: 23 requests no earlier run rendered")
+        p.add_argument("--first-seed", type=int, default=0,
+                       help="first variant to render and judge; route and water files are numbered from 00")
         if name == "verify":
             p.add_argument("--served", nargs="+", default=[], help="arm=dir of generic_probe.py output, variant 0")
         if name == "judge-vocab":
@@ -1088,13 +1525,25 @@ def main(argv=None):
         if name == "page":
             p.add_argument("--out", default=PAGE)
             p.add_argument("--seed", default="generic1")
+        if name in ("confirm", "tpage"):
+            p.set_defaults(run="confirm")
+            p.add_argument("--parts", nargs="+", required=True, help="keyset=work dir, for example old=DIR fresh=DIR")
+        if name == "confirm":
+            p.add_argument("--out", required=True, help="confirm json")
+        if name == "tpage":
+            p.add_argument("--confirm", required=True, help="the json the confirm command wrote")
+            p.add_argument("--arms", nargs="+", default=["phrasebook", "caption+tt"])
+            p.add_argument("--out", default=os.path.join(ROOT, "data", "_gate", "template", "page"))
+            p.add_argument("--seed", default="template1")
     a = ap.parse_args(argv)
-    global RUN, WATER_ARMS
+    global RUN, WATER_ARMS, KEYS, FIRST, PARTNER
     RUN, WATER_ARMS = RUNS[a.run]
+    KEYS, FIRST = KEY_SETS[a.keys], a.first_seed
+    PARTNER = RUN_PARTNER.get(a.run, PARTNER)
     a.water_dir = os.path.abspath(os.path.join(ROOT, a.water_dir))
     return {"render-woosh": cmd_render_woosh, "render-sa3": cmd_render_sa3, "verify": cmd_verify, "routes": cmd_routes,
             "judge-vocab": cmd_judge_vocab, "judge-water": cmd_judge_water, "report": cmd_report,
-            "page": cmd_page, "rank": cmd_rank}[a.cmd](a)
+            "page": cmd_page, "rank": cmd_rank, "confirm": cmd_confirm, "tpage": cmd_tpage}[a.cmd](a)
 
 
 if __name__ == "__main__":
