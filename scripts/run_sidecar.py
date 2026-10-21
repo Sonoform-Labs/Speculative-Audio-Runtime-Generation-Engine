@@ -23,6 +23,7 @@ os.environ.setdefault("TRITON_CACHE_DIR", os.path.join(_CACHE, "triton-" + _TORC
 
 _T = startup.stage("sarge package import", _T_SCRIPT)
 from sarge import prefetch, weight_cache
+from sarge.prompts import TEMPLATES, check_style
 from sarge.sidecar import serve
 
 startup.stage("sarge.sidecar import", _T)
@@ -88,7 +89,7 @@ def start_woosh(args, hold=False):
         [args.amp] if args.amp in ("punch", "auto") else []) + (
         ["--level", "loudness"] if getattr(args, "level", None) == "loudness" else []) + (
         ["--stereo"] if args.stereo else []) + (
-        ["--prompts", "generic"] if getattr(args, "prompts", None) == "generic" else [])
+        ["--prompts", args.prompts] if getattr(args, "prompts", None) not in (None, "tuned") else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -214,13 +215,16 @@ def main(argv=None) -> int:
                     help="the searched prompt grammar (sarge.prompts.build, a phrasebook tuned to the demo's event and "
                          "material names): detailed source, action and acoustic wording plus the space from the request "
                          "context (outdoor_open, indoor_small, indoor_large, tunnel; default is outdoor_open); "
-                         "--generator hybrid always uses it unless --prompts generic")
-    ap.add_argument("--prompts", choices=["tuned", "generic"], default="tuned",
+                         "--generator hybrid always uses it unless --prompts generic or template:NAME")
+    ap.add_argument("--prompts", type=check_style, default="tuned",
                     help="generic: every prompt on both routes is built only from the request (event and material "
                          "words split on underscores, capitals and digits, the intensity word, the context words, and "
                          "with --world the contact words), one template for every sound, SA3 gets the vendor's "
-                         "'TrackType: SFX,' prefix (docs/generic.md); tuned (default): the prompts as before. A prompt "
-                         "the game sends (prebake key or event field) wins over both on both routes")
+                         "'TrackType: SFX,' prefix (docs/generic.md); template:NAME: one of the universal sentence "
+                         "templates in sarge.prompts.TEMPLATES (%s), filled from the same request fields, with a "
+                         "+tt or -tt suffix forcing the SA3 prefix on or off; tuned (default): the prompts as before. "
+                         "A prompt the game sends (prebake key or event field) wins over all of them on both routes"
+                         % ", ".join(TEMPLATES))
     ap.add_argument("--route", choices=["families", "words", "class", "single"], default="families",
                     help="--generator hybrid: which sounds go to SA3 medium (guns) and which to Woosh. families "
                          "(default): substrings of sarge.amp.FAMILIES as before; words: a whole word of the event name "
@@ -331,8 +335,8 @@ def main(argv=None) -> int:
             woosh = launch_woosh(args)
             gen_kwargs.update(start_rest=lambda: open_woosh(args, *woosh), load_rest=lambda: gate(woosh[0], "load"),
                               drop_rest=lambda: close_woosh(woosh[0]))
-    if args.prompts == "generic":
-        gen_kwargs["prompt_style"] = "generic"
+    if args.prompts != "tuned":
+        gen_kwargs["prompt_style"] = args.prompts
     ckpt = args.decoder_ckpt or os.environ.get("SARGE_DECODER_CKPT")
     if ckpt:
         ckpt = ckpt if os.path.isabs(ckpt) else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ckpt)

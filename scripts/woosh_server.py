@@ -18,7 +18,7 @@ sys.path.insert(0, str(HERE.parent / "src"))
 
 from model_server import _recv, _send
 from sarge import startup
-from sarge.prompts import STYLES, WOOSH_PREFIX, compose
+from sarge.prompts import TEMPLATES, WOOSH_PREFIX, check_style, compose
 from sarge.types import CacheKey, seed_for
 
 WOOSH_HOME = os.environ.get("WOOSH_HOME", r"F:\AI\cache\woosh")
@@ -749,9 +749,11 @@ def main():
                     help="amplifier stage: --amp or --amp full is attack emphasis plus saturation by sound family, "
                          "--amp punch is the attack emphasis alone, --amp auto sets attack emphasis, saturation and "
                          "stereo width from the rendered clip (sarge.amp.auto_params)")
-    ap.add_argument("--prompts", choices=STYLES, default="tuned",
+    ap.add_argument("--prompts", type=check_style, default="tuned",
                     help="tuned: the sarge.prompts.build phrasebook; generic: a prompt made only from the request "
-                         "fields (sarge.prompts.generic); a prompt sent with the request wins over both")
+                         "fields (sarge.prompts.generic); template:NAME: a universal sentence template filled from the "
+                         "request fields (sarge.prompts.template; %s); a prompt sent with the request wins over all"
+                         % ", ".join(TEMPLATES))
     ap.add_argument("--stereo", action="store_true")
     ap.add_argument("--level", choices=("peak", "loudness"), default="peak",
                     help="peak sets each clip's peak per intensity; loudness sets its 400 ms loudness per intensity "

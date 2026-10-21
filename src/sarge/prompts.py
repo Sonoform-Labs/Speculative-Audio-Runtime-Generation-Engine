@@ -1,11 +1,28 @@
 from __future__ import annotations
 
+import argparse
+import re
+
 from .words import split_words
 
-STYLES = ("tuned", "generic")
 SA3_PREFIX = "TrackType: SFX, "
 WOOSH_PREFIX = ""
 UNSET_WORDS = ("", "default", "normal")
+TEMPLATE = "template:"
+TT_ON, TT_OFF = "+tt", "-tt"
+INTENSITY_ADJ = {"soft": "light", "hard": "heavy"}
+TEMPLATES = {
+    "library": ("{Mf}, single {adj} {noun}, foley, close-distance, {space}, {contact}", False, "exterior, open air"),
+    "library_ef": ("{Ef}, single {adj} {noun}, foley, close-distance, {space}, {contact}", False, "exterior, open air"),
+    "library_n": ("{Mf}, single {lit} {noun}, foley, close-distance, {space}, {contact}", False, "exterior, open air"),
+    "tags": ("{ev}, {mat}, {iw}, {ctx}, single, close-up, foley, sound effect, {contact}", True, ""),
+    "caption": ("A single {adj} {mf} sound, recorded up close, {ctx}, {contact}.", True, ""),
+    "oneshot": ("{Amf} one-shot, short, isolated, close-mic, {ctx}, {contact}", False, ""),
+    "guide": ("{Amf}, a single short sound with a quick decay, close perspective, {space}, {contact}", True, "outdoors"),
+    "plain": ("{Amf}, {ctx}, {contact}", True, ""),
+}
+STYLES = ("tuned", "generic") + tuple(TEMPLATE + n for n in TEMPLATES)
+_SLOT = re.compile(r"\{(\w+)\}")
 
 SPACES = {
     "outdoor_open": {"foley": "exterior, open air", "gun": "exterior, open field, echo rolling away into the distance",
@@ -270,9 +287,74 @@ def generic(event, material="", intensity="normal", context="default", phys="", 
     return prefix + text if text else prefix.rstrip(", ")
 
 
-def compose(style, key, prefix=""):
+def parse_template(style):
+    s = str(style or "")
+    if not s.startswith(TEMPLATE):
+        return None
+    body = s[len(TEMPLATE):]
+    tt = {TT_ON: True, TT_OFF: False}.get(body[-len(TT_ON):])
+    name = body[:-len(TT_ON)] if tt is not None else body
+    if name not in TEMPLATES:
+        raise ValueError("unknown prompt template %r (known: %s)" % (name, ", ".join(TEMPLATES)))
+    return name, (TEMPLATES[name][1] if tt is None else tt)
+
+
+def check_style(style):
+    s = str(style or "")
+    try:
+        if s in ("tuned", "generic") or parse_template(s):
+            return s
+    except ValueError as e:
+        raise argparse.ArgumentTypeError(str(e))
+    raise argparse.ArgumentTypeError("prompt style must be tuned, generic or template:<name>[+tt|-tt], got %r" % s)
+
+
+def _phrase(words):
+    return " ".join(words)
+
+
+def template_slots(event, material="", intensity="normal", context="default", phys=""):
+    ev = split_words(event)
+    mat = split_words(material)
+    mat = [] if mat and all(w in ev for w in mat) else mat
+    iw = _field(intensity)
+    lit = split_words(intensity)
+    adj = split_words(" ".join(INTENSITY_ADJ.get(w, w) for w in iw))
+    ctx = _field(context)
+    mf, ef = _phrase(mat + ev), _phrase(ev + mat)
+    return {"ev": _phrase(ev), "mat": _phrase(mat), "mf": mf, "ef": ef, "noun": _phrase(ev or mat),
+            "amf": _phrase(adj + mat + ev), "adj": _phrase(adj), "iw": _phrase(iw), "lit": _phrase(lit),
+            "ctx": _phrase(ctx), "contact": contact_words(phys)}
+
+
+def _tidy(text):
+    t = re.sub(r"\s+", " ", text)
+    t = re.sub(r"\s+([,.])", r"\1", t)
+    t = re.sub(r",(\s*,)+", ",", t)
+    t = re.sub(r",\s*\.", ".", t)
+    return t.strip(" ,")
+
+
+def _sentence_case(text):
+    return text.lstrip("{")[:1].isupper()
+
+
+def template(style, event, material="", intensity="normal", context="default", phys="", model="woosh"):
+    name, tt = parse_template(style)
+    text, _tt, space = TEMPLATES[name]
+    slots = template_slots(event, material, intensity, context, phys)
+    slots["space"] = slots["ctx"] or space
+    out = _tidy(_SLOT.sub(lambda m: slots[m.group(1).lower()], text))
+    out = out[:1].upper() + out[1:] if _sentence_case(text) else out
+    prefix = SA3_PREFIX if model == "sa3" and tt else ""
+    return prefix + out if out else prefix.rstrip(", ")
+
+
+def compose(style, key, prefix="", model="woosh"):
     if style == "generic":
         return generic(key.event_type, key.material, key.intensity, key.context, key.phys, prefix)
+    if str(style or "").startswith(TEMPLATE):
+        return template(style, key.event_type, key.material, key.intensity, key.context, key.phys, model)
     return build(key.event_type, key.material, key.intensity, key.context, key.phys)
 
 

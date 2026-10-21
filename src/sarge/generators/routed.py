@@ -96,8 +96,9 @@ class RoutedGenerator(Generator):
         extra = []
         if self.route_mode != "families":
             extra.append("route:%s" % (self.route_mode + (":" + self.single_route if self.route_mode == "single" else "")))
-        if getattr(self.guns, "prompt_style", "") == "generic":
-            extra.append("prompts:generic")
+        style = str(getattr(self.guns, "prompt_style", "") or "")
+        if style == "generic" or style.startswith("template:"):
+            extra.append("prompts:" + style)
         return "|".join([tag] + extra) if extra else tag
 
     def ensure_ready(self):

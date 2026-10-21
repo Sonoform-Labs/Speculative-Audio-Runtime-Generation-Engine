@@ -20,6 +20,7 @@ from math import gcd
 import numpy as np
 
 from sarge.generators.routed import side_for
+from sarge.prompts import TEMPLATE as STYLE_TEMPLATE, TEMPLATES, TT_OFF, TT_ON
 from sarge.types import AudioClip, CacheKey
 
 ROOT = os.path.dirname(os.path.dirname(BENCH))
@@ -84,9 +85,22 @@ ARM_TEXT = {"phrasebook": "shipped flags: --amp --detailed-prompts (tuned phrase
             "generic_bare": "diagnostic, no flag: the --prompts generic text without the 'TrackType: SFX, ' prefix on SA3 "
                             "(Woosh never gets the prefix, so its audio is the generic arm's), families route, family "
                             "amplifier"}
+OLD_ARMS = tuple(ARMS)
+for _n, (_text, _tt, _space) in TEMPLATES.items():
+    for _sfx, _word in ((TT_OFF, "without"), (TT_ON, "with")):
+        ARMS[_n + _sfx] = (STYLE_TEMPLATE + _n + _sfx, "families", "full")
+        ARM_TEXT[_n + _sfx] = ("--prompts template:%s%s: the universal template %r, %s the 'TrackType: SFX, ' prefix on "
+                               "SA3 (Woosh never gets it), families route, family amplifier" % (_n, _sfx, _text, _word))
+    PARTNER[_n + TT_ON] = _n + TT_OFF
+TMPL_ARMS = ("phrasebook", "generic") + tuple(a for a in ARMS if a not in OLD_ARMS)
+RUNS = {"old": (OLD_ARMS, MAIN_ARMS), "templates": (TMPL_ARMS, ("phrasebook", "generic") + tuple(
+    n + TT_OFF for n in TEMPLATES))}
+RUN, WATER_ARMS = RUNS["old"]
+WATER_ALIAS = {n + TT_ON: n + TT_OFF for n in TEMPLATES}
+TIER_LETTERS = "abcdefghijklmnopqrstuvwxyz"
 MODEL_NAME = {"sa3": "SA3 medium", "woosh": "Woosh DFlow"}
 STYLE_TO_SA3 = {"tuned": "detailed", "generic": "generic", "generic_bare": "generic"}
-LETTERS = "ABCDEFGH"
+LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 BOOT, BOOT_SEED = 4000, 20261017
 
 
@@ -106,19 +120,35 @@ def source(arm, et, mat):
     style, route, amp = ARMS[arm]
     cls = "weapon" if route == "class" and kid(et, mat) in WEAPON_CLASS else ""
     model = "sa3" if side_for(key_of(et, mat, cls), route) == "guns" else "woosh"
-    if model == "woosh" and style == "generic_bare":
-        style = "generic"
+    if model == "woosh":
+        style = woosh_style(style)
     return (model, style, amp)
 
 
+def woosh_style(style):
+    if style == "generic_bare":
+        return "generic"
+    if style.startswith(STYLE_TEMPLATE) and style[-len(TT_ON):] in (TT_ON, TT_OFF):
+        return style[:-len(TT_ON)]
+    return style
+
+
 def src_name(src):
-    return "%s-%s-%s" % src
+    return "%s-%s-%s" % (src[0], src[1].replace(":", "_"), src[2])
+
+
+def water_tiers():
+    return {arm: "%s_%s" % (TIER_LETTERS[i], arm) for i, arm in enumerate(WATER_ARMS)}
+
+
+def water_arm(arm):
+    return arm if arm in WATER_ARMS else WATER_ALIAS.get(arm)
 
 
 def plan():
     out = {"sa3": {}, "woosh": {}}
     for et, mat, _g in KEYS:
-        for arm in ARMS:
+        for arm in RUN:
             model, style, amp = source(arm, et, mat)
             out[model].setdefault((et, mat, style), set()).add(amp)
     return out
@@ -231,7 +261,7 @@ def cmd_render_sa3(a):
     jobs = [j for j in jobs if not a.styles or j[0][2] in a.styles]
     for (et, mat, style), amps in jobs:
         k = key_of(et, mat)
-        g.prompt_style = STYLE_TO_SA3[style]
+        g.prompt_style = STYLE_TO_SA3.get(style, style)
         g.prompts.clear()
         if style == "generic_bare":
             from sarge.prompts import generic
@@ -338,7 +368,7 @@ def route_for(arm, et, mat):
 def cmd_routes(a):
     prompts = prompts_by_src(a.work)
     made = {}
-    for arm in ARMS:
+    for arm in RUN:
         keys = route_keys(arm)
         d = os.path.join(a.work, "routes", arm)
         if os.path.isdir(d):
@@ -358,11 +388,11 @@ def cmd_routes(a):
                       "normalize_loudness target_for('normal'), 44.1 kHz; seeds 0-%d from seed_for" % (
                           ARM_TEXT[arm], a.seeds - 1)}, os.path.join(d, "route.json"))
         made[arm] = len(keys)
-    wd = WATER_DIR
+    wd = a.water_dir
     if os.path.isdir(wd):
         shutil.rmtree(wd)
-    for i, arm in enumerate(MAIN_ARMS):
-        d = os.path.join(wd, "%s_%s" % ("abc"[i], arm))
+    for arm, tier in water_tiers().items():
+        d = os.path.join(wd, tier)
         os.makedirs(d)
         for et, mat, _g in KEYS:
             stem = WATER.get(kid(et, mat))
@@ -382,7 +412,7 @@ def cmd_judge_vocab(a):
     tag = "_" + a.tag if a.tag else ""
     argv = ["--refs", a.refs, "--settings", "none", "--seeds", str(a.seeds), "--out",
             os.path.join(a.work, "vocab%s.json" % tag), "--listen", os.path.join(a.work, "vocab_listen%s.wav" % tag)]
-    for arm in (a.arms or ARMS):
+    for arm in (a.arms or RUN):
         d = os.path.join(a.work, "routes", arm)
         if os.path.isdir(d):
             argv += ["--route", "%s=%s" % (arm, d)]
@@ -392,7 +422,7 @@ def cmd_judge_vocab(a):
 def cmd_judge_water(a):
     import water_judge as wj
     return wj.main(["--ctl-lengths", "0.6", "--probe-json", os.path.join(a.work, "no_probe.json"), "--probe-dir",
-                    os.path.join(a.work, "water_empty"), "--tier-dir", WATER_DIR, "--out",
+                    os.path.join(a.work, "water_empty"), "--tier-dir", a.water_dir, "--out",
                     os.path.join(a.work, "water.json")])
 
 
@@ -433,7 +463,7 @@ def vocab_table(V, rng):
         if not VOCAB.get(k):
             continue
         arms = {}
-        for arm in ARMS:
+        for arm in RUN:
             use = route_for(arm, et, mat_)
             g = "gen:%s|%s|%s" % (use, et, mat_) if use else None
             c = cons.get(g) if g else None
@@ -469,7 +499,7 @@ def water_table(W, rng):
     val = W["validity"]
     gen = W["generated"]
     out = {}
-    tiers = {arm: "gen:tier|%s_%s" % ("abc"[i], arm) for i, arm in enumerate(MAIN_ARMS)}
+    tiers = {arm: "gen:tier|" + water_tiers()[water_arm(arm)] for arm in RUN if water_arm(arm)}
     for k, stem in WATER.items():
         wk_ = "%s|%s" % tuple(stem.split("-"))
         arms = {}
@@ -585,14 +615,14 @@ def cmd_report(a):
     for et, mat, grp in KEYS:
         k = kid(et, mat)
         stat[k] = {}
-        for arm in ARMS:
+        for arm in RUN:
             src = source(arm, et, mat)
             rr = by.get((k,) + src, [])
             stat[k][arm] = {"model": src[0], "prompt": prompts.get((k, src[0], src[1])), "n": len(rr),
                             "static": int(sum(x["static"] for x in rr)), "t40": float(np.median([x["t40"] for x in rr]))
                             if rr else None, "len": float(np.median([x["len"] for x in rr])) if rr else None,
                             "gen_ms": float(np.median([x["gen_ms"] for x in rr])) if rr else None}
-    pool = {arm: {g: pooled(vt, arm, g, rng) for g in ("demo", "unseen", "all")} for arm in ARMS if arm != "phrasebook"}
+    pool = {arm: {g: pooled(vt, arm, g, rng) for g in ("demo", "unseen", "all")} for arm in RUN if arm != "phrasebook"}
     validity = {}
     for t, by_f in (V.get("chosen") or {}).items():
         validity[t] = {f: {"variant": v, "real": V["validity"][v][t.split("@")[1]]["real"]} for f, v in by_f.items()}
@@ -640,8 +670,221 @@ def cmd_report(a):
     print("CLIPS (all %d seeds): model, static-rule flags, median decay to -40 dB, median length" % res["meta"]["seeds"])
     for k, s in stat.items():
         print("%-30s %s" % (k, "  ".join("%s %s st%d t40 %.2f len %.2f" % (
-            arm, s[arm]["model"], s[arm]["static"], s[arm]["t40"] or 0, s[arm]["len"] or 0) for arm in MAIN_ARMS)))
+            arm, s[arm]["model"], s[arm]["static"], s[arm]["t40"] or 0, s[arm]["len"] or 0) for arm in MAIN_ARMS
+            if arm in RUN)))
     print("saved", os.path.join(a.work, "report.json"))
+    return 0
+
+
+def rank_groups(vt):
+    ks = list(vt)
+    sa3 = [k for k in ks if source("phrasebook", *k.split("|"))[0] == "sa3"]
+    return {"all": ks, "demo": [k for k in ks if vt[k]["group"] == "demo"],
+            "unseen": [k for k in ks if vt[k]["group"] == "unseen"],
+            "guns": [k for k in ks if vt[k]["type"].startswith("gunshot")],
+            "footsteps": [k for k in ks if vt[k]["type"] == "footstep"],
+            "sa3_rows": sa3, "woosh_rows": [k for k in ks if k not in sa3]}
+
+
+def cons_draws(hits, reals, idx):
+    out = np.full(idx.shape[0], np.inf)
+    for f, hs in hits.items():
+        out = np.minimum(out, np.minimum(np.asarray(hs, float)[idx].mean(1) / reals[f], 1.0))
+    return out
+
+
+def rank_table(rows, arms, rng):
+    ks = list(rows)
+    n = len(next(iter(next(iter(rows[ks[0]].values()))["hits"].values())))
+    seeds = {k: rng.integers(0, n, size=(BOOT, n)) for k in ks}
+    reals = {k: {f: j["real"] for f, j in rows[k]["phrasebook"]["judges"].items()} for k in ks}
+    point, draws = {}, {}
+    for arm in arms:
+        point[arm] = np.array([cons_of(rows[k][arm]["hits"], reals[k]) for k in ks])
+        draws[arm] = np.vstack([cons_draws(rows[k][arm]["hits"], reals[k], seeds[k]) for k in ks])
+    return ks, point, draws
+
+
+def summarize_group(ks, point, draws, members, arms, rng):
+    pos = [ks.index(k) for k in members]
+    kb = rng.integers(0, len(pos), size=(BOOT, len(pos)))
+    sel = np.asarray(pos)[kb]
+    cols = np.arange(BOOT)[:, None]
+    pooled_b = {arm: draws[arm][sel, cols].mean(1) for arm in arms}
+    out = {}
+    for arm in arms:
+        p = float(point[arm][pos].mean())
+        ci = [float(x) for x in np.percentile(pooled_b[arm], [2.5, 97.5])]
+        rec = {"mean": p, "ci": ci, "keys": len(pos)}
+        for ref in ("phrasebook", "generic"):
+            if ref == arm or ref not in pooled_b:
+                continue
+            d = pooled_b[arm] - pooled_b[ref]
+            dp = point[arm][pos] - point[ref][pos]
+            rec["vs_" + ref] = {"delta": float(dp.mean()), "ci": [float(x) for x in np.percentile(d, [2.5, 97.5])],
+                                "p_boot": min(1.0, 2.0 * min(float(np.mean(d <= 0)), float(np.mean(d >= 0)))),
+                                "up": int((dp > 1e-9).sum()), "down": int((dp < -1e-9).sum())}
+        out[arm] = rec
+    return out
+
+
+def judge_pairs(rows, members, arm, ref):
+    fam = {}
+    for k in members:
+        a, b = rows[k][arm]["hits"], rows[k][ref]["hits"]
+        for f in b:
+            ha, hb = np.asarray(a[f], bool), np.asarray(b[f], bool)
+            x = fam.setdefault(f, [0, 0])
+            x[0] += int((ha & ~hb).sum())
+            x[1] += int((~ha & hb).sum())
+    return {f: {"gain": g, "loss": l, "p": sign_two(g, l)} for f, (g, l) in sorted(fam.items())}
+
+
+def fmt_group(rec):
+    if not rec:
+        return "-"
+    return "%.3f [%.2f, %.2f]" % (rec["mean"], rec["ci"][0], rec["ci"][1])
+
+
+def fmt_delta(rec, ref):
+    v = (rec or {}).get("vs_" + ref)
+    if not v:
+        return "-"
+    return "%+.3f [%+.2f, %+.2f] %d/%d" % (v["delta"], v["ci"][0], v["ci"][1], v["up"], v["down"])
+
+
+def cmd_rank(a):
+    rng = np.random.default_rng(BOOT_SEED)
+    V = load_json(os.path.join(a.work, "vocab.json"))
+    merge_vocab(V, a.work)
+    vt = vocab_table(V, rng)
+    W = load_json(os.path.join(a.work, "water.json")) if os.path.isfile(os.path.join(a.work, "water.json")) else None
+    wt = water_table(W, rng) if W else {}
+    arms = [arm for arm in RUN if all(arm in vt[k]["arms"] for k in vt)]
+    groups = rank_groups(vt)
+    vrows = {k: vt[k]["arms"] for k in vt}
+    ks, point, draws = rank_table(vrows, arms, rng)
+    res = {"groups": {}, "per_key": {}, "water": {}, "pairs": {}, "floor": {}, "split": {}, "clips": {}, "identity": {}}
+    for g, members in groups.items():
+        res["groups"][g] = summarize_group(ks, point, draws, members, arms, rng)
+    for arm in arms:
+        res["pairs"][arm] = {ref: judge_pairs(vrows, ks, arm, ref) for ref in ("phrasebook", "generic") if ref != arm}
+        res["floor"][arm] = {ref: [k for k in ks if vrows[k][arm]["cons"] < vrows[k][ref]["cons_ci"][0] - 1e-9]
+                             for ref in ("phrasebook", "generic") if ref != arm}
+    for k in ks:
+        res["per_key"][k] = {arm: {"cons": vrows[k][arm]["cons"], "route": vrows[k][arm]["route"]} for arm in arms}
+    warms = [arm for arm in arms if all(arm in wt[k]["arms"] for k in wt)] if wt else []
+    if warms:
+        wrows = {k: {arm: dict(wt[k]["arms"][arm], judges={f: {"real": r} for f, r in
+                                                           wt[k]["arms"]["phrasebook"]["reals"].items()})
+                     for arm in warms} for k in wt}
+        wks, wpoint, wdraws = rank_table(wrows, warms, rng)
+        res["water"] = {"group": summarize_group(wks, wpoint, wdraws, wks, warms, rng),
+                        "per_key": {k: {arm: wt[k]["arms"][arm]["cons"] for arm in warms} for k in wks}}
+        aks = ks + ["water:" + k for k in wks]
+        apoint = {arm: np.concatenate([point[arm], wpoint[arm]]) for arm in warms}
+        adraws = {arm: np.vstack([draws[arm], wdraws[arm]]) for arm in warms}
+        res["groups"]["all_plus_water"] = summarize_group(aks, apoint, adraws, aks, warms, rng)
+    sa3k, wk = groups["sa3_rows"], groups["woosh_rows"]
+    sa3_side = {arm: float(np.mean([point[arm][ks.index(k)] for k in sa3k])) for arm in arms}
+    woosh_side = {arm: float(np.mean([point[arm][ks.index(k)] for k in wk])) for arm in arms}
+    tmpl = [arm for arm in arms if arm not in OLD_ARMS]
+    if tmpl:
+        bs = max(tmpl, key=lambda x: sa3_side[x])
+        bw = max((x for x in tmpl if x.endswith(TT_OFF)), key=lambda x: woosh_side[x])
+        pos_s, pos_w = [ks.index(k) for k in sa3k], [ks.index(k) for k in wk]
+        sp = np.concatenate([point[bs][pos_s], point[bw][pos_w]])
+        order = pos_s + pos_w
+        sd = np.vstack([draws[bs][pos_s], draws[bw][pos_w]])
+        kb = rng.integers(0, len(order), size=(BOOT, len(order)))
+        cols = np.arange(BOOT)[:, None]
+        sb = sd[kb, cols].mean(1)
+        pb = draws["phrasebook"][np.asarray(order)[kb], cols].mean(1)
+        res["split"] = {"sa3": bs, "woosh": bw, "mean": float(sp.mean()),
+                        "ci": [float(x) for x in np.percentile(sb, [2.5, 97.5])],
+                        "vs_phrasebook": float(sp.mean() - point["phrasebook"][order].mean()),
+                        "vs_phrasebook_ci": [float(x) for x in np.percentile(sb - pb, [2.5, 97.5])],
+                        "sa3_side": sa3_side, "woosh_side": woosh_side}
+    rows = render_rows(a.work)
+    by = {}
+    for r in rows:
+        if r["v"] < a.seeds:
+            by.setdefault((r["key"], r["model"], r["style"], r["amp"]), []).append(r)
+    for arm in RUN:
+        t40 = {"sa3": [], "woosh": []}
+        for et, mat, _g in KEYS:
+            src = source(arm, et, mat)
+            rr = by.get((kid(et, mat),) + src, [])
+            if rr:
+                t40[src[0]].append(float(np.median([x["t40"] for x in rr])))
+        res["clips"][arm] = {m: float(np.median(v)) if v else None for m, v in t40.items()}
+    ident = V["generated"].get("_identity", {})
+    for k in groups["guns"]:
+        res["identity"][k] = {arm: ident.get("gen:%s|%s" % (vrows[k][arm]["route"], k)) for arm in arms}
+    dump(res, os.path.join(a.work, "rank.json"))
+    order_arms = sorted(arms, key=lambda x: -res["groups"]["all"][x]["mean"])
+    print("RANK on %d judged requests, seeds 0-%d: mean of cons (min over judges of min(rate/real, 1)); "
+          "[95%% CI, keys and seeds resampled]; deltas paired on key and seed, up/down = keys" % (len(ks), a.seeds - 1))
+    hdr = ("arm", "pooled 24", "vs phrasebook", "vs generic", "guns", "footsteps", "unseen", "water judge",
+           "24 + water")
+    print("%-14s %-22s %-28s %-28s %-22s %-22s %-22s %-22s %s" % hdr)
+    for arm in order_arms:
+        G = res["groups"]
+        print("%-14s %-22s %-28s %-28s %-22s %-22s %-22s %-22s %s" % (
+            arm, fmt_group(G["all"][arm]), fmt_delta(G["all"][arm], "phrasebook"), fmt_delta(G["all"][arm], "generic"),
+            fmt_group(G["guns"][arm]), fmt_group(G["footsteps"][arm]), fmt_group(G["unseen"][arm]),
+            fmt_group(res["water"].get("group", {}).get(arm)) if res["water"] else "-",
+            fmt_group(G.get("all_plus_water", {}).get(arm))))
+    print()
+    print("GROUP DELTAS vs phrasebook / vs generic")
+    for g in ("demo", "unseen", "guns", "footsteps", "sa3_rows", "woosh_rows"):
+        print(" %s (%d keys)" % (g, len(groups[g])))
+        for arm in order_arms:
+            r = res["groups"][g][arm]
+            print("   %-14s %-22s %-30s %s" % (arm, fmt_group(r), fmt_delta(r, "phrasebook"), fmt_delta(r, "generic")))
+    if res["water"]:
+        print(" water judge (%d keys)" % len(res["water"]["per_key"]))
+        for arm in order_arms:
+            r = res["water"]["group"].get(arm)
+            print("   %-14s %-22s %-30s %s" % (arm, fmt_group(r), fmt_delta(r, "phrasebook"), fmt_delta(r, "generic")))
+    print()
+    print("PER KEY cons (seeds 0-%d)" % (a.seeds - 1))
+    print("%-30s %s" % ("key", " ".join("%-6s" % x[:6] for x in order_arms)))
+    print("%-30s %s" % ("", " ".join("%-6s" % x[6:12] for x in order_arms)))
+    for k in ks:
+        print("%-30s %s" % (k, " ".join("%-6.2f" % res["per_key"][k][x]["cons"] for x in order_arms)))
+    for k, by_arm in (res["water"].get("per_key") or {}).items():
+        print("%-30s %s" % ("water:" + k, " ".join("%-6.2f" % by_arm[x] if x in by_arm else "  -   "
+                                                   for x in order_arms)))
+    print()
+    print("JUDGE PAIRS pooled over keys (seeds where one arm hits and the other misses), and keys below the floor "
+          "(cons under the reference's lower 95% bound)")
+    for arm in order_arms:
+        print("  %-14s %s" % (arm, "  ".join("vs %s: %s; below floor %s" % (
+            ref, " ".join("%s +%d/-%d" % (f[0], m["gain"], m["loss"]) for f, m in pp.items()),
+            res["floor"][arm][ref] or "-") for ref, pp in res["pairs"][arm].items())))
+    if res["split"]:
+        s = res["split"]
+        print()
+        print("PER-MODEL SPLIT (best SA3-side arm on its %d keys, best Woosh-side template on its %d keys; picked on "
+              "these seeds, so optimistic): sa3 %s + woosh %s = %.3f [%.2f, %.2f], vs phrasebook %+.3f [%+.2f, %+.2f]" % (
+                  len(sa3k), len(wk), s["sa3"], s["woosh"], s["mean"], s["ci"][0], s["ci"][1], s["vs_phrasebook"],
+                  s["vs_phrasebook_ci"][0], s["vs_phrasebook_ci"][1]))
+        print("  sa3 side  " + "  ".join("%s %.2f" % (x, v) for x, v in sorted(s["sa3_side"].items(), key=lambda t: -t[1])))
+        print("  woosh side " + "  ".join("%s %.2f" % (x, v) for x, v in sorted(s["woosh_side"].items(),
+                                                                                 key=lambda t: -t[1])))
+    print()
+    print("MEDIAN DECAY to -40 dB (median over keys of the per-key median), s")
+    for arm in order_arms:
+        c = res["clips"][arm]
+        print("  %-14s sa3 %s  woosh %s" % (arm, "%.2f" % c["sa3"] if c["sa3"] is not None else "-",
+                                           "%.2f" % c["woosh"] if c["woosh"] is not None else "-"))
+    print()
+    print("CLAP TOP-1 on gun keys (3 most common)")
+    for k, by_arm in res["identity"].items():
+        for arm in order_arms:
+            print("  %-22s %-14s %s" % (k, arm, by_arm.get(arm)))
+    print("saved", os.path.join(a.work, "rank.json"))
     return 0
 
 
@@ -666,7 +909,7 @@ def cmd_page(a):
         k = kid(et, mat)
         sid = slug(k)
         opts = {}
-        for arm in ARMS:
+        for arm in RUN:
             opts.setdefault(source(arm, et, mat), []).append(arm)
         order = sorted(opts, key=lambda s: h(a.seed + sid + src_name(s)))
         blocks = []
@@ -823,11 +1066,17 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description="the generic runtime path against the tuned phrasebook on the models that "
                                              "ship: render, verify against the sidecar, judge, report, blind page")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    for name in ("render-woosh", "render-sa3", "verify", "routes", "judge-vocab", "judge-water", "report", "page"):
+    for name in ("render-woosh", "render-sa3", "verify", "routes", "judge-vocab", "judge-water", "report", "page",
+                 "rank"):
         p = sub.add_parser(name)
         p.add_argument("--work", default=WORK)
         p.add_argument("--seeds", type=int, default=SEEDS)
         p.add_argument("--takes", type=int, default=TAKES)
+        p.add_argument("--run", choices=sorted(RUNS), default="old",
+                       help="old: the shipped flags against the generic flag sets; templates: the phrasebook and the "
+                            "generic word list against every universal template with and without the SA3 prefix")
+        p.add_argument("--water-dir", default=WATER_DIR,
+                       help="tier folders for water_judge.py, which must sit inside the repo")
         if name == "verify":
             p.add_argument("--served", nargs="+", default=[], help="arm=dir of generic_probe.py output, variant 0")
         if name == "judge-vocab":
@@ -840,9 +1089,12 @@ def main(argv=None):
             p.add_argument("--out", default=PAGE)
             p.add_argument("--seed", default="generic1")
     a = ap.parse_args(argv)
+    global RUN, WATER_ARMS
+    RUN, WATER_ARMS = RUNS[a.run]
+    a.water_dir = os.path.abspath(os.path.join(ROOT, a.water_dir))
     return {"render-woosh": cmd_render_woosh, "render-sa3": cmd_render_sa3, "verify": cmd_verify, "routes": cmd_routes,
             "judge-vocab": cmd_judge_vocab, "judge-water": cmd_judge_water, "report": cmd_report,
-            "page": cmd_page}[a.cmd](a)
+            "page": cmd_page, "rank": cmd_rank}[a.cmd](a)
 
 
 if __name__ == "__main__":
