@@ -30,9 +30,11 @@ ARMS = {"head": OFF, "ref": ["--vram-kb", "2000000", "--target-variants", "2"] +
         "fix": ["--predict-fixes", "--pool-fix", "--concurrent-gen", "--no-async-cache-write"],
         "pf": ["--predict-fixes", "--pool-fix"] + OFF_GEN,
         "kw50": ["--keep-warm-ms", "50"] + OFF, "kw200": ["--keep-warm-ms", "200"] + OFF,
-        "dflt": ["--no-predict-fixes"], "pfx": ["--predict-fixes"], "pfp": ["--predict-fixes", "--pool-fix"]}
+        "dflt": ["--no-predict-fixes"], "pfx": ["--predict-fixes"], "pfp": ["--predict-fixes", "--pool-fix"],
+        "now": [], "upf": ["--prompts", "template:caption+tt", "--woosh-upgrade", "flow"]}
 PHASES = {"head": "bac", "ref": "r", "cg": "ba", "cga": "ba", "fix": "ba", "pf": "b", "kw50": "c", "kw200": "c",
-          "dflt": "ba", "pfx": "ba", "pfp": "ba"}
+          "dflt": "ba", "pfx": "ba", "pfp": "ba", "now": "bdu", "upf": "bdu"}
+DRAIN_S, DRAIN_QUIET_S = 300.0, 3.0
 FOREIGN = ("run_sidecar", "woosh_server", "e2e_hybrid", "woosh_opt", "medium_opt", "world_render")
 GUN_EVENTS = ("shoot", "reload", "empty_click", "equip")
 LATE_MS = 20.0
@@ -287,6 +289,8 @@ class Game:
         it["sample_rate"] = int(body.get("sample_rate", 0))
         it["channels"] = int(body.get("channels", 1))
         it["n"] = int(y.shape[0]) if y.ndim else 0
+        if body.get("prompt_rev") is not None:
+            it["rev"] = int(body.get("prompt_rev") or 0)
         it["ms"] = (it["t_reply"] - it["t_enq"]) * 1000.0
         it["queue_ms"] = (it["t_deq"] - it["t_enq"]) * 1000.0
         if y.size:
@@ -586,16 +590,17 @@ def match_log(records, log):
         if best is not None:
             used.add(id(best))
             it["log"] = {k: best.get(k) for k in ("served", "variant", "await_ms", "lock_wait_ms", "engine_ms",
-                                                   "gen_ms", "encode_ms", "send_ms", "concurrent", "t_recv")}
+                                                   "gen_ms", "encode_ms", "send_ms", "concurrent", "t_recv",
+                                                   "upgraded", "rev")}
 
 
 def clean(it):
     return {k: v for k, v in it.items() if k not in ("done",)}
 
 
-def run_session(game, rec, smi):
+def run_session(game, rec, smi, name="b"):
     acts = session()
-    game.phase = "b"
+    game.phase = name
     t_wall0 = time.time()
     t0 = time.perf_counter() + 0.5
     slips = []
@@ -615,9 +620,95 @@ def run_session(game, rec, smi):
     t_events_done = time.time()
     q = game.quiesce(stable=1.0)
     t_end = time.time()
-    rec["b"] = {"t_start": t_wall0, "t_events_done": t_events_done, "t_end": t_end, "quiesce_s": q,
-                "slip_ms_p50": pct(slips, 50), "slip_ms_max": round(max(slips), 2), "stats": game.stats(),
-                "gpu": smi.summary(t_wall0, t_end)}
+    rec[name] = {"t_start": t_wall0, "t_events_done": t_events_done, "t_end": t_end, "quiesce_s": q,
+                 "slip_ms_p50": pct(slips, 50), "slip_ms_max": round(max(slips), 2), "stats": game.stats(),
+                 "gpu": smi.summary(t_wall0, t_end)}
+
+
+def run_drain(game, rec, smi, limit=DRAIN_S, quiet=DRAIN_QUIET_S):
+    game.phase = "u"
+    t0 = time.time()
+    poll, since, drained = [], None, None
+    while time.time() - t0 < limit:
+        up = game.stats().get("upgrade")
+        if up is None:
+            break
+        poll.append([round(time.time() - t0, 2), up.get("queued_takes"), up.get("staged_takes"), up.get("rendered"),
+                     up.get("swapped_takes"), up.get("errors"), up.get("skipped_keys")])
+        if not up.get("queued_takes") and not up.get("staged_takes"):
+            since = since or time.time()
+            if time.time() - since >= quiet:
+                drained = round(since - t0, 2)
+                break
+        else:
+            since = None
+        time.sleep(0.5)
+    t1 = time.time()
+    keys = []
+    for r in game.records:
+        if r["kind"] == "event" and r.get("phase") in ("b", "b2") and r["route"] == "rest" and r["key"] not in keys:
+            keys.append(r["key"])
+    items = []
+    for k in keys:
+        et, mat, inten, ctx = k.split("|")
+        it = game.event(et, mat, inten, ctx, cls="replay", lane=0, tag="replay")
+        game.wait([it])
+        items.append(it)
+    t2 = time.time()
+    rec["u"] = {"t_start": t0, "t_drained": t1, "t_end": t2, "drained_s": drained, "limit_s": limit, "poll": poll,
+                "replay_keys": len(keys), "stats": game.stats(), "gpu": smi.summary(t0, t1)}
+
+
+def upgrade_spans(log, t0, t1):
+    out = {"swap_takes": 0, "swap_ms": 0.0, "yield_n": 0, "yield_ms": 0.0, "error_n": 0, "error_ms": 0.0}
+    for r in log:
+        t = r.get("t")
+        if t is None or not (t0 <= t <= t1 + 0.5):
+            continue
+        if r.get("type") == "upgrade_swap":
+            ms = [x for x in (r.get("take_ms") or []) if x is not None]
+            out["swap_takes"] += len(ms)
+            out["swap_ms"] += sum(ms)
+        elif r.get("type") == "upgrade_yield":
+            out["yield_n"] += 1
+            out["yield_ms"] += float(r.get("ms") or 0.0)
+        elif r.get("type") in ("upgrade_error", "upgrade_failed"):
+            out["error_n"] += 1
+            out["error_ms"] += float(r.get("ms") or 0.0)
+    out["ms"] = round(out["swap_ms"] + out["yield_ms"] + out["error_ms"], 1)
+    return out
+
+
+def plays(records, phase):
+    ev = [r for r in records if r.get("phase") == phase and r["kind"] == "event" and r["route"] == "rest"]
+    out = {"woosh_plays": len(ev), "dflow_on_demand": 0, "dflow_take": 0, "flow_take": 0, "unmatched": 0}
+    for r in ev:
+        lg = r.get("log") or {}
+        if not lg:
+            out["unmatched"] += 1
+        elif lg.get("served") == "realtime":
+            out["dflow_on_demand"] += 1
+        elif lg.get("upgraded"):
+            out["flow_take"] += 1
+        else:
+            out["dflow_take"] += 1
+    return out
+
+
+def upgrade_lag(log):
+    swaps = [r for r in log if r.get("type") == "upgrade_swap"]
+    lags = sorted(r["first_hit_s"] for r in swaps if r.get("first_swap") and r.get("first_hit_s") is not None)
+    hit = {r["key"] for r in log if r.get("type") == "event" and family(r["key"].split("|")[0]) == "rest"}
+    swapped = {r["key"] for r in swaps}
+    return {"keys_swapped_after_hit": len(lags), "lag_p50_s": pct(lags, 50), "lag_p95_s": pct(lags, 95),
+            "lag_max_s": round(max(lags), 2) if lags else None,
+            "swaps_before_hit": sum(1 for r in swaps if r.get("first_swap") and r.get("first_hit_s") is None),
+            "keys_played_never_swapped": len(hit - swapped), "swaps": len(swaps),
+            "takes_swapped": sum(int(r.get("takes") or 0) for r in swaps),
+            "errors": sum(1 for r in log if r.get("type") == "upgrade_error"),
+            "failed_keys": sum(1 for r in log if r.get("type") == "upgrade_failed"),
+            "yields": sum(1 for r in log if r.get("type") == "upgrade_yield"),
+            "state": [r.get("state") for r in log if r.get("type") == "upgrade_state"][-1:]}
 
 
 def hol_trial(game, smi, kind, gun, probe, rows, i):
@@ -729,8 +820,8 @@ def run_ref(game, rec):
     rec["r"] = {"keys": len(keys), "variants": got, "seconds": round(time.time() - t0, 1)}
 
 
-def summarise_b(records, log, t0, t1):
-    ev = [r for r in records if r.get("phase") == "b" and r["kind"] == "event"]
+def summarise_b(records, log, t0, t1, phase="b"):
+    ev = [r for r in records if r.get("phase") == phase and r["kind"] == "event"]
     classes = sorted({r["cls"] for r in ev})
     out = {}
     for c in classes + ["all"]:
@@ -841,8 +932,12 @@ def run(a):
                 rec["b_load_start_s"] = load.start()
                 time.sleep(2.0)
             run_session(game, rec, smi)
+            if "d" in phases:
+                run_session(game, rec, smi, "b2")
             if load is not None:
                 load.stop()
+        if "u" in phases:
+            run_drain(game, rec, smi)
         if "a" in phases:
             run_hol(game, rec, smi, n=a.hol_n)
         if "c" in phases:
@@ -912,8 +1007,19 @@ def run(a):
                 if gr is not None and gr.get("log"):
                     t["gun_engine_ms"] = gr["log"].get("engine_ms")
             rec["a"]["summary"] = summarise_a(rec["a"]["trials"], recs)
-        if "b" in rec:
-            rec["b"]["summary"] = summarise_b(recs, log, rec["b"]["t_start"], rec["b"]["t_end"])
+        for ph in ("b", "b2"):
+            if ph in rec:
+                rec[ph]["summary"] = summarise_b(recs, log, rec[ph]["t_start"], rec[ph]["t_end"], ph)
+                rec[ph]["upgrade_render"] = upgrade_spans(log, rec[ph]["t_start"], rec[ph]["t_end"])
+                rn = rec[ph]["summary"]["renders"]
+                wall = rn["wall_ms"] or 0.0
+                rn["upgrade_ms"] = rec[ph]["upgrade_render"]["ms"]
+                rn["gpu_share_with_upgrade"] = round((rn["gpu_ms_total"] + rn["upgrade_ms"]) / wall, 4) if wall else None
+                rec[ph]["plays"] = plays(recs, ph)
+        if "u" in rec:
+            rec["u"]["upgrade_render"] = upgrade_spans(log, rec["u"]["t_start"], rec["u"]["t_drained"])
+            rec["u"]["plays"] = plays(recs, "u")
+        rec["upgrade_lag"] = upgrade_lag(log)
         acts = gen_activity(log)
         for c in rec.get("c", []):
             for t in c["trials"]:
@@ -937,8 +1043,13 @@ def run(a):
         with open(os.path.join(d, "result.json"), "w", encoding="utf-8") as f:
             json.dump(rec, f, indent=1, default=str)
         short = {k: rec.get(k) for k in ("arm", "rep", "startup", "error", "vram_run_peak_mib", "kill")}
-        if "b" in rec:
-            short["b"] = {k: v for k, v in rec["b"]["summary"].items() if k in ("all", "renders")}
+        for ph in ("b", "b2"):
+            if ph in rec:
+                short[ph] = {k: v for k, v in rec[ph]["summary"].items() if k in ("all", "renders")}
+                short[ph]["plays"] = rec[ph]["plays"]
+        if "u" in rec:
+            short["u"] = {k: rec["u"][k] for k in ("drained_s", "replay_keys", "plays", "upgrade_render")}
+        short["upgrade_lag"] = rec["upgrade_lag"]
         if "a" in rec:
             short["a"] = rec["a"].get("summary")
         if "c" in rec:

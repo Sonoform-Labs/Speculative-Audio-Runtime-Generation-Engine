@@ -42,9 +42,23 @@ GROUND_BASE = {"anchors": "named"}
 EXTRA_ARMS = ("ceiling",)
 FLOW_BASE = {"fl_phrasebook": "phrasebook", "fl_caption": "caption"}
 FLOW_ARMS = tuple(FLOW_BASE)
-ENGINES = {"dflow": "woosh", "flow": "woosh-flow"}
-MODEL_NAME = dict(ge.MODEL_NAME, **{"woosh-flow": "Woosh Flow"})
-ALL_ARMS = BASE_ARMS + VARIANTS + STYLE_ARMS + GROUND_ARMS + EXTRA_ARMS + FLOW_ARMS
+ENGINES = {"dflow": "woosh", "flow": "woosh-flow", "flow_rk4_8": "woosh-flow-rk4-8", "flow_rk4_16": "woosh-flow-rk4-16",
+           "flow_mid_16": "woosh-flow-mid-16", "flow_mid_32": "woosh-flow-mid-32", "dflow_6": "woosh-6",
+           "dflow_8": "woosh-8"}
+ENGINE_SPEC = {"dflow": ("dflow", 4, "dopri5"), "flow": ("flow", 4, "dopri5"), "flow_rk4_8": ("flow", 8, "rk4"),
+               "flow_rk4_16": ("flow", 16, "rk4"), "flow_mid_16": ("flow", 16, "midpoint"),
+               "flow_mid_32": ("flow", 32, "midpoint"), "dflow_6": ("dflow", 6, "dopri5"),
+               "dflow_8": ("dflow", 8, "dopri5")}
+SPEED_BASE = {"fc_rk4_8": ("caption", "flow_rk4_8"), "fc_rk4_16": ("caption", "flow_rk4_16"),
+              "fc_mid_16": ("caption", "flow_mid_16"), "fc_mid_32": ("caption", "flow_mid_32"),
+              "dc_6": ("caption", "dflow_6"), "dc_8": ("caption", "dflow_8"), "dp_8": ("phrasebook", "dflow_8")}
+SPEED_ARMS = tuple(SPEED_BASE)
+MODEL_NAME = dict(ge.MODEL_NAME, **{"woosh-flow": "Woosh Flow", "woosh-flow-rk4-8": "Woosh Flow, rk4 8 steps",
+                                    "woosh-flow-rk4-16": "Woosh Flow, rk4 16 steps",
+                                    "woosh-flow-mid-16": "Woosh Flow, midpoint 16 steps",
+                                    "woosh-flow-mid-32": "Woosh Flow, midpoint 32 steps",
+                                    "woosh-6": "Woosh DFlow, 6 steps", "woosh-8": "Woosh DFlow, 8 steps"})
+ALL_ARMS = BASE_ARMS + VARIANTS + STYLE_ARMS + GROUND_ARMS + EXTRA_ARMS + FLOW_ARMS + SPEED_ARMS
 ARMS = BASE_ARMS
 SETS = ("known", "fresh", "all", "fresh3", "all3", "dev")
 FRESH = (
@@ -214,7 +228,18 @@ ARM_TEXT = {"phrasebook": "the shipped phrasebook (--prompts tuned, the default)
             "fl_phrasebook": "the phrasebook prompt rendered on Woosh Flow (non-distilled, the adopted fast path) "
                              "in place of DFlow; SA3 rows are the phrasebook clips",
             "fl_caption": "the caption template prompt rendered on Woosh Flow in place of DFlow; SA3 rows are the "
-                          "caption clips"}
+                          "caption clips",
+            "fc_rk4_8": "the caption template on Woosh Flow with a fixed rk4 solver, 8 steps; SA3 rows are the caption "
+                        "clips",
+            "fc_rk4_16": "the caption template on Woosh Flow with a fixed rk4 solver, 16 steps; SA3 rows are the "
+                         "caption clips",
+            "fc_mid_16": "the caption template on Woosh Flow with a fixed midpoint solver, 16 steps; SA3 rows are the "
+                         "caption clips",
+            "fc_mid_32": "the caption template on Woosh Flow with a fixed midpoint solver, 32 steps; SA3 rows are the "
+                         "caption clips",
+            "dc_6": "the caption template on Woosh DFlow at 6 steps; SA3 rows are the caption clips",
+            "dc_8": "the caption template on Woosh DFlow at 8 steps; SA3 rows are the caption clips",
+            "dp_8": "the phrasebook on Woosh DFlow at 8 steps; SA3 rows are the phrasebook clips"}
 TIERS = {arm: "%s_%s" % ("abcdefghijklmnopqrstuvwxyz"[i], arm) for i, arm in enumerate(ALL_ARMS)}
 SET_TEXT = {"bench": "the 40 scene-bearing bench scenarios", "generic": "the 35 plain requests of the generic run",
             "fresh": "the 30 fresh scenarios (llm_eval.FRESH, or FRESH3 with --set fresh3 or all3)",
@@ -486,7 +511,13 @@ def scenarios(work, only=None):
 
 
 def engine_of(r, arm):
-    return ENGINES["flow"] if arm in FLOW_BASE and r["model"] == "woosh" else r["model"]
+    if r["model"] != "woosh":
+        return r["model"]
+    if arm in FLOW_BASE:
+        return ENGINES["flow"]
+    if arm in SPEED_BASE:
+        return ENGINES[SPEED_BASE[arm][1]]
+    return r["model"]
 
 
 def jobs(rows, model):
@@ -530,10 +561,11 @@ def cmd_render_woosh(a):
     import woosh_server as ws
     kind = getattr(a, "engine", "dflow")
     model = ENGINES[kind]
-    opts = dict(ws.OPTIONS, **ws.ADOPTED[kind])
+    base, steps, solver = ENGINE_SPEC[kind]
+    opts = dict(ws.OPTIONS, **ws.ADOPTED[base])
     frames = ws.parse_frames(None)
     t0 = time.perf_counter()
-    gen = ws.make_gen(kind, frames["other"], 4, "dopri5", **opts)
+    gen = ws.make_gen(base, frames["other"], steps, solver, **opts)
     ws.prepare(gen, frames)
     print("woosh %s ready in %.1f s, %s" % (kind, time.perf_counter() - t0, opts), flush=True)
     out = []
@@ -549,7 +581,8 @@ def cmd_render_woosh(a):
                             uses=j["uses"]))
         print("woosh %-60s median %.1f ms  %s  <- %s" % (str(j["rkey"])[:60], float(np.median(ms)), j["text"],
                                                          ",".join("%s:%s" % tuple(u) for u in j["uses"])), flush=True)
-    dump({"meta": {"model": "woosh-" + kind, "options": opts, "frames": frames, "first_seed": a.first_seed,
+    dump({"meta": {"model": "woosh-" + kind, "options": opts, "steps": steps, "solver": solver, "frames": frames,
+                   "first_seed": a.first_seed,
                    "seeds": a.seeds, "takes": a.takes, "graph_error": gen.stats.get("graph_error"),
                    "nfe_median": float(np.median(gen.stats["nfe"])) if gen.stats.get("nfe") else None,
                    "seconds": time.perf_counter() - t0}, "rows": out},
@@ -1376,8 +1409,10 @@ def main(argv=None):
             p.add_argument("--only", nargs="+", default=None)
         if name == "render-woosh":
             p.add_argument("--engine", choices=sorted(ENGINES), default="dflow",
-                           help="dflow renders every arm but the Flow arms; flow renders only the Flow arms "
-                                "(fl_phrasebook, fl_caption) on Woosh Flow with woosh_server.ADOPTED['flow']")
+                           help="dflow renders every arm on the served DFlow; flow renders only the Flow arms "
+                                "(fl_phrasebook, fl_caption) on Woosh Flow with woosh_server.ADOPTED['flow']; the "
+                                "other engines (ENGINE_SPEC: fixed-step Flow solvers, DFlow at 6 or 8 steps) render "
+                                "only the arms of SPEED_BASE that name them")
         if name == "judge-vocab":
             p.add_argument("--refs", default=os.path.join("data", "refs_heldout"))
         if name == "page":

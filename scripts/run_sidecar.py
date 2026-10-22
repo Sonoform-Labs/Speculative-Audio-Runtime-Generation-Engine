@@ -46,6 +46,11 @@ TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
 WOOSH_COST_MS = {"dflow": 50.0, "flow": 1010.0}
 WRITER_STYLES = ("v1", "named", "texture", "title", "caption")
 WRITER_GROUND = ("off", "anchors", "words", "caption")
+UPGRADE_SOLVERS = ("dopri5", "rk4:8", "rk4:16", "midpoint:16", "midpoint:32")
+
+
+def check_first(style):
+    return "same" if str(style or "") == "same" else check_style(style)
 
 
 def cache_dir_of(args):
@@ -80,9 +85,18 @@ def early_woosh(env=None) -> bool:
         "0", "off", "no")
 
 
+def woosh_styles(args):
+    final = getattr(args, "prompts", None) or "tuned"
+    first = getattr(args, "first_prompt", None) or "same"
+    if first == "same" or getattr(args, "woosh_upgrade", "off") == "off":
+        first = final
+    return first, final
+
+
 def start_woosh(args, hold=False):
     if not os.path.isfile(args.woosh_python):
         raise SystemExit("woosh python not found: %s" % args.woosh_python)
+    first, final = woosh_styles(args)
     pin = os.path.join(os.path.dirname(REPO), "sarge-research", "modal", "runpinned.py")
     cmd = [args.woosh_python, "-u"] + ([pin] if os.path.isfile(pin) else []) + [
         os.path.join(REPO, "scripts", "woosh_server.py"), "--model", args.woosh_model,
@@ -91,8 +105,11 @@ def start_woosh(args, hold=False):
         [args.amp] if args.amp in ("punch", "auto") else []) + (
         ["--level", "loudness"] if getattr(args, "level", None) == "loudness" else []) + (
         ["--stereo"] if args.stereo else []) + (
-        ["--prompts", args.prompts] if getattr(args, "prompts", None) not in (None, "tuned") else []) + (
-        ["--upgrade", args.woosh_upgrade] if getattr(args, "woosh_upgrade", "off") != "off" else [])
+        ["--prompts", first] if first != "tuned" else []) + (
+        ["--upgrade", args.woosh_upgrade] if getattr(args, "woosh_upgrade", "off") != "off" else []) + (
+        ["--upgrade-prompts", final] if final != first else []) + (
+        ["--upgrade-solver", args.woosh_upgrade_solver]
+        if getattr(args, "woosh_upgrade_solver", "dopri5") != "dopri5" else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -207,6 +224,17 @@ def main(argv=None) -> int:
                          "DFlow, then idle-time Flow renders of every held take (same seed, same prompt, about 1 s "
                          "each, preempted by any served render) are swapped in per key with prompt_rev + 1, kept in "
                          "memory only (docs/hybrid.md). Off by default")
+    ap.add_argument("--first-prompt", type=check_first, default="same",
+                    help="--woosh-upgrade flow: the prompt style of the first-hit DFlow renders (tuned, generic or "
+                         "template:NAME as for --prompts), while the Flow re-renders and every gun keep --prompts; "
+                         "same (default) plays --prompts on both. tuned keeps the per-sound phrasebook for first "
+                         "hits as a temporary trade-off, since the caption template on DFlow measured -0.14 on the "
+                         "demo keys and -0.42 on water against it; it goes once a generic first hit holds those bars "
+                         "(docs/hybrid.md). A prompt the game or the writer sends wins on both renders")
+    ap.add_argument("--woosh-upgrade-solver", choices=UPGRADE_SOLVERS, default="dopri5",
+                    help="--woosh-upgrade flow: the ODE solver of the Flow re-renders, dopri5 (adaptive, about 86 "
+                         "evaluations and 1.0 s a clip, the default) or a fixed solver with its step count, e.g. "
+                         "rk4:8 at 32 evaluations (docs/hybrid.md)")
     ap.add_argument("--woosh-port", type=int, default=8771)
     ap.add_argument("--woosh-hf-cache", default=r"D:\hf_cache",
                     help="--generator hybrid: the HF cache that holds roberta-large for the Woosh text encoder")
@@ -351,6 +379,10 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     if args.woosh_upgrade != "off" and (args.generator != "hybrid" or args.woosh_model == args.woosh_upgrade):
         raise SystemExit("--woosh-upgrade %s needs --generator hybrid and --woosh-model dflow" % args.woosh_upgrade)
+    if args.woosh_upgrade_solver != "dopri5" and args.woosh_upgrade == "off":
+        raise SystemExit("--woosh-upgrade-solver %s needs --woosh-upgrade flow" % args.woosh_upgrade_solver)
+    if args.first_prompt != "same" and args.woosh_upgrade == "off":
+        raise SystemExit("--first-prompt %s needs --woosh-upgrade flow" % args.first_prompt)
     if args.generator == "hybrid":
         prefetch.start_hybrid(HYBRID_GUNS["model_name"], args.woosh_model,
                               weights=lambda: weight_cache.locate(HYBRID_GUNS["model_name"], cache_dir_of(args)))
@@ -391,6 +423,9 @@ def main(argv=None) -> int:
                           rest_cost_ms=WOOSH_COST_MS[args.woosh_model])
         if args.woosh_upgrade != "off":
             gen_kwargs["upgrade"] = args.woosh_upgrade
+            first, final = woosh_styles(args)
+            if first != final:
+                gen_kwargs["first_prompt"] = first
         if args.route != "families":
             gen_kwargs.update(route=args.route, single_route="guns" if args.single_model == "sa3" else "rest",
                               gun_classes=tuple(c for c in args.gun_class.split(",") if c.strip()))
@@ -455,7 +490,8 @@ def main(argv=None) -> int:
           f"prompts={args.prompts} route={args.route} amp={args.amp or 'off'}  "
           f"cache-write={'async' if args.async_cache_write else 'inline'}"
           + ("  scene=on" if args.scene else "")
-          + (f"  woosh-upgrade={args.woosh_upgrade}" if args.woosh_upgrade != "off" else "")
+          + (f"  woosh-upgrade={args.woosh_upgrade} first-prompt={woosh_styles(args)[0]} "
+             f"solver={args.woosh_upgrade_solver}" if args.woosh_upgrade != "off" else "")
           + (f"  writer={writer.describe()} swap={args.writer_swap}" if writer is not None else ""),
           flush=True)
     if writer is not None:

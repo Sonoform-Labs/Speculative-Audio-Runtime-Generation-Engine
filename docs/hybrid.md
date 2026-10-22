@@ -201,6 +201,16 @@ The arguments did not change for the on-time defaults: `--concurrent-gen` is now
 
 `hfHome` moved from the scene's old `D:\hf_cache`, because stable-audio-3-medium only lives under `F:\AI\cache\hf\hub`; with the old value the sidecar now stops at startup and says so. Woosh reads its roberta-large text config from `D:\hf_cache`; `run_sidecar.py` hands the worker `HF_HUB_CACHE` from `--woosh-hf-cache` (default `D:\hf_cache`), so the worker finds it whatever `HF_HOME` or `TRANSFORMERS_CACHE` the game passes. `runpinned.py` keeps the sidecar off core 8 (Woosh is pinned by `run_sidecar.py` either way), and because it moves the working directory to `scripts\`, the cache directory is given as an absolute path. Without pinning, `scripts\run_sidecar.py --generator hybrid --realtime --stereo --amp --detailed-prompts` gives the same engine. `--learn` (the runtime affordance learner) was part of the Unity-environment run.
 
+### Arguments for the recommended Flow upgrade (the scene is unchanged)
+
+The scene still carries the arguments above. To play the configuration that rule C of 2026-10-22 recommends (see "Cheaper upgrades, the first-hit trade-off and a scripted session" below), set `arguments` to this line and leave `pythonExe`, `workingDir`, `hfHome` and `port` as they are:
+
+```
+D:\Python\sarge-research\modal\runpinned.py scripts\run_sidecar.py --generator hybrid --realtime --stereo --amp --detailed-prompts --learn --cache-dir D:\Python\SAGE\.cache\sfx_bake --prompts template:caption+tt --woosh-upgrade flow --woosh-upgrade-solver midpoint:16
+```
+
+The upgrade gate ran these exact flags under Unity's environment, with only the port, the event log and a fresh cache directory added (`data/_gate/flowpath/upgrade/gate_fp_upf.json`). The sidecar empties its cache directory at every start, so the template's new cache tag costs nothing extra on disk and every session renders its first hits fresh under either line. The scene runs without `--event-log`, so after a Play session the record to read is the last `upgrade flow:` line in `sidecar.log` (keys skipped, median and maximum time from first hit to swap), together with the card's peak from `nvidia-smi`, which had 120 MiB of margin in the scripted session. Removing the three added flags brings back today's engine, which served 75 of 75 clips bit-identical to `baseline_warm_1` on the final code.
+
 ## Loudness levelling and world playback (flags off)
 
 The Unity session on 2026-10-16 found the glass inaudible next to the guns and the ball on metal far too loud. Most of the glass gap is playback: windows and bullet hits play through `AudioSource.PlayClipAtPoint`, a 3D source with a 1 m minimum distance, which costs 15 to 26 dB at the range's 5 to 18 m, while guns, steps and balls play 2D. Peak levelling adds a few dB on sparse sounds, and the amplifier's saturation made a ringing metal clip the loudest thing served (-4.7 LUFS). Everything below is opt-in and the defaults are unchanged.
@@ -287,6 +297,102 @@ Served sound always wins the GPU. The worker counts the served requests waiting 
 
 READY sits over its bound in both runs because the desktop held 1,163 to 1,165 MiB before launch, and the flag adds nothing before READY. The peak with both models leaves 327 MiB of margin. With every flag off the end-to-end bench under Unity's environment (`e2e_hybrid.py --tag untried_off --extra --learn`) served 75 of 75 clips bit-identical to `baseline_warm_1`, max abs 0.0 (`data/_gate/untried/eval/compare_untried_off.json`), and `tests/test_woosh_upgrade.py` (17 tests, CPU) covers the wire field, the second connection, the abort, the yield counter, the load guard, the streamed weights, the part sharing, the staged swap with its revision and the flags.
 
+### First-hit prompt, failed renders and the upgrade line
+
+`--first-prompt STYLE` (default `same`) sets the prompt style of the first-hit DFlow renders under `--woosh-upgrade flow`. The Flow re-renders and every gun keep `--prompts`, so `--prompts template:caption+tt --woosh-upgrade flow --first-prompt tuned` plays today's phrasebook on DFlow for a first hit and replaces it with the caption template on Flow, which is the rule-4 arm exactly. The phrasebook half is a temporary trade-off and stays off by default: rule 1 put the caption template on DFlow at -0.14 on the demo and -0.42 on water against it, and the option goes once a generic first hit clears those bars. It needs three checks before anything turns it on: the ear on a first play against a later play of the same key, gate V and a flags-off end-to-end run. The sidecar hands the worker the two styles as `--prompts` and `--upgrade-prompts` and adds `first:STYLE` to the disk-cache tag, so a DFlow take rendered under one first-hit style never answers for another. Left at `same`, or set to the `--prompts` style, the flag leaves the worker command, the generator arguments and the cache paths as they were. A game or writer prompt still wins on both renders.
+
+With the upgrade on, the revision now moves in two more places. A game prompt that replaces a cached key's prompt bumps it (before, only the writer did), and so do swapped takes that leave the cache, which the server checks on the key's next event and on every upgrade step. Without the second bump a client holding Flow takes would keep playing them meta-only beside the server's fresh DFlow takes at the same revision, and with two prompt styles those takes differ in prompt as well as model.
+
+A failed Flow render now counts against its key, while a preempted one still waits a second and tries again. The key waits 5 s and then 10 s (`UPGRADE_BACKOFF_S`, doubling), and after `UPGRADE_RETRIES` (2) retries it is skipped for the rest of the session with one console line and one `upgrade_failed` record in the event log; other keys keep upgrading during the waits. A new prompt for the key gives it a fresh start, and a success clears an earlier failure. A worker that does not answer at all backs off every key together, 5 s doubling to 60 s, and marks none of them failed.
+
+The console gets one upgrade line after a swap (at most every 15 s), after a key is given up, and when the queue empties: takes queued and staged, Flow takes rendered, takes swapped and swaps, swaps that landed before the key's first hit, preemptions, failed renders, keys skipped, and the median and maximum time from a key's first hit to its first swap. The Unity scene runs without `--event-log`, so this line is the only upgrade record a Play session leaves in `sidecar.log`. The STATS reply carries the same numbers under `"upgrade"`. The event log adds `upgrade_error` and `upgrade_failed` records, the swap record gains `first_hit_s`, `first_swap`, the per-take render times and the running counters, and each served event gains `upgraded` (the take is a Flow take) and `rev`; with the flag off none of these fields appear. `tests/test_woosh_upgrade.py` holds the CPU tests for all of it. The GPU runs are in the next section.
+
+### Cheaper upgrades, the first-hit trade-off and a scripted session (GPU, 2026-10-22)
+
+Three questions went to the GPU, each with its decision rule written first (`data/_gate/flowpath/eval/rule_A_speed.txt`, `rule_B_first_hit.txt`, `rule_C_session.txt`; digests and file times in `rules_sha1.txt`). The clips are the 75 known scenarios at variants 220 to 239, which no earlier run rendered, judged with the identity floor, the water judge and Audiobox PQ as in rule 2. `llm_eval.py` gained engine arms for this (`ENGINE_SPEC`, `SPEED_BASE`: Flow on fixed rk4 and midpoint solvers, DFlow at 6 and 8 steps), and the numbers come from `rule_ab_result.txt` and `rule_c_result.txt` in the same folder.
+
+**Rule A, a cheaper upgrade engine.** Every setting rendered the caption template on the 36 judged Woosh rows and the 7 water rows, against Flow at adaptive dopri5, the setting `--woosh-upgrade flow` used until now. A setting replaces dopri5 only if its identity delta is at least -0.03 with a lower bound of at least -0.08, its water delta at least -0.05, and it runs in half the time or less.
+
+| caption template, minus Flow dopri5 (0.725 identity, 0.709 water) | identity [95% CI], rows up/down | water | Audiobox PQ | ms per clip | evaluations | rule |
+|---|---|---|---|---|---|---|
+| Flow, midpoint, 16 steps | +0.028 [-0.041, +0.089], 10/9 | +0.005 | -0.058 [-0.091, -0.024] | 366 (2.8x faster) | 32 | **pass, adopted** |
+| Flow, rk4, 8 steps | +0.006 [-0.084, +0.075], 11/10 | -0.005 | -0.171 [-0.229, -0.117] | 363 | 32 | fail, lower bound by 0.004 |
+| Flow, midpoint, 32 steps | +0.031 [-0.026, +0.070], 14/4 | +0.015 | +0.008 [-0.021, +0.040] | 728 (1.4x) | 64 | fail, speed |
+| Flow, rk4, 16 steps | +0.012 [-0.050, +0.068], 11/4 | -0.010 | -0.050 [-0.093, -0.010] | 725 | 64 | fail, speed |
+| DFlow, 8 steps | -0.223 [-0.338, -0.108], 2/23 | -0.359 | -0.158 | 54.6 | 8 | fail |
+| DFlow, 6 steps | -0.235 [-0.350, -0.133], 3/26 | -0.363 | -0.186 | 41.5 | 6 | fail |
+| DFlow, 4 steps (served first hit, context) | -0.151 [-0.261, -0.055], 6/21 | -0.262 | -0.275 | 28.6 | 4 | |
+
+The gain lives in the undistilled weights, and 32 evaluations keep it: midpoint at 16 steps scored a hair above dopri5 on identity and water, glass breaks included (0.65 against 0.61 over six rows). Its one cost is production quality. Audiobox PQ fell 0.058 against dopri5, a quarter of the 0.22 it still holds over DFlow, so the ear should check that the faster upgrade still sounds as clean. More DFlow steps make things worse: 8 steps scored 0.072 under 4 steps [-0.152, +0.016] and 6 steps 0.084 under, so DFlow 8 fails the first-hit test of rule A (decision 2) on all three counts and a distilled model stays at the step count it was trained for.
+
+The adopted setting ships as `--woosh-upgrade-solver midpoint:16` (choices `dopri5`, the default, `rk4:8`, `rk4:16`, `midpoint:16`, `midpoint:32`). The sidecar hands it to the worker as `--upgrade-solver` only when it differs from dopri5, so every earlier command line stays as it was, and the worker builds the Flow model with that solver and step count.
+
+**Rule B, the size of the first-hit trade-off.** With `--prompts template:caption+tt --woosh-upgrade flow`, the first play of a Woosh key is a DFlow render, and `--first-prompt` picks its prompt. Guns keep the template on SA3 medium under both options, so their delta is zero by construction.
+
+| first hit, deltas paired on seed | demo (23) | unseen (22) | water (7) | Woosh rows (36) |
+|---|---|---|---|---|
+| template (`same`, default) minus phrasebook (`tuned`) | -0.160 [-0.308, +0.001] | +0.052 [-0.094, +0.219] | -0.262 [-0.575, -0.013] | -0.070 [-0.204, +0.088] |
+| template minus today's engine | -0.155 [-0.308, +0.004] | +0.056 [-0.102, +0.226] | -0.262 | -0.070 |
+| phrasebook first hit minus today's engine | +0.005 [-0.025, +0.031] | +0.004 | 0.000 | 0.000 |
+
+The phrasebook first hit is today's DFlow clip on every Woosh row, so `tuned` costs nothing against today; the template first hit loses about 0.16 on the demo keys and 0.26 on water, where glass on its short sentence collapses (0.16 against 0.75) and gains on the unseen names (horns, dog barks, the UI click). The deficit misses the round-two bars (demo -0.05, water -0.10), so `--first-prompt tuned` keeps a measured reason to exist and stays available, off by default. How long the trade-off lasts is rule C's lag below: with the adopted solver, a few seconds per key in a session.
+
+**Rule C, gates and a session.** All runs used Unity's environment and a fresh disk cache on F: per run, so every first hit rendered. R0 is today's flags, R1 adds `--prompts template:caption+tt --woosh-upgrade flow`, R1f adds `--woosh-upgrade-solver midpoint:16` to R1. `upgrade_gate.py` gained `--out`, skips its wait for Flow when the upgrade is off, and reports the lag p95 and any failure records (`data/_gate/flowpath/upgrade/`).
+
+| upgrade_gate | R0 | R1 (dopri5) | R1f (midpoint 16) | bound |
+|---|---|---|---|---|
+| startup peak, MiB | 10,479 | 10,479 | 10,475 | 10,752 |
+| READY, MiB (desktop 1,194 to 1,197 before launch) | 9,981 | 9,981 | 9,977 | R0 + 150 |
+| peak after READY, both Woosh models and gun renders | 10,499 | 11,307 | 11,311 | 11,571 |
+| fill first hits before Flow loads, guns / Woosh median (ms) | 155.1 / 49.6 | 160.6 / 50.7 | 160.0 / 50.5 | R0 + 5 |
+| stress misses while upgrades run, guns / Woosh median (ms) | 383.0 / 76.8 | 169.8 / 56.6 | 167.2 / 52.4 | R0 + 10 |
+| swaps / preempted Flow renders in the run | | 29 / 38 | 46 / 12 | |
+| first hit to swap, median / p95 / max (s) | | 61.6 / 86.9 / 93.4 | 9.8 / 29.9 / 30.5 | |
+| gates | | **fail**: gun fill +5.5 ms | **pass** | |
+
+The gun fill gate is a coin flip at its bound. Before Flow loads the two upgrade runs run the same code, and the only gun-side change from R0 is the template prompt on SA3 medium; each fill median is three gun keys, and the render bench rendered a new gun prompt in 160.0 ms with the phrasebook and 159.5 ms with the template over seven prompts each. So I read the +5 ms as spread; by the letter of the rule, R1 fails and R1f passes. The stress row favours the upgrade for a reason that has nothing to do with the upgrade being free: with every flag off, the card drops its clocks in the 0.3 to 2 s gaps between misses, and with Flow renders in the gaps it stays at full clock.
+
+The forced failure ran R1 with `SARGE_UPGRADE_FAIL=footstep|wood`, a bench hook in `woosh_server.Upgrade.render` that fails every Flow render of a key whose string holds that text and leaves the rest alone. `footstep|wood|normal|default` logged two `upgrade_error` records 6.6 s and then 10.8 s apart (the 5 s and 10 s backoffs plus the wait for an idle second), then one `upgrade_failed` after 3 attempts with the console line `... failed 3 times (...), skipped for the session`; its after-pass plays stayed DFlow at `prompt_rev` 0; other keys kept swapping (32 swaps in the run); two more footstep|wood keys were given up the same way and a fourth had two errors when the run ended. The worker and the sidecar stayed up.
+
+`ontime_bench.py` gained arms `now` and `upf`, a second pass of the scripted session (`d`, recorded as `b2`) and a drain phase (`u`: STATS polled until no take is queued or staged for 3 s, then one replay of every Woosh key). Each pass is the 58 s session with two event lanes, predictions and the game60 GPU load (`data/_gate/ontime/flowpath/`).
+
+| scripted session | R0 | R1 (dopri5) | R1f (midpoint 16) |
+|---|---|---|---|
+| first pass, Woosh plays: DFlow on demand / DFlow from the pool / Flow | 3 / 81 / 0 | 5 / 49 / 30 | 3 / 41 / 40 |
+| second pass, same | 0 / 84 / 0 | 0 / 0 / 84 | 0 / 0 / 84 |
+| first hit to swap, p50 / p95 / max (s), 14 keys | | 10.1 / 16.1 / 17.6 | 4.5 / 8.9 / 9.2 |
+| swaps before the key's first play (predicted keys) | | 5 | 5 |
+| GPU busy share, first pass: SARGE renders / with upgrade renders | 6.1% / 6.1% | 6.7% / 64% | 6.6% / 28% |
+| nvidia-smi utilisation mean, first pass (game load included) | 42% | 79% | 54% |
+| first plays, guns p95 / Woosh p95 (ms; most first plays were predicted, p50 about 1 ms) | 245 / 86 | 261 / 113 | 249 / 116 |
+| VRAM peak over the run, MiB (game load process included) | 10,677 | 11,451 | 11,451 |
+
+By the second minute every Woosh play is a Flow take under both solvers; the queue was empty before the drain began. The session's first-play p95 for Woosh rose by about 30 ms with the upgrade on, which the rule left as context because two lanes, predictions and the game load make it the noisiest number here; the gate's misses with upgrades running did not show it. The session's VRAM peak leaves 120 MiB under the 11.3 GiB bound with the game60 load process on the card, so a Play session in the real scene is the check this harness still lacks (`docs/untried.md`, item 4).
+
+With every new flag off, `e2e_hybrid.py --tag flowpath_off --extra --learn` under Unity's environment served the 75 clips of `baseline_warm_1` bit-identical (max abs 0.0, `data/_gate/flowpath/eval/compare_flowpath_off.json`), READY at 50.7 s, gun first hit median 149.4 ms and Woosh 33.6 ms. The runtime files last changed at 08:57 and that run started at 11:02.
+
+**The configuration these runs recommend**, to add to the scene's arguments when the ear agrees:
+
+```
+--prompts template:caption+tt --woosh-upgrade flow --woosh-upgrade-solver midpoint:16
+```
+
+`--first-prompt` stays at `same`, which keeps every per-sound table out of the path; `--first-prompt tuned` is the measured temporary trade-off from rule B for anyone who wants today's first hits back while the swap is pending. The blind page `data/_gate/flowpath/page/index.html` (built by `data/_gate/flowpath/eval/tools/page.py`, key in `data/_gate/flowpath/page_key.json`; `page_check.py` matched all 66 takes to exactly one rendered clip with the right prompt and engine, and the page script passes `node --check`) plays 11 rows chosen by rule C: today's engine against this configuration as a player hears it after the swap, three takes each. The full launcher line is under "Unity launcher" above.
+
+### Independent check of this round (no GPU)
+
+The rules came first. All three files match the digests in `rules_sha1.txt` and carry the times 08:48:20 to 08:48:41, the first render of the round started at 08:50:55 and the first sidecar run of rule C at 10:41:40, and the judge outputs in `judge_outputs.zip` are byte-identical to the ones the report read. The scripts and outputs of this check are in `data/_gate/flowpath/eval/verify/`.
+
+`recompute_ab.py` rebuilds rules A and B from the raw per-seed hits in `vocab.json` and `water.json`, taking each row's judges and real rates from the consensus table, with a separately seeded bootstrap over rows and seeds (seed 777). Every pooled mean and every point delta matches `rule_ab_result.txt` to the printed digit, every judge rate equals the mean of its hits, and every interval lands within 0.013 of the reported one. The verdicts hold. Midpoint 16 is the only setting that passes rule A, and the pick would stand even if rk4 8 had passed (its lower bound sits at -0.084 or -0.085 depending on the bootstrap seed), because the two run within 1% of each other and the rule then takes the higher identity delta, +0.028 against +0.006. DFlow 8 fails decision 2 on all three checks, and the tuned first hit keeps its measured reason to exist.
+
+`recompute_c.py` reads the gate rows, the VRAM timelines and the event logs directly and reproduces the rule C table: startup peak 10,475 MiB, READY 9,977 against 9,981 with flags off, peak after READY 11,311 MiB, fill medians +4.9 ms on guns and +0.9 ms on Woosh, stress medians under R0 on both sides, first hit to swap 9.8 s at the median over 36 keys. Each fill median is three gun keys: 150.0, 187.7 and 160.0 ms for R1f against 152.6, 155.2 and 155.1 for R0, so R1f's pass at +4.9 ms and R1's fail at +5.5 ms are one draw apart. The render bench backs the reading that the template costs the guns nothing: a new gun prompt took 160.0 ms on the phrasebook and 159.5 ms on the template over seven prompts each, and later takes 147.4 and 148.0 ms. The forced failure reads the same from the event log, including 30 swaps of other keys after the first error and after-pass plays of the failing key served from the pool at `prompt_rev` 0.
+
+`startup_compare.py` re-run on the saved flags-off clips gives 75 of 75 identical to `baseline_warm_1`, max abs 0.0, and the runtime files last changed at 08:57:57 against a run start of 11:02:32. The scratch identity script still finds no difference from HEAD on the final files (1,440 worker commands, 54 sets of `main()` arguments, 1,728 cache paths, server replies over 10 frames under 3 settings), and the CPU suite passes 598 of 598. `page_check.py` re-run matches all 66 takes to exactly one rendered clip with the right prompt and engine, the 11 rows follow rule C (the second water row breaks a 0.105 tie between `g_footstep_water` and `b_step_water` by name), and the markup ties no letter to an option.
+
+Reading the diff turned up no defect in the retry fix, the prompt switch or the revision logic. A failing key blocks only itself through `_upgrade_blocked`, the pick moves on to the next key at once, and a success or a new prompt clears the record. A key's failure and an unreachable worker stay apart because `_remote()` opens no socket and every connection error surfaces inside the `try` of `upgrade_take`. Each revision bump happens under `engine_lock`, `_upgrade_forget` bumps only while the revision still equals the one recorded at the swap, and `prompt_rev` is `None` whenever the writer and the upgrade are both off, so the unconditional `_bump_rev` in `_register_prompt` is inert with flags off. The counters written outside the lock (`preempted`, `upgrade_block`, the console line state) have a single writer, the deepen thread. Two loose ends remain: the `SARGE_UPGRADE_FAIL` bench hook ships inside the worker and does nothing unless the variable is set, and `page_check.py` run through `runpinned.py` leaves a copy of the page script at the repo root as `page_script.js` (moved to the scratch folder).
+
+Three facts belong next to the recommendation. The template on Flow still loses the two weakest glass rows at either solver: the bottle shot scores 0.00 against 0.60 today and the glass shatter 0.32 against 0.88, and both rows are on the page. In the scripted session 44 of the 84 first-pass Woosh plays were template takes on DFlow, the arm rule B put 0.16 under today on the demo keys and 0.26 under on water, while the page plays only the sound after the swap. And the VRAM margin of 120 MiB in that session makes one real Play session the check that decides whether the line stays in the scene.
+
 ## Candidates waiting for your ear
 
 `data/_gate/opt/page/index.html` (built by `scripts/bench/opt_page.py`, key in `data/_gate/opt/page_key.json`) holds every G2 candidate for blind listening: 23 sounds, three takes per option, letters shuffled per sound, best, worst and "none sound right", picks kept in the browser, Reveal and Download. Each sound also offers the production setting and the setting before the speed work, so the same page doubles as an ear check on the G1 adoptions.
@@ -297,7 +403,7 @@ READY sits over its bound in both runs because the desktop held 1,163 to 1,165 M
 | Woosh DFlow | 4 steps at 1.5 s 33; 6 steps at 1.0 s 41 and 1.5 s 48; 8 steps at 1.0 s 54 and 1.5 s 63 | 28 (fp32 before 104) |
 | Woosh Flow | rk4 8 steps 361; rk4 16 steps 720; midpoint 16 steps 364; midpoint 32 steps 723 | 1005 (fp32 before 3584) |
 
-The Woosh candidates were rendered in fp32 and would ship in bf16; the bf16 versions sit within 0.03 of the same ratios. Six SA3 steps is the candidate I would listen to first: it saves 27 ms on every gun and moved the sound by about one seed (ratio 1.03), with pistol identity at 0.79. The shorter generations cut tails on most clips and will probably lose. On the Woosh side, 6 steps at 1.0 s (ratio 0.42) and 4 steps at 1.5 s keep a new-prompt first hit near 60 ms, while 8 steps pushes it to about 80 ms. The fixed Flow solvers would bring Flow down to about 0.36 s, still too slow for an unpredicted first hit, though fine for sounds the predictor asks for early.
+The Woosh candidates were rendered in fp32 and would ship in bf16; the bf16 versions sit within 0.03 of the same ratios. The judges have since scored every Woosh candidate on the caption template (rule A under "Flow upgrade"): Flow at midpoint 16 steps holds dopri5's identity and water at 2.8 times the speed and drives the upgrade behind `--woosh-upgrade-solver midpoint:16`, and DFlow at 6 or 8 steps scores below 4 steps. Six SA3 steps is the candidate I would listen to first: it saves 27 ms on every gun and moved the sound by about one seed (ratio 1.03), with pistol identity at 0.79. The shorter generations cut tails on most clips and will probably lose. On the Woosh side, 6 steps at 1.0 s (ratio 0.42) and 4 steps at 1.5 s keep a new-prompt first hit near 60 ms, while 8 steps pushes it to about 80 ms. The fixed Flow solvers would bring Flow down to about 0.36 s, still too slow for an unpredicted first hit, though fine for sounds the predictor asks for early.
 
 The physics context has a separate page, `data/_gate/feel/world_page/index.html` (built by `scripts/bench/world_page.py` from the `world_render.py demo` renders, key in `data/_gate/feel/world_page_key.json`): the eleven demo collisions, each through HEAD, `--world` and `--world --level loudness`, three takes each at the level the game plays them. The numbers behind it are in `docs/physics-context.md` under "GPU checks run".
 

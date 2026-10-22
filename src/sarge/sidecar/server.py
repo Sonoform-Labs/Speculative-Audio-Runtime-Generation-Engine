@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import socket
 import socketserver
+import statistics
 import threading
 import time
 from dataclasses import replace
@@ -31,6 +32,10 @@ KIND_DECAY = 0.8
 UPGRADE_DELAY_S = 10.0
 UPGRADE_IDLE_S = 1.0
 UPGRADE_POLL_S = 2.0
+UPGRADE_RETRIES = 2
+UPGRADE_BACKOFF_S = 5.0
+UPGRADE_UNREACH_MAX_S = 60.0
+UPGRADE_LINE_S = 15.0
 
 
 class SfxServer(socketserver.ThreadingTCPServer):
@@ -261,6 +266,8 @@ class _Handler(socketserver.BaseRequestHandler):
         eng = self.server.engine
         with engine_lock:
             t2 = time.perf_counter()
+            if getattr(self.server, "upgrade", None):
+                _upgrade_sync(self.server, key)
             rev = _rev(self.server, key)
             claimed = getattr(self.server, "concurrent_gen", False) and eng.claim_realtime(key)
             if claimed:
@@ -307,14 +314,21 @@ class _Handler(socketserver.BaseRequestHandler):
             meta["meta_only"] = True
         t4 = time.perf_counter()
         self._send(MsgType.AUDIO, meta, pcm)
+        up = getattr(self.server, "upgrade", None)
+        if up:
+            self.server.upgrade_first.setdefault(key, time.monotonic())
         if getattr(self.server, "event_log", None) is not None:
-            _log(self.server, {"type": "event", "t_recv": t_recv, "key": str(key), "served": served,
-                               "variant": variant_id, "concurrent": bool(claimed),
-                               "await_ms": (t1 - t0) * 1e3, "lock_wait_ms": (t2 - t1) * 1e3,
-                               "engine_ms": (t3 - t2) * 1e3,
-                               "gen_ms": clip.gen_ms if served == "realtime" else 0.0,
-                               "encode_ms": (t4 - t3) * 1e3, "send_ms": (time.perf_counter() - t4) * 1e3,
-                               "bytes": len(pcm), "meta_only": meta_only, "client": id(self)})
+            rec = {"type": "event", "t_recv": t_recv, "key": str(key), "served": served,
+                   "variant": variant_id, "concurrent": bool(claimed),
+                   "await_ms": (t1 - t0) * 1e3, "lock_wait_ms": (t2 - t1) * 1e3,
+                   "engine_ms": (t3 - t2) * 1e3,
+                   "gen_ms": clip.gen_ms if served == "realtime" else 0.0,
+                   "encode_ms": (t4 - t3) * 1e3, "send_ms": (time.perf_counter() - t4) * 1e3,
+                   "bytes": len(pcm), "meta_only": meta_only, "client": id(self)}
+            if up:
+                rec["upgraded"] = self.server.upgrade_done.get(key, {}).get(variant_id) is clip
+                rec["rev"] = rev
+            _log(self.server, rec)
 
     def _update_intent(self, key, rapid=False):
         srv = self.server
@@ -490,6 +504,9 @@ class _Handler(socketserver.BaseRequestHandler):
             cached = len(self.server.engine.cache)
             pending = len(self.server.writer_pending)
         reply = {"type": "stats_reply", "stats": stats, "wasted": wasted, "cached_keys": cached}
+        if getattr(self.server, "upgrade", None):
+            with engine_lock:
+                reply["upgrade"] = _upgrade_summary(self.server)
         w = getattr(self.server, "writer", None)
         if w is not None:
             reply["writer"] = dict(w.stats, state=w.state, id=w.id[:12], stored=len(w.store or ()),
@@ -535,8 +552,9 @@ def _register_prompt(server, key, prompt):
         if had or key in eng.cache:
             eng.cache.pop(key, None)
             eng.recent.pop(key, None)
-            if owned is not None:
-                _bump_rev(server, key)
+            _bump_rev(server, key)
+            if getattr(server, "upgrade", None):
+                _upgrade_drop(server, key)
 
 
 def _rapid(server, event_type):
@@ -895,12 +913,60 @@ def _upgrade_pending(server, key, pool):
     return [c for c in pool if done.get(c.variant_id) is not c and st["orig"].get(c.variant_id) is not c]
 
 
-def _upgrade_pick(server, g):
+def _upgrade_init(server):
+    server.upgrade_fail = {}
+    server.upgrade_rev = {}
+    server.upgrade_first = {}
+    server.upgrade_timed = set()
+    server.upgrade_lag = []
+    server.upgrade_unreach = 0
+    server.upgrade_line_t = 0.0
+    server.upgrade_line_dirty = False
+    server.upgrade_count = {"rendered": 0, "preempted": 0, "errors": 0, "unreachable": 0, "failed_keys": 0,
+                            "before_hit": 0}
+
+
+def _upgrade_drop(server, key):
+    server.upgrade_done.pop(key, None)
+    server.upgrade_stage.pop(key, None)
+    return server.upgrade_rev.pop(key, None)
+
+
+def _upgrade_forget(server, key):
+    at = _upgrade_drop(server, key)
+    if at is not None and _rev(server, key) == at:
+        _bump_rev(server, key)
+
+
+def _upgrade_sync(server, key):
+    done = server.upgrade_done.get(key)
+    if done and not any(done.get(c.variant_id) is c for c in server.engine.cache.get(key) or ()):
+        _upgrade_forget(server, key)
+
+
+def _upgrade_dead(server, key, prompt):
+    rec = server.upgrade_fail.get(key)
+    return rec is not None and rec["dead"] and rec["prompt"] == prompt
+
+
+def _upgrade_blocked(server, key, prompt, now):
+    rec = server.upgrade_fail.get(key)
+    if rec is None:
+        return False
+    if rec["prompt"] != prompt:
+        server.upgrade_fail.pop(key, None)
+        return False
+    return rec["dead"] or now < rec["until"]
+
+
+def _upgrade_pick(server, g, now=None):
     eng = server.engine
     pm = _prompts(server) or {}
+    now = time.monotonic() if now is None else now
     for key in list(server.upgrade_done):
+        _upgrade_sync(server, key)
+    for key in list(server.upgrade_stage):
         if key not in eng.cache:
-            server.upgrade_done.pop(key, None)
             server.upgrade_stage.pop(key, None)
     keys = sorted((k for k in eng.cache if g.route(k) != "guns"), key=lambda k: k not in eng.fired)
     for key in keys:
@@ -908,10 +974,103 @@ def _upgrade_pick(server, g):
         st = server.upgrade_stage.get(key)
         if st is not None and st["prompt"] != prompt:
             server.upgrade_stage.pop(key, None)
+        if _upgrade_blocked(server, key, prompt, now):
+            continue
         for c in _upgrade_pending(server, key, eng.cache.get(key) or []):
             if (key, c.variant_id) not in eng.inflight:
                 return key, c, prompt
     return None
+
+
+def _upgrade_summary(server):
+    eng = server.engine
+    g = _routed(server)
+    pm = _prompts(server) or {}
+    queued = keys = staged = skipped = 0
+    for key, pool in list(eng.cache.items()):
+        if not pool or g is None or g.route(key) == "guns":
+            continue
+        if _upgrade_dead(server, key, pm.get(str(key))):
+            skipped += 1
+            continue
+        n = len(_upgrade_pending(server, key, pool))
+        queued += n
+        keys += 1 if n else 0
+        st = server.upgrade_stage.get(key)
+        if st:
+            staged += sum(1 for c in pool if st["orig"].get(c.variant_id) is c)
+    c = server.upgrade_count
+    lag = sorted(server.upgrade_lag)
+    return {"engine": server.upgrade, "state": server.upgrade_state, "queued_takes": queued, "queued_keys": keys,
+            "staged_takes": staged, "rendered": c["rendered"], "swapped_takes": int(eng.stats.get("upgrades", 0)),
+            "swaps": int(eng.stats.get("upgrade_swaps", 0)), "preempted": c["preempted"], "errors": c["errors"],
+            "unreachable": c["unreachable"], "failed_keys": c["failed_keys"], "skipped_keys": skipped,
+            "first_hit_to_swap_s": {"keys": len(lag), "median": statistics.median(lag) if lag else None,
+                                    "max": lag[-1] if lag else None},
+            "swapped_before_hit": c["before_hit"]}
+
+
+def _upgrade_line(s):
+    lag = s["first_hit_to_swap_s"]
+    when = ("first hit to swap median %.1f s, max %.1f s over %d keys" % (lag["median"], lag["max"], lag["keys"])
+            if lag["keys"] else "no swap after a first hit yet")
+    return ("upgrade %s: queued %d takes (%d keys), staged %d, rendered %d, swapped %d takes in %d swaps, "
+            "%d before a first hit, preempted %d, failed %d renders, %d keys skipped, %s"
+            % (s["engine"], s["queued_takes"], s["queued_keys"], s["staged_takes"], s["rendered"],
+               s["swapped_takes"], s["swaps"], s["swapped_before_hit"], s["preempted"], s["errors"],
+               s["skipped_keys"], when))
+
+
+def _upgrade_say(server, summary, force=False):
+    now = time.monotonic()
+    if summary is None or not (force or now - server.upgrade_line_t >= UPGRADE_LINE_S):
+        return
+    server.upgrade_line_t = now
+    server.upgrade_line_dirty = False
+    print(_upgrade_line(summary), flush=True)
+
+
+def _upgrade_error(server, key, variant, prompt, err, ms):
+    now = time.monotonic()
+    msg = str(err)[:300]
+    c = server.upgrade_count
+    gone = None
+    with engine_lock:
+        if getattr(err, "unreachable", False):
+            server.upgrade_unreach += 1
+            wait = min(UPGRADE_UNREACH_MAX_S, UPGRADE_BACKOFF_S * 2 ** (server.upgrade_unreach - 1))
+            server.upgrade_block = now + wait
+            c["unreachable"] += 1
+            rec = {"type": "upgrade_error", "t": time.time(), "key": str(key), "variant": variant, "ms": ms,
+                   "error": msg, "unreachable": True, "retry_in_s": wait}
+        else:
+            fail = server.upgrade_fail.get(key)
+            if fail is None or fail["prompt"] != prompt:
+                fail = server.upgrade_fail[key] = {"n": 0, "prompt": prompt, "until": 0.0, "dead": False}
+            fail["n"] += 1
+            fail["error"] = msg
+            c["errors"] += 1
+            server.upgrade_line_dirty = True
+            if fail["n"] > UPGRADE_RETRIES:
+                fail["dead"] = True
+                server.upgrade_stage.pop(key, None)
+                c["failed_keys"] += 1
+                rec = {"type": "upgrade_failed", "t": time.time(), "key": str(key), "variant": variant, "ms": ms,
+                       "attempts": fail["n"], "error": msg}
+                gone = _upgrade_summary(server)
+            else:
+                wait = UPGRADE_BACKOFF_S * 2 ** (fail["n"] - 1)
+                fail["until"] = now + wait
+                rec = {"type": "upgrade_error", "t": time.time(), "key": str(key), "variant": variant, "ms": ms,
+                       "error": msg, "attempt": fail["n"], "retry_in_s": wait}
+    if gone is not None:
+        print("upgrade %s: %s failed %d times (%s), skipped for the session"
+              % (server.upgrade, key, rec["attempts"], msg), flush=True)
+        _upgrade_say(server, gone, True)
+    elif rec.get("unreachable") and server.upgrade_unreach == 1:
+        print("upgrade %s: the worker did not answer (%s), retrying with backoff" % (server.upgrade, msg), flush=True)
+    if getattr(server, "event_log", None) is not None:
+        _log(server, rec)
 
 
 def _upgrade_step(server):
@@ -922,17 +1081,26 @@ def _upgrade_step(server):
     if now < server.upgrade_block or not _upgrade_ready(server, g, now):
         return False
     eng = server.engine
+    drained = None
     with engine_lock:
         if eng.claims or eng.inflight or now - server.last_gen_t < UPGRADE_IDLE_S:
             return False
-        pick = _upgrade_pick(server, g)
+        pick = _upgrade_pick(server, g, now)
+        if pick is None and server.upgrade_line_dirty:
+            drained = _upgrade_summary(server)
     if pick is None:
+        _upgrade_say(server, drained, True)
         return False
     key, orig, prompt = pick
     t = time.perf_counter()
-    clip = g.upgrade_take(key, orig.variant_id, prompt)
+    try:
+        clip = g.upgrade_take(key, orig.variant_id, prompt)
+    except Exception as e:
+        _upgrade_error(server, key, orig.variant_id, prompt, e, (time.perf_counter() - t) * 1e3)
+        return not getattr(e, "unreachable", False)
     ms = (time.perf_counter() - t) * 1e3
     if clip is None:
+        server.upgrade_count["preempted"] += 1
         server.upgrade_block = time.monotonic() + UPGRADE_IDLE_S
         if getattr(server, "event_log", None) is not None:
             _log(server, {"type": "upgrade_yield", "t": time.time(), "key": str(key), "variant": orig.variant_id,
@@ -940,12 +1108,18 @@ def _upgrade_step(server):
         return False
     swapped = 0
     with engine_lock:
+        server.upgrade_count["rendered"] += 1
+        server.upgrade_unreach = 0
+        fail = server.upgrade_fail.get(key)
+        if fail is not None and not fail["dead"]:
+            server.upgrade_fail.pop(key, None)
         pool = eng.cache.get(key)
         if not pool or (_prompts(server) or {}).get(str(key)) != prompt or not any(c is orig for c in pool):
             return True
-        st = server.upgrade_stage.setdefault(key, {"prompt": prompt, "clips": {}, "orig": {}})
+        st = server.upgrade_stage.setdefault(key, {"prompt": prompt, "clips": {}, "orig": {}, "ms": {}})
         st["clips"][orig.variant_id] = clip
         st["orig"][orig.variant_id] = orig
+        st.setdefault("ms", {})[orig.variant_id] = ms
         if _upgrade_pending(server, key, pool):
             return True
         new = [st["clips"][c.variant_id] if st["orig"].get(c.variant_id) is c else c for c in pool]
@@ -957,11 +1131,28 @@ def _upgrade_step(server):
                 swapped += 1
         server.upgrade_stage.pop(key, None)
         _bump_rev(server, key)
+        rev = server.upgrade_rev[key] = _rev(server, key)
         eng.stats["upgrades"] = eng.stats.get("upgrades", 0) + swapped
         eng.stats["upgrade_swaps"] = eng.stats.get("upgrade_swaps", 0) + 1
+        t_first = server.upgrade_first.get(key)
+        first_hit_s = time.monotonic() - t_first if t_first is not None else None
+        first_swap = key not in server.upgrade_timed
+        if first_swap:
+            server.upgrade_timed.add(key)
+            if first_hit_s is None:
+                server.upgrade_count["before_hit"] += 1
+            else:
+                server.upgrade_lag.append(first_hit_s)
+        server.upgrade_line_dirty = True
+        summary = _upgrade_summary(server)
+    _upgrade_say(server, summary)
     if getattr(server, "event_log", None) is not None:
         _log(server, {"type": "upgrade_swap", "t": time.time(), "key": str(key), "takes": swapped, "ms": ms,
-                      "rev": _rev(server, key)})
+                      "rev": rev, "take_ms": [st["ms"].get(v) for v in sorted(st["ms"])],
+                      "first_hit_s": first_hit_s, "first_swap": first_swap,
+                      "queued": summary["queued_takes"], "rendered": summary["rendered"],
+                      "swapped": summary["swapped_takes"], "failed": summary["errors"],
+                      "skipped_keys": summary["skipped_keys"]})
     return True
 
 
@@ -1125,6 +1316,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.upgrade_block = 0.0
     server.upgrade_done = {}
     server.upgrade_stage = {}
+    _upgrade_init(server)
     if writer is not None:
         writer.on_written = lambda key, rec: _writer_written(server, key, rec)
     server.event_log_lock = threading.Lock()

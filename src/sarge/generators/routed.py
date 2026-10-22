@@ -37,6 +37,12 @@ def side_for(key, mode="families", gun_families=GUN_FAMILIES, gun_classes=GUN_CL
     return "guns" if family_for(key.event_type) in gun_families else "rest"
 
 
+class UpgradeFailed(RuntimeError):
+    def __init__(self, message, unreachable=False):
+        super().__init__(message)
+        self.unreachable = bool(unreachable)
+
+
 def release_cuda_cache():
     try:
         import torch
@@ -54,7 +60,8 @@ class RoutedGenerator(Generator):
     def __init__(self, woosh_host: str = "127.0.0.1", woosh_port: int = 8771, gun_families=GUN_FAMILIES,
                  guns=None, rest=None, warm_guns: bool = True, start_rest=None, gun_cost_ms: float = 155.0,
                  rest_cost_ms: float = 50.0, load_rest=None, drop_rest=None, route: str = "families",
-                 gun_classes=GUN_CLASSES, single_route: str = "rest", upgrade: str | None = None, **sa3_kwargs):
+                 gun_classes=GUN_CLASSES, single_route: str = "rest", upgrade: str | None = None,
+                 first_prompt: str | None = None, **sa3_kwargs):
         if route not in ROUTES:
             raise ValueError("unknown route %r, choose from %s" % (route, ", ".join(ROUTES)))
         if single_route not in SIDES:
@@ -84,6 +91,7 @@ class RoutedGenerator(Generator):
         self._rest_started = False
         self.costs = {"guns": float(gun_cost_ms), "rest": float(rest_cost_ms)}
         self.upgrade = upgrade or None
+        self.first_prompt = first_prompt or None
         self.woosh_host, self.woosh_port = woosh_host, int(woosh_port)
         self._up = self._ctl = None
         self._up_busy = threading.Event()
@@ -125,13 +133,16 @@ class RoutedGenerator(Generator):
         self._up_busy.set()
         try:
             clip = self._up.generate(key, variant=variant, prompt=prompt, engine=self.upgrade)
-        except RuntimeError as e:
-            self.upgrade_stats["preempted" if "Preempted" in str(e) else "failed"] += 1
-            return None
-        except (ConnectionError, OSError):
+        except (ConnectionError, OSError) as e:
             self._up = None
             self.upgrade_stats["failed"] += 1
-            return None
+            raise UpgradeFailed("%s: %s" % (type(e).__name__, e), unreachable=True) from e
+        except Exception as e:
+            if isinstance(e, RuntimeError) and "Preempted" in str(e):
+                self.upgrade_stats["preempted"] += 1
+                return None
+            self.upgrade_stats["failed"] += 1
+            raise UpgradeFailed("%s: %s" % (type(e).__name__, e)) from e
         finally:
             self._up_busy.clear()
         self.upgrade_stats["renders"] += 1
@@ -152,6 +163,8 @@ class RoutedGenerator(Generator):
         style = str(getattr(self.guns, "prompt_style", "") or "")
         if style == "generic" or style.startswith("template:"):
             extra.append("prompts:" + style)
+        if self.first_prompt:
+            extra.append("first:" + self.first_prompt)
         return "|".join([tag] + extra) if extra else tag
 
     def ensure_ready(self):

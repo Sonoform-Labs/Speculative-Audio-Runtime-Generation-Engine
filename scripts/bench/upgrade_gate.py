@@ -86,20 +86,22 @@ def main(argv=None):
     ap.add_argument("--port", type=int, default=8768)
     ap.add_argument("--woosh-port", type=int, default=8773)
     ap.add_argument("--stress-s", type=float, default=90.0)
+    ap.add_argument("--out", default=OUT)
     ap.add_argument("--extra", nargs=argparse.REMAINDER, default=[])
     a = ap.parse_args(argv)
     e2e.late_imports()
-    os.makedirs(OUT, exist_ok=True)
+    os.makedirs(a.out, exist_ok=True)
     for p in e2e.woosh_by_port(a.woosh_port):
         raise SystemExit("a woosh server is already running on port %d (pid %d)" % (a.woosh_port, p))
-    log_path = os.path.join(OUT, "sidecar_%s.log" % a.tag)
-    ev_path = os.path.join(OUT, "events_%s.jsonl" % a.tag)
+    log_path = os.path.join(a.out, "sidecar_%s.log" % a.tag)
+    ev_path = os.path.join(a.out, "events_%s.jsonl" % a.tag)
     if os.path.exists(ev_path):
         os.remove(ev_path)
     cmd = [sys.executable, "-u", e2e.PIN, os.path.join(e2e.ROOT, "scripts", "run_sidecar.py")] + e2e.ARGS + [
         "--port", str(a.port), "--woosh-port", str(a.woosh_port), "--learn", "--event-log", ev_path,
         "--cache-dir", os.path.join(e2e.ROOT, ".cache", "sfx_bake")] + list(a.extra)
-    res = {"tag": a.tag, "cmd": cmd, "bounds": BOUNDS, "gpu_before": e2e.smi(), "time": time.strftime("%Y-%m-%d %H:%M:%S")}
+    res = {"tag": a.tag, "cmd": cmd, "bounds": BOUNDS, "gpu_before": e2e.smi(), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+           "fail_hook": os.environ.get("SARGE_UPGRADE_FAIL") or None}
     sampler = e2e.Sampler(every=0.1)
     log = open(log_path, "w", encoding="utf-8")
     t0 = time.time()
@@ -147,7 +149,7 @@ def main(argv=None):
         res["peak_fill_mib"] = sampler.peak(t_fill)
         t_wait = time.time()
         state = None
-        while time.time() - t_wait < 180:
+        while "--woosh-upgrade" in a.extra and time.time() - t_wait < 180:
             st = [x for x in events(ev_path) if x.get("type") == "upgrade_state"]
             state = st[-1]["state"] if st else None
             if state in ("ready", "failed"):
@@ -205,9 +207,26 @@ def main(argv=None):
     miss = [r for r in rows if r["pass"] == "stress_miss" and r["served"] == "realtime"]
     after = [r for r in rows if r["pass"] == "after"]
     changed = sum(1 for r in after if r["rev"] >= 1 and first.get(r["key"], {}).get("sha") != r["sha"])
+    lags = [x["first_hit_s"] for x in swaps if x.get("first_swap") and x.get("first_hit_s") is not None]
     res["upgrade"] = {"swaps": len(swaps), "takes": sum(x.get("takes", 0) for x in swaps), "yields": len(yields),
                       "flow_ms_median": med([x["ms"] for x in swaps]), "rev_after": sorted({r["rev"] for r in after}),
-                      "after_changed_audio": changed, "after_rows": len(after)}
+                      "after_changed_audio": changed, "after_rows": len(after),
+                      "errors": len([x for x in ev if x.get("type") == "upgrade_error"]),
+                      "failed_keys": len([x for x in ev if x.get("type") == "upgrade_failed"]),
+                      "first_hit_to_swap_s_median": med(lags), "first_hit_to_swap_s_max": max(lags, default=None),
+                      "first_hit_to_swap_s_p95": float(e2e.np.percentile(lags, 95)) if lags else None,
+                      "first_hit_to_swap_keys": len(lags),
+                      "served_upgraded": len([x for x in ev if x.get("type") == "event" and x.get("upgraded")]),
+                      "summary": (res.get("stats") or {}).get("upgrade")}
+    errs = [x for x in ev if x.get("type") in ("upgrade_error", "upgrade_failed")]
+    if errs:
+        t_err = min(x["t"] for x in errs)
+        bad = sorted({x["key"] for x in errs})
+        res["upgrade"]["failure"] = {"keys": bad, "records": errs,
+                                     "swaps_after_first_error": len([x for x in swaps if x["t"] > t_err
+                                                                     and x["key"] not in bad]),
+                                     "after_rows_of_failed_keys": [r for r in after if any(
+                                         r["key"] == b.split("|scene=")[0] for b in bad)]}
     res["latency"] = {side: {"fill_realtime_median_ms": med([r["ms"] for r in fill if r["side"] == side]),
                              "stress_realtime_median_ms": med([r["ms"] for r in miss if r["side"] == side]),
                              "stress_realtime_max_ms": max([r["ms"] for r in miss if r["side"] == side], default=None),
@@ -220,7 +239,7 @@ def main(argv=None):
     res["gate_v_pass"] = all(v[0] is not None and v[0] <= v[1] for v in res["gate_v"].values())
     res["rows"] = rows
     res["vram_timeline"] = [[round(t, 2), u] for t, u in sampler.rows]
-    with open(os.path.join(OUT, "gate_%s.json" % a.tag), "w", encoding="utf-8") as fh:
+    with open(os.path.join(a.out, "gate_%s.json" % a.tag), "w", encoding="utf-8") as fh:
         json.dump(res, fh, indent=1, default=str)
     print(json.dumps({k: res.get(k) for k in ("startup", "gate_v", "gate_v_pass", "upgrade_state", "upgrade",
                                                "latency", "stress_hit_median_ms", "woosh_died_s",

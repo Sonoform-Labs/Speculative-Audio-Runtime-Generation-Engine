@@ -40,11 +40,14 @@ ADOPTED = {"dflow": {"cond_cache": 256, "graph": "full", "mod_cache": True, "pre
 FRAMES = {"impact": 101, "step": 101, "other": 101}
 WARM = "warmup, a soft thud"
 UPGRADES = ("off", "flow")
+UPGRADE_SOLVERS = {"dopri5": ("dopri5", 4), "rk4:8": ("rk4", 8), "rk4:16": ("rk4", 16), "midpoint:16": ("midpoint", 16),
+                   "midpoint:32": ("midpoint", 32)}
 SHARED = ("autoencoder", "conditioners")
 ABORT_HOLD_S = 0.5
 RETRY_S = 0.2
 LOAD_IDLE_S = 0.5
 LOAD_COMMIT_GB = 1.5
+FAIL_ENV = "SARGE_UPGRADE_FAIL"
 
 
 class Preempted(Exception):
@@ -826,9 +829,11 @@ def make_gen(kind, frames, steps=4, solver="dopri5", cond_cache=0, graph="none",
 
 
 class Upgrade:
-    def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None):
+    def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None, solver="dopri5"):
         self.base, self.kind, self.frames, self.lock, self.opts = base, kind, frames, lock, dict(opts)
-        self.make = make or (lambda: make_gen(kind, frames["other"], 4, "dopri5", share=base, **self.opts))
+        self.solver = solver
+        method, steps = UPGRADE_SOLVERS[solver]
+        self.make = make or (lambda: make_gen(kind, frames["other"], steps, method, share=base, **self.opts))
         self.clock = clock
         self.commit = commit or commit_free_gb
         self.gen = None
@@ -838,6 +843,7 @@ class Upgrade:
         self.abort_until = 0.0
         self.renders = 0
         self.preempted = 0
+        self.failed = 0
         self.last_request = 0.0
         self.load_s = None
         self.mu = threading.Lock()
@@ -894,16 +900,23 @@ class Upgrade:
 
     def info(self):
         return {"type": "upgrade", "engine": self.kind, "state": self.state, "error": self.error,
-                "renders": self.renders, "preempted": self.preempted, "load_s": self.load_s}
+                "renders": self.renders, "preempted": self.preempted, "failed": self.failed, "load_s": self.load_s,
+                "solver": self.solver}
 
     def render(self, key, variant, prompts, prompt, amp, stereo, level):
         if self.gen is None:
             raise RuntimeError("upgrade %s is %s" % (self.kind, self.state))
+        fail = os.environ.get(FAIL_ENV, "")
         with self.lock:
             try:
+                if fail and fail in str(key):
+                    raise RuntimeError("%s holds %r, the bench hook fails this render" % (FAIL_ENV, fail))
                 raw = render_key(self.gen, key, variant, self.frames, prompts, prompt)
             except Preempted:
                 self.preempted += 1
+                raise
+            except Exception:
+                self.failed += 1
                 raise
         self.renders += 1
         return finish_key(raw, key, amp, stereo, level=level)
@@ -970,6 +983,10 @@ def prompt_for(key, style="tuned", prompt=None):
     if isinstance(prompt, str) and prompt.strip():
         return prompt
     return compose(style, key, WOOSH_PREFIX)
+
+
+def upgrade_style(args):
+    return getattr(args, "upgrade_prompts", None) or args.prompts
 
 
 def render_key(gen, key, variant, frames, style="tuned", prompt=None):
@@ -1062,9 +1079,19 @@ def main():
                          "autoencoder and text encoder) and render requests that carry engine=flow with it; every "
                          "served request preempts a Flow render within one solver step (docs/hybrid.md). Off by "
                          "default")
+    ap.add_argument("--upgrade-prompts", type=check_style, default=None,
+                    help="--upgrade: the prompt style of the upgrade renders (same choices as --prompts); left out, "
+                         "they use --prompts. A prompt sent with the request wins over both")
+    ap.add_argument("--upgrade-solver", choices=sorted(UPGRADE_SOLVERS), default="dopri5",
+                    help="--upgrade: the ODE solver of the Flow renders, dopri5 (adaptive, the default) or a fixed "
+                         "solver with its step count (docs/hybrid.md)")
     args = ap.parse_args()
     if args.upgrade != "off" and args.upgrade == args.model:
         ap.error("--upgrade %s needs a different --model" % args.upgrade)
+    if args.upgrade_prompts and args.upgrade == "off":
+        ap.error("--upgrade-prompts needs --upgrade")
+    if args.upgrade_solver != "dopri5" and args.upgrade == "off":
+        ap.error("--upgrade-solver needs --upgrade")
     startup.stage("woosh python up", at=_T_SCRIPT)
     startup.stage("woosh base imports", _T_SCRIPT)
     if args.parent_pid:
@@ -1096,9 +1123,10 @@ def main():
         ", graph failed: %s" % gen.stats["graph_error"] if gen.stats["graph_error"] else ""), flush=True)
     up = None
     if args.upgrade != "off":
-        up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]))
+        up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]), solver=args.upgrade_solver)
         print("woosh upgrade %s on request: it loads after an upgrade_load message, shares the autoencoder and the "
-              "text encoder, and yields to every served render" % args.upgrade, flush=True)
+              "text encoder, and yields to every served render; served prompts %s, upgrade prompts %s, solver %s"
+              % (args.upgrade, args.prompts, upgrade_style(args), args.upgrade_solver), flush=True)
 
     def served(key, req):
         up.enter()
@@ -1135,7 +1163,7 @@ def main():
                     if up is not None and req.get("engine"):
                         if req["engine"] != up.kind:
                             raise ValueError("unknown engine %r, this worker upgrades to %s" % (req["engine"], up.kind))
-                        y = up.render(key, req.get("variant", 0), args.prompts, req.get("prompt"), args.amp,
+                        y = up.render(key, req.get("variant", 0), upgrade_style(args), req.get("prompt"), args.amp,
                                       args.stereo, args.level)
                     elif up is not None:
                         y = finish_key(served(key, req), key, args.amp, args.stereo, level=args.level)
