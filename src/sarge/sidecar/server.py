@@ -28,6 +28,9 @@ RAPID_HZ = 1.5
 MOTION_SOURCE = "motion"
 KIND_WINDOW_S = 10.0
 KIND_DECAY = 0.8
+UPGRADE_DELAY_S = 10.0
+UPGRADE_IDLE_S = 1.0
+UPGRADE_POLL_S = 2.0
 
 
 class SfxServer(socketserver.ThreadingTCPServer):
@@ -854,6 +857,114 @@ def _writer_fill_step(server):
     return True
 
 
+def _routed(server):
+    g = server.engine.gen
+    for _ in range(4):
+        if callable(getattr(g, "upgrade_take", None)):
+            return g
+        g = getattr(g, "inner", None)
+        if g is None:
+            return None
+    return None
+
+
+def _upgrade_ready(server, g, now):
+    st = server.upgrade_state
+    if st == "ready":
+        return True
+    if st in ("failed", "off"):
+        return False
+    if now - server.upgrade_t0 < UPGRADE_DELAY_S or now - server.last_gen_t < UPGRADE_IDLE_S:
+        return False
+    if now - server.upgrade_polled < UPGRADE_POLL_S:
+        return False
+    server.upgrade_polled = now
+    info = g.upgrade_control("upgrade_load" if st == "idle" else "upgrade_state")
+    got = info.get("state")
+    if got in ("loading", "ready", "failed", "off"):
+        server.upgrade_state = "failed" if got == "off" else got
+    if getattr(server, "event_log", None) is not None and server.upgrade_state != st:
+        _log(server, {"type": "upgrade_state", "t": time.time(), "state": server.upgrade_state,
+                      "error": info.get("error")})
+    return server.upgrade_state == "ready"
+
+
+def _upgrade_pending(server, key, pool):
+    done = server.upgrade_done.get(key, {})
+    st = server.upgrade_stage.get(key) or {"clips": {}, "orig": {}}
+    return [c for c in pool if done.get(c.variant_id) is not c and st["orig"].get(c.variant_id) is not c]
+
+
+def _upgrade_pick(server, g):
+    eng = server.engine
+    pm = _prompts(server) or {}
+    for key in list(server.upgrade_done):
+        if key not in eng.cache:
+            server.upgrade_done.pop(key, None)
+            server.upgrade_stage.pop(key, None)
+    keys = sorted((k for k in eng.cache if g.route(k) != "guns"), key=lambda k: k not in eng.fired)
+    for key in keys:
+        prompt = pm.get(str(key))
+        st = server.upgrade_stage.get(key)
+        if st is not None and st["prompt"] != prompt:
+            server.upgrade_stage.pop(key, None)
+        for c in _upgrade_pending(server, key, eng.cache.get(key) or []):
+            if (key, c.variant_id) not in eng.inflight:
+                return key, c, prompt
+    return None
+
+
+def _upgrade_step(server):
+    g = _routed(server)
+    if g is None:
+        return False
+    now = time.monotonic()
+    if now < server.upgrade_block or not _upgrade_ready(server, g, now):
+        return False
+    eng = server.engine
+    with engine_lock:
+        if eng.claims or eng.inflight or now - server.last_gen_t < UPGRADE_IDLE_S:
+            return False
+        pick = _upgrade_pick(server, g)
+    if pick is None:
+        return False
+    key, orig, prompt = pick
+    t = time.perf_counter()
+    clip = g.upgrade_take(key, orig.variant_id, prompt)
+    ms = (time.perf_counter() - t) * 1e3
+    if clip is None:
+        server.upgrade_block = time.monotonic() + UPGRADE_IDLE_S
+        if getattr(server, "event_log", None) is not None:
+            _log(server, {"type": "upgrade_yield", "t": time.time(), "key": str(key), "variant": orig.variant_id,
+                          "ms": ms})
+        return False
+    swapped = 0
+    with engine_lock:
+        pool = eng.cache.get(key)
+        if not pool or (_prompts(server) or {}).get(str(key)) != prompt or not any(c is orig for c in pool):
+            return True
+        st = server.upgrade_stage.setdefault(key, {"prompt": prompt, "clips": {}, "orig": {}})
+        st["clips"][orig.variant_id] = clip
+        st["orig"][orig.variant_id] = orig
+        if _upgrade_pending(server, key, pool):
+            return True
+        new = [st["clips"][c.variant_id] if st["orig"].get(c.variant_id) is c else c for c in pool]
+        eng.cache[key] = new
+        done = server.upgrade_done.setdefault(key, {})
+        for c in new:
+            if st["clips"].get(c.variant_id) is c:
+                done[c.variant_id] = c
+                swapped += 1
+        server.upgrade_stage.pop(key, None)
+        _bump_rev(server, key)
+        eng.stats["upgrades"] = eng.stats.get("upgrades", 0) + swapped
+        eng.stats["upgrade_swaps"] = eng.stats.get("upgrade_swaps", 0) + 1
+    if getattr(server, "event_log", None) is not None:
+        _log(server, {"type": "upgrade_swap", "t": time.time(), "key": str(key), "takes": swapped, "ms": ms,
+                      "rev": _rev(server, key)})
+    return True
+
+
 def _writer_written(server, key, rec):
     _writer_deliver(server, key, rec)
     if getattr(server, "event_log", None) is not None:
@@ -894,6 +1005,8 @@ def _deepen_loop(server):
                 continue
             if not batch and getattr(server, "writer", None) is not None and (
                     _writer_step(server) or _writer_fill_step(server)):
+                continue
+            if not batch and getattr(server, "upgrade", None) and _upgrade_step(server):
                 continue
             if batch:
                 tg = time.perf_counter()
@@ -948,7 +1061,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
           concurrent_gen: bool = False, keep_warm_ms: float = 0.0, sibling_on_miss: bool = False,
           cache_async: bool = False, rapid_hz: float = RAPID_HZ, read_class: bool = False, clock=None,
           scene: bool = False, writer=None, writer_swap: str = "revalidate", writer_yield: bool = True,
-          **engine_kwargs) -> SfxServer:
+          upgrade: str | None = None, **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
@@ -1004,7 +1117,14 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.writer_pending = {}
     server.writer_fill = {}
     server.writer_rendering = None
-    server.prompt_rev = {} if writer is not None else None
+    server.prompt_rev = {} if writer is not None or upgrade else None
+    server.upgrade = upgrade or None
+    server.upgrade_state = "idle"
+    server.upgrade_t0 = time.monotonic()
+    server.upgrade_polled = 0.0
+    server.upgrade_block = 0.0
+    server.upgrade_done = {}
+    server.upgrade_stage = {}
     if writer is not None:
         writer.on_written = lambda key, rec: _writer_written(server, key, rec)
     server.event_log_lock = threading.Lock()

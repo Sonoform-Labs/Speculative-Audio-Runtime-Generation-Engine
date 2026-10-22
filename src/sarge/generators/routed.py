@@ -54,7 +54,7 @@ class RoutedGenerator(Generator):
     def __init__(self, woosh_host: str = "127.0.0.1", woosh_port: int = 8771, gun_families=GUN_FAMILIES,
                  guns=None, rest=None, warm_guns: bool = True, start_rest=None, gun_cost_ms: float = 155.0,
                  rest_cost_ms: float = 50.0, load_rest=None, drop_rest=None, route: str = "families",
-                 gun_classes=GUN_CLASSES, single_route: str = "rest", **sa3_kwargs):
+                 gun_classes=GUN_CLASSES, single_route: str = "rest", upgrade: str | None = None, **sa3_kwargs):
         if route not in ROUTES:
             raise ValueError("unknown route %r, choose from %s" % (route, ", ".join(ROUTES)))
         if single_route not in SIDES:
@@ -83,6 +83,59 @@ class RoutedGenerator(Generator):
         self.drop_rest = drop_rest
         self._rest_started = False
         self.costs = {"guns": float(gun_cost_ms), "rest": float(rest_cost_ms)}
+        self.upgrade = upgrade or None
+        self.woosh_host, self.woosh_port = woosh_host, int(woosh_port)
+        self._up = self._ctl = None
+        self._up_busy = threading.Event()
+        self.upgrade_stats = {"renders": 0, "preempted": 0, "failed": 0, "aborts_sent": 0}
+
+    def _remote(self):
+        from .remote import RemoteGenerator
+        r = RemoteGenerator(host=self.woosh_host, port=self.woosh_port)
+        r.prompts = self.prompts
+        return r
+
+    def _abort_upgrade(self):
+        if not self._up_busy.is_set():
+            return
+        try:
+            if self._ctl is None:
+                self._ctl = self._remote()
+            self._ctl.control({"type": "upgrade_abort"}, reply=False)
+            self.upgrade_stats["aborts_sent"] += 1
+        except Exception:
+            self._ctl = None
+
+    def upgrade_control(self, kind: str) -> dict:
+        if not self.upgrade:
+            return {"state": "off"}
+        if self._up is None:
+            self._up = self._remote()
+        try:
+            return self._up.control({"type": kind}) or {}
+        except Exception as e:
+            self._up = None
+            return {"state": "unreachable", "error": str(e)}
+
+    def upgrade_take(self, key: CacheKey, variant: int, prompt: str | None = None):
+        if not self.upgrade or self.route(key) == "guns":
+            return None
+        if self._up is None:
+            self._up = self._remote()
+        self._up_busy.set()
+        try:
+            clip = self._up.generate(key, variant=variant, prompt=prompt, engine=self.upgrade)
+        except RuntimeError as e:
+            self.upgrade_stats["preempted" if "Preempted" in str(e) else "failed"] += 1
+            return None
+        except (ConnectionError, OSError):
+            self._up = None
+            self.upgrade_stats["failed"] += 1
+            return None
+        finally:
+            self._up_busy.clear()
+        self.upgrade_stats["renders"] += 1
+        return clip
 
     def route(self, key: CacheKey) -> str:
         return side_for(key, self.route_mode, self.gun_families, self.gun_classes, self.single_route)
@@ -156,6 +209,8 @@ class RoutedGenerator(Generator):
         self.counts[side] += 1
         kw = {"prompt": prompt} if prompt else {}
         if side == "guns":
+            if self.upgrade:
+                self._abort_upgrade()
             return self.guns.generate(key, variant=variant, **kw)
         with self._rest_lock:
             return self.rest.generate(key, variant=variant, **kw)
@@ -164,6 +219,8 @@ class RoutedGenerator(Generator):
         out = [None] * len(items)
         guns = [i for i, (k, _v) in enumerate(items) if self.route(k) == "guns"]
         if guns:
+            if self.upgrade:
+                self._abort_upgrade()
             clips = self.guns.generate_batch([items[i] for i in guns])
             for i, c in zip(guns, clips):
                 out[i] = c
@@ -176,4 +233,6 @@ class RoutedGenerator(Generator):
     def fast_stats(self) -> dict:
         s = dict(getattr(self.guns, "fast_stats", lambda: {})())
         s.update({"routed_" + k: v for k, v in self.counts.items()})
+        if self.upgrade:
+            s.update({"upgrade_" + k: v for k, v in self.upgrade_stats.items()})
         return s

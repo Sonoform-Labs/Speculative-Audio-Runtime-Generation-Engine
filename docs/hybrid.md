@@ -264,6 +264,29 @@ All four runs passed gate V (startup peak at most 10,752 MiB, READY at most 9,83
 
 Both runs passed gate V. This harness sends no PREDICT messages, so the prediction fixes reach only the guesses of the habit model here, and the first-hit columns match within run-to-run spread. The scene needs no new argument, and `--no-predict-fixes` in its arguments brings back literal predictions.
 
+## Flow upgrade (`--woosh-upgrade flow`, off by default)
+
+The blind bake-off put Woosh Flow far ahead of DFlow on glass, water and quality sounds, and the judges now agree on the same prompts and seeds. On the 36 judged Woosh rows of the 75 known scenarios at variants 160 to 179 (`llm_eval.py` arms `fl_phrasebook` and `fl_caption`, rule in `data/_gate/untried/eval/rule_2_flow.txt`), Flow lifts the served phrasebook from 0.60 to 0.72, +0.11 [+0.01, +0.23] with 25 rows up and 6 down, and the caption template from 0.54 to 0.74, +0.19 [+0.10, +0.30]. Glass breaks go from 0.71 to 1.00 over six rows and punches from 0.47 to 0.96, footsteps stay level, and Audiobox production quality rises by 0.26 [+0.17, +0.36]. The water judge holds on the phrasebook (+0.00 [-0.07, +0.06]) and jumps on the caption template (0.30 to 0.73), so most of the water gap that sank every generic prompt round was DFlow's. Decay and loudness barely move (median time to -40 dB 0.34 against 0.38 s, momentary loudness +0.6 dB). The price is time: a Flow clip takes 1.0 s at the median (86 function evaluations) against 29 ms, far too slow for a first hit, so the flag keeps DFlow for every first hit and upgrades the takes afterwards.
+
+With the flag on, the Woosh worker (`woosh_server.py --upgrade flow`) loads Flow beside DFlow when the sidecar asks, at least 10 s after start and after a second of quiet, so READY never sees it. The load reuses DFlow's autoencoder and text encoder, builds the Flow DiT on the meta device, allocates it on the GPU in its served dtypes (bf16 linears), streams the 239 tensors from the safetensors file without a memory map, copies the two rope tables from DFlow (equal bit for bit) and captures the Flow graph without running the solver. It takes 1.4 s and adds 762 MiB on the card and 0.77 GB of commit, and the worker refuses to load with less than 1.5 GB of commit free. A Flow render with the shared parts matches the standalone Flow render of the bench at 48 to 60 dB SNR, the residue of decoding through DFlow's bf16 autoencoder. The first loader built a whole Flow model on the CPU, needed 3.2 GB of extra commit against the 3.1 GB this machine has free at READY, and took the worker down in the gate run; the meta-device load exists for that reason.
+
+Served sound always wins the GPU. The worker counts the served requests waiting for its lock and the Flow solver checks that count between steps, and a gun render in the sidecar sends the worker a one-way abort that holds Flow off for 0.5 s, so a served render waits at most one solver step (3.9 to 8.8 ms measured, `data/_gate/untried/eval/woosh_share_probe.json`). On the sidecar side the deepen loop takes an upgrade step only after a second with no render, claim or render in flight: it renders one held take of a Woosh key on Flow with the same seed and prompt over a second connection, keeps it staged, and once every held take of the key has its Flow twin it swaps them in together under the engine lock and raises the key's `prompt_rev` by one, so a client drops its DFlow takes on the next play. A preempted take waits a second and tries again, a prompt change drops the staged takes, guns are never touched, and the Flow takes live in memory only, so the disk cache never sees them.
+
+`scripts/bench/upgrade_gate.py` checks gate V and the served misses under Unity's environment (`data/_gate/untried/upgrade/gate_upgrade_flow4.json`): READY, fifteen Woosh and three gun first hits, a wait until Flow is ready, 90 s of misses and hits spaced 0.3 to 2 s apart while upgrades run, then every Woosh key again.
+
+| `--woosh-upgrade flow`, one run | measured | bound |
+|---|---|---|
+| startup peak | 10,446 MiB | 10,752 |
+| READY (Flow not loaded yet) | 9,948 MiB; 9,950 with every flag off the same day | 9,830 |
+| peak with both Woosh models and SA3 rendering | 11,244 MiB | 11,571 |
+| Flow ready after the request | 6 s, including the wait for quiet | |
+| Woosh misses, median (max) | 57.8 ms (120 ms) during upgrades; 50.3 ms before Flow loaded | |
+| gun misses, median (max) | 162.7 ms (176 ms) during upgrades; 155.5 ms before | |
+| upgrades | 36 swaps; 30 of 30 later plays of the Woosh keys served Flow audio at `prompt_rev` 1 | |
+| commit free | 3.6 GB at READY, 2.2 GB at the lowest | |
+
+READY sits over its bound in both runs because the desktop held 1,163 to 1,165 MiB before launch, and the flag adds nothing before READY. The peak with both models leaves 327 MiB of margin. With every flag off the end-to-end bench under Unity's environment (`e2e_hybrid.py --tag untried_off --extra --learn`) served 75 of 75 clips bit-identical to `baseline_warm_1`, max abs 0.0 (`data/_gate/untried/eval/compare_untried_off.json`), and `tests/test_woosh_upgrade.py` (17 tests, CPU) covers the wire field, the second connection, the abort, the yield counter, the load guard, the streamed weights, the part sharing, the staged swap with its revision and the flags.
+
 ## Candidates waiting for your ear
 
 `data/_gate/opt/page/index.html` (built by `scripts/bench/opt_page.py`, key in `data/_gate/opt/page_key.json`) holds every G2 candidate for blind listening: 23 sounds, three takes per option, letters shuffled per sound, best, worst and "none sound right", picks kept in the browser, Reveal and Download. Each sound also offers the production setting and the setting before the speed work, so the same page doubles as an ear check on the G1 adoptions.

@@ -1,5 +1,6 @@
 import argparse
 import contextlib
+import gc
 import os
 import socket
 import sys
@@ -38,6 +39,16 @@ ADOPTED = {"dflow": {"cond_cache": 256, "graph": "full", "mod_cache": True, "pre
            "flow": {"cond_cache": 256, "graph": "full", "precision": "bf16", "batch_cfg": True}}
 FRAMES = {"impact": 101, "step": 101, "other": 101}
 WARM = "warmup, a soft thud"
+UPGRADES = ("off", "flow")
+SHARED = ("autoencoder", "conditioners")
+ABORT_HOLD_S = 0.5
+RETRY_S = 0.2
+LOAD_IDLE_S = 0.5
+LOAD_COMMIT_GB = 1.5
+
+
+class Preempted(Exception):
+    pass
 
 
 def parse_frames(spec=None):
@@ -123,7 +134,163 @@ def hold(name, torch=None):
     os._exit(0)
 
 
-def load(kind):
+def stream_safetensors(path, own):
+    import json
+    import struct
+    import torch
+    kinds = {"F32": torch.float32, "BF16": torch.bfloat16, "F16": torch.float16}
+    with open(path, "rb") as fh:
+        n = struct.unpack("<Q", fh.read(8))[0]
+        head = json.loads(fh.read(n).decode("utf-8"))
+        base = 8 + n
+        items = sorted(((k, v) for k, v in head.items() if k != "__metadata__"), key=lambda kv: kv[1]["data_offsets"][0])
+        if any(k not in own or v["dtype"] not in kinds or list(own[k].shape) != list(v["shape"]) for k, v in items):
+            return False
+        with torch.no_grad():
+            for k, v in items:
+                a, b = v["data_offsets"]
+                fh.seek(base + a)
+                buf = bytearray(fh.read(b - a))
+                t = torch.frombuffer(buf, dtype=kinds[v["dtype"]]).reshape(v["shape"]) if b > a else torch.empty(
+                    v["shape"], dtype=kinds[v["dtype"]])
+                own[k].copy_(t)
+                del t, buf
+    return True
+
+
+def commit_free_gb():
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class PI(ctypes.Structure):
+            _fields_ = [("cb", wintypes.DWORD), ("CommitTotal", ctypes.c_size_t), ("CommitLimit", ctypes.c_size_t),
+                        ("CommitPeak", ctypes.c_size_t), ("PhysicalTotal", ctypes.c_size_t),
+                        ("PhysicalAvailable", ctypes.c_size_t), ("SystemCache", ctypes.c_size_t),
+                        ("KernelTotal", ctypes.c_size_t), ("KernelPaged", ctypes.c_size_t),
+                        ("KernelNonpaged", ctypes.c_size_t), ("PageSize", ctypes.c_size_t),
+                        ("HandleCount", wintypes.DWORD), ("ProcessCount", wintypes.DWORD),
+                        ("ThreadCount", wintypes.DWORD)]
+
+        p = PI()
+        p.cb = ctypes.sizeof(PI)
+        if not ctypes.WinDLL("psapi").GetPerformanceInfo(ctypes.byref(p), p.cb):
+            return None
+        return (p.CommitLimit - p.CommitTotal) * p.PageSize / 2 ** 30
+    except Exception:
+        return None
+
+
+def materialize(dit, base_dit, dtype):
+    import torch
+    if dtype is not None:
+        cast_linear(dit, dtype)
+    names = {n for n, b in dit.named_buffers() if b is not None}
+    theirs = dict(base_dit.named_buffers()) if base_dit is not None else {}
+    dit.to_empty(device="cuda")
+    for n in names:
+        b = dict(dit.named_buffers())[n]
+        hit = [v for k, v in theirs.items() if k.split(".")[-1] == n.split(".")[-1] and v is not None and
+               v.shape == b.shape and v.dtype == b.dtype]
+        if len(hit) != 1:
+            raise RuntimeError("no single served buffer to restore %s from" % n)
+        with torch.no_grad():
+            b.copy_(hit[0])
+
+
+@contextlib.contextmanager
+def reuse_parts(base, dtype=None):
+    import torch
+    import woosh.model.ldm as wl
+    from woosh.components.base import BaseComponent
+    ae = getattr(base, "autoencoder", None)
+    conds = getattr(base, "conditioners", None)
+    pool = ([ae] if ae is not None else []) + (list(conds.values()) if conds is not None else [])
+    used = []
+    dits = []
+    orig = (wl.AudioAutoEncoder, wl.SFXCLAPTextConditioner, BaseComponent.load_from_config)
+    orig_dit = wl.SFXFlow
+
+    def on_meta(args):
+        with torch.device("meta"):
+            d = orig_dit(args)
+        dits.append(d)
+        return d
+
+    def where(p):
+        return os.path.normcase(os.path.abspath(p)) if p else None
+
+    def take(cfg, fallback):
+        want = where(getattr(cfg, "path", None))
+        for m in pool:
+            have = where(os.path.dirname(getattr(m, "_weights_path", None) or "")) if getattr(
+                m, "_weights_path", None) else None
+            if type(m) is fallback and want and have == want and not any(m is u for u in used):
+                used.append(m)
+                return m
+        return fallback(cfg)
+
+    def lfc(self):
+        if any(self is u for u in used):
+            return None
+        return orig[2](self)
+
+    read = BaseComponent._load_statedict_from_disk
+
+    def stream(self, only_return_state_dict=False, strict=True):
+        path = str(getattr(self, "_weights_path", None) or "")
+        if only_return_state_dict or not path.endswith(".safetensors"):
+            return read(self, only_return_state_dict=only_return_state_dict, strict=strict)
+        mine = [d for d in dits if any(d is m for m in self.modules())]
+        for d in mine:
+            materialize(d, getattr(base, "dit", None), dtype)
+        own = self.state_dict(keep_vars=True)
+        if not stream_safetensors(path, own):
+            if mine:
+                raise RuntimeError("the %s checkpoint does not match the model built for it" % path)
+            return read(self, only_return_state_dict=only_return_state_dict, strict=strict)
+        if any(t.is_meta for t in own.values() if t is not None):
+            raise RuntimeError("weights missing for part of %s" % type(self).__name__)
+        return None
+
+    wl.AudioAutoEncoder = lambda cfg: take(cfg, orig[0])
+    wl.SFXCLAPTextConditioner = lambda cfg: take(cfg, orig[1])
+    wl.SFXFlow = on_meta
+    BaseComponent.load_from_config = lfc
+    BaseComponent._load_statedict_from_disk = stream
+    try:
+        yield used
+    finally:
+        wl.AudioAutoEncoder, wl.SFXCLAPTextConditioner, BaseComponent.load_from_config = orig
+        wl.SFXFlow = orig_dit
+        BaseComponent._load_statedict_from_disk = read
+
+
+def share_parts(ldm, base):
+    swap = {}
+    for name in SHARED:
+        mine, theirs = getattr(ldm, name, None), getattr(base, name, None)
+        if mine is None or theirs is None or type(mine) is not type(theirs):
+            continue
+        a, b = mine.state_dict(), theirs.state_dict()
+        if a.keys() != b.keys() or any(a[k].shape != b[k].shape for k in a):
+            continue
+        swap[id(mine)] = theirs
+        if hasattr(mine, "items"):
+            for k, m in mine.items():
+                swap[id(m)] = theirs[k]
+        setattr(ldm, name, theirs)
+    subs = getattr(ldm, "_subcomponents", None)
+    if isinstance(subs, dict):
+        for k, v in list(subs.items()):
+            if id(v) in swap:
+                subs[k] = swap[id(v)]
+    return sorted(n for n in SHARED if getattr(ldm, n, None) is getattr(base, n, None))
+
+
+def load(kind, share=None, dit_dtype=None):
     t = time.time()
     import torch
     t = startup.stage("woosh torch import", t)
@@ -144,17 +311,32 @@ def load(kind):
         from woosh.model.ldm import LatentDiffusionModel as build
     else:
         from woosh.model.flowmap_from_pretrained import FlowMapFromPretrained as build
-    hold("load", torch)
+    if share is None:
+        hold("load", torch)
     t = time.time()
     orig = _timed_reads(BaseComponent)
     try:
-        ldm = build(LoadConfig(path=ckpt))
+        if share is None:
+            ldm = build(LoadConfig(path=ckpt))
+        else:
+            half = {"bf16": torch.bfloat16, "fp16": torch.float16}.get(dit_dtype)
+            with reuse_parts(share, half) as reused:
+                ldm = build(LoadConfig(path=ckpt))
+            startup.stage("woosh %s built around %d served parts" % (kind, len(reused)))
     finally:
         BaseComponent._load_statedict_from_disk = orig
     t = startup.stage("woosh model build + weights", t)
-    hold("gpu", torch)
-    if HOLD["on"] and priority(False):
-        startup.stage("woosh back to normal priority")
+    if share is None:
+        hold("gpu", torch)
+        if HOLD["on"] and priority(False):
+            startup.stage("woosh back to normal priority")
+    else:
+        shared = share_parts(ldm, share)
+        half = {"bf16": torch.bfloat16, "fp16": torch.float16}.get(dit_dtype)
+        if half is not None:
+            cast_linear(ldm.dit, half)
+        gc.collect()
+        startup.stage("woosh %s shares %s with the served model" % (kind, ", ".join(shared) or "nothing"), t)
     t = time.time()
     ldm = ldm.eval().to("cuda")
     startup.stage("woosh to cuda", t)
@@ -319,12 +501,15 @@ def _skip(stage):
 
 class Gen:
     def __init__(self, kind, frames, steps=4, solver="dopri5", cond_cache=0, graph="none", precision="fp32",
-                 ae_precision="fp32", batch_cfg=False, time_dtype="float64", mod_cache=False):
+                 ae_precision="fp32", batch_cfg=False, time_dtype="float64", mod_cache=False, share=None):
         if graph not in GRAPHS or precision not in PRECISIONS or ae_precision not in AE_PRECISIONS or \
                 time_dtype not in TIME_DTYPES:
             raise ValueError("bad option: graph %s precision %s ae_precision %s time_dtype %s" % (
                 graph, precision, ae_precision, time_dtype))
-        torch, ldm, cfg = load(kind)
+        torch, ldm, cfg = load(kind) if share is None else load(kind, share=share.ldm, dit_dtype=precision)
+        if share is not None and ldm.autoencoder is share.ldm.autoencoder:
+            ae_precision = share.ae_precision
+        self.should_stop = None
         t = time.time()
         self.torch, self.ldm, self.cfg = torch, ldm, cfg
         self.kind, self.frames, self.steps, self.solver = kind, int(frames), int(steps), solver
@@ -354,6 +539,27 @@ class Gen:
                           self.batch_cfg or time_dtype != "float64")
         self.no_cond, self.buckets, self.mod = {}, {}, None
         startup.stage("woosh precision cast", t)
+
+    def capture(self, frames, prompt=WARM):
+        out = {}
+        for n in sorted(set(frames.values())):
+            t = time.perf_counter()
+            if self.kind != "flow" or self.graph == "none" or self.plain:
+                self(prompt, 0, frames=n)
+            else:
+                torch = self.torch
+                cond = self._cond(prompt)
+                torch.manual_seed(0)
+                noise = torch.randn(1, 128, n).to("cuda")
+                with torch.inference_mode():
+                    if n not in self.no_cond:
+                        self.no_cond[n] = self.ldm.get_cond({"audio": noise, **cond}, no_dropout=True, device="cuda",
+                                                            no_cond=True)
+                    if n not in self.buckets:
+                        self._capture_flow(cond, n)
+                torch.cuda.synchronize()
+            out[n] = time.perf_counter() - t
+        return out
 
     def __call__(self, prompt, seed, mark=None, frames=None):
         mark = mark or _skip
@@ -589,6 +795,8 @@ class Gen:
 
             def f(t, y):
                 calls[0] += 1
+                if self.should_stop is not None and self.should_stop():
+                    raise Preempted()
                 if g is not None:
                     st["t"].copy_((1 - t).reshape(1))
                     st["y"].copy_(y)
@@ -612,9 +820,93 @@ class Gen:
 
 
 def make_gen(kind, frames, steps=4, solver="dopri5", cond_cache=0, graph="none", precision="fp32", ae_precision="fp32",
-             batch_cfg=False, time_dtype="float64", mod_cache=False):
+             batch_cfg=False, time_dtype="float64", mod_cache=False, share=None):
     return Gen(kind, frames, steps=steps, solver=solver, cond_cache=cond_cache, graph=graph, precision=precision,
-               ae_precision=ae_precision, batch_cfg=batch_cfg, time_dtype=time_dtype, mod_cache=mod_cache)
+               ae_precision=ae_precision, batch_cfg=batch_cfg, time_dtype=time_dtype, mod_cache=mod_cache, share=share)
+
+
+class Upgrade:
+    def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None):
+        self.base, self.kind, self.frames, self.lock, self.opts = base, kind, frames, lock, dict(opts)
+        self.make = make or (lambda: make_gen(kind, frames["other"], 4, "dopri5", share=base, **self.opts))
+        self.clock = clock
+        self.commit = commit or commit_free_gb
+        self.gen = None
+        self.state = "idle"
+        self.error = None
+        self.waiting = 0
+        self.abort_until = 0.0
+        self.renders = 0
+        self.preempted = 0
+        self.last_request = 0.0
+        self.load_s = None
+        self.mu = threading.Lock()
+        self.thread = None
+
+    def stop(self):
+        return self.waiting > 0 or self.clock() < self.abort_until
+
+    def abort(self):
+        self.abort_until = self.clock() + ABORT_HOLD_S
+
+    def enter(self):
+        with self.mu:
+            self.waiting += 1
+            self.last_request = self.clock()
+
+    def leave(self):
+        with self.mu:
+            self.waiting -= 1
+
+    def start(self, wait=False):
+        with self.mu:
+            if self.thread is None:
+                self.state = "loading"
+                self.thread = threading.Thread(target=self._load, name="woosh-upgrade", daemon=True)
+                self.thread.start()
+        if wait:
+            self.thread.join()
+        return self.state
+
+    def _load(self):
+        t = time.perf_counter()
+        try:
+            cf = self.commit()
+            if cf is not None and cf < LOAD_COMMIT_GB:
+                raise MemoryError("%.1f GB of commit left, the load needs %.1f GB" % (cf, LOAD_COMMIT_GB))
+            gen = self.make()
+            while self.clock() - self.last_request < LOAD_IDLE_S or self.clock() < self.abort_until:
+                time.sleep(RETRY_S)
+            with self.lock:
+                if callable(getattr(gen, "capture", None)):
+                    gen.capture(self.frames)
+                else:
+                    prepare(gen, self.frames)
+            gen.should_stop = self.stop
+            self.gen = gen
+            self.state = "ready"
+        except Exception as e:
+            self.error = "%s: %s" % (type(e).__name__, e)
+            self.state = "failed"
+        self.load_s = time.perf_counter() - t
+        print("woosh upgrade %s %s after %.1f s%s" % (self.kind, self.state, self.load_s,
+                                                       ": " + self.error if self.error else ""), flush=True)
+
+    def info(self):
+        return {"type": "upgrade", "engine": self.kind, "state": self.state, "error": self.error,
+                "renders": self.renders, "preempted": self.preempted, "load_s": self.load_s}
+
+    def render(self, key, variant, prompts, prompt, amp, stereo, level):
+        if self.gen is None:
+            raise RuntimeError("upgrade %s is %s" % (self.kind, self.state))
+        with self.lock:
+            try:
+                raw = render_key(self.gen, key, variant, self.frames, prompts, prompt)
+            except Preempted:
+                self.preempted += 1
+                raise
+        self.renders += 1
+        return finish_key(raw, key, amp, stereo, level=level)
 
 
 def body_peak(x, shape=None):
@@ -765,7 +1057,14 @@ def main():
                     help="import everything, then wait for a 'load' line on stdin before building the model and "
                          "a 'gpu' line before touching the GPU (the sidecar opens them in turn); exit on EOF; the "
                          "process runs at below-normal CPU priority until the gpu gate")
+    ap.add_argument("--upgrade", choices=UPGRADES, default="off",
+                    help="flow: on an upgrade_load message, load Woosh Flow beside the served model (sharing its "
+                         "autoencoder and text encoder) and render requests that carry engine=flow with it; every "
+                         "served request preempts a Flow render within one solver step (docs/hybrid.md). Off by "
+                         "default")
     args = ap.parse_args()
+    if args.upgrade != "off" and args.upgrade == args.model:
+        ap.error("--upgrade %s needs a different --model" % args.upgrade)
     startup.stage("woosh python up", at=_T_SCRIPT)
     startup.stage("woosh base imports", _T_SCRIPT)
     if args.parent_pid:
@@ -795,6 +1094,29 @@ def main():
         ", ".join("%d: %.1f s +%.0f MB" % (n, w["warm_s"], w["reserved_mb"]) for n, w in sorted(warm.items())),
         " ".join("%s=%s" % kv for kv in sorted(opts.items())),
         ", graph failed: %s" % gen.stats["graph_error"] if gen.stats["graph_error"] else ""), flush=True)
+    up = None
+    if args.upgrade != "off":
+        up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]))
+        print("woosh upgrade %s on request: it loads after an upgrade_load message, shares the autoencoder and the "
+              "text encoder, and yields to every served render" % args.upgrade, flush=True)
+
+    def served(key, req):
+        up.enter()
+        left = False
+        try:
+            with lock:
+                up.leave()
+                left = True
+                return render_key(gen, key, req.get("variant", 0), frames, args.prompts, req.get("prompt"))
+        finally:
+            if not left:
+                up.leave()
+
+    def control(conn, kind):
+        if kind == "upgrade_abort":
+            up.abort()
+            return
+        _send(conn, dict(up.info(), state=up.start()) if kind == "upgrade_load" else up.info())
 
     def serve(conn):
         try:
@@ -803,13 +1125,24 @@ def main():
                 if req.get("type") == "hello":
                     _send(conn, {"type": "hello", "sample_rate": SR, "model": "woosh-" + args.model})
                     continue
+                if up is not None and req.get("type") in ("upgrade_load", "upgrade_state", "upgrade_abort"):
+                    control(conn, req["type"])
+                    continue
                 try:
                     key = CacheKey(req["event_type"], req["material"], req.get("intensity", "normal"),
                                    req.get("context", "default"), req.get("phys", ""))
                     t = time.perf_counter()
-                    with lock:
-                        raw = render_key(gen, key, req.get("variant", 0), frames, args.prompts, req.get("prompt"))
-                    y = finish_key(raw, key, args.amp, args.stereo, level=args.level)
+                    if up is not None and req.get("engine"):
+                        if req["engine"] != up.kind:
+                            raise ValueError("unknown engine %r, this worker upgrades to %s" % (req["engine"], up.kind))
+                        y = up.render(key, req.get("variant", 0), args.prompts, req.get("prompt"), args.amp,
+                                      args.stereo, args.level)
+                    elif up is not None:
+                        y = finish_key(served(key, req), key, args.amp, args.stereo, level=args.level)
+                    else:
+                        with lock:
+                            raw = render_key(gen, key, req.get("variant", 0), frames, args.prompts, req.get("prompt"))
+                        y = finish_key(raw, key, args.amp, args.stereo, level=args.level)
                 except (ConnectionError, OSError):
                     raise
                 except Exception as e:

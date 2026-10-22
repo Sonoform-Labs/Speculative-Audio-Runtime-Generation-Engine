@@ -65,7 +65,21 @@ class RemoteGenerator(Generator):
         _send(self._sock, obj, pcm)
         return _recv(self._sock)
 
-    def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None) -> AudioClip:
+    def control(self, obj, reply: bool = True):
+        for attempt in (0, 1):
+            try:
+                self._ensure()
+                if not reply:
+                    _send(self._sock, obj)
+                    return None
+                return self._roundtrip(obj)[0]
+            except (ConnectionError, OSError):
+                self._sock = None
+                if attempt == 1:
+                    raise
+
+    def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None,
+                 engine: str | None = None) -> AudioClip:
         req = {"type": "gen", "event_type": key.event_type, "material": key.material,
                "intensity": key.intensity, "context": key.context, "variant": int(variant)}
         if key.phys:
@@ -73,6 +87,8 @@ class RemoteGenerator(Generator):
         prompt = prompt or self.prompts.get(str(key))
         if prompt:
             req["prompt"] = prompt
+        if engine:
+            req["engine"] = engine
         for attempt in (0, 1):
             try:
                 self._ensure()

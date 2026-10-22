@@ -39,7 +39,12 @@ STYLE_ARMS = tuple(a for a in STYLE_ARM.values() if a != "llm")
 GROUND = {"rg_anchor": "anchors", "rg_words": "words", "rg_caption": "caption"}
 GROUND_ARMS = tuple(GROUND)
 GROUND_BASE = {"anchors": "named"}
-ALL_ARMS = BASE_ARMS + VARIANTS + STYLE_ARMS + GROUND_ARMS
+EXTRA_ARMS = ("ceiling",)
+FLOW_BASE = {"fl_phrasebook": "phrasebook", "fl_caption": "caption"}
+FLOW_ARMS = tuple(FLOW_BASE)
+ENGINES = {"dflow": "woosh", "flow": "woosh-flow"}
+MODEL_NAME = dict(ge.MODEL_NAME, **{"woosh-flow": "Woosh Flow"})
+ALL_ARMS = BASE_ARMS + VARIANTS + STYLE_ARMS + GROUND_ARMS + EXTRA_ARMS + FLOW_ARMS
 ARMS = BASE_ARMS
 SETS = ("known", "fresh", "all", "fresh3", "all3", "dev")
 FRESH = (
@@ -203,7 +208,13 @@ ARM_TEXT = {"phrasebook": "the shipped phrasebook (--prompts tuned, the default)
             "rg_words": "--writer ground --writer-ground words: no language model; the request's event and material "
                         "words, then up to four sound words shared by the eight nearest real recording captions",
             "rg_caption": "--writer ground --writer-ground caption: no language model; the request's event and "
-                          "material words in front of the nearest real recording caption, v1 composition"}
+                          "material words in front of the nearest real recording caption, v1 composition",
+            "ceiling": "diagnostic, no flag: one prompt per scenario written by a strong model from the scene facts "
+                       "alone, in each audio model's own preferred form (the ceiling of what a writer can do)",
+            "fl_phrasebook": "the phrasebook prompt rendered on Woosh Flow (non-distilled, the adopted fast path) "
+                             "in place of DFlow; SA3 rows are the phrasebook clips",
+            "fl_caption": "the caption template prompt rendered on Woosh Flow in place of DFlow; SA3 rows are the "
+                          "caption clips"}
 TIERS = {arm: "%s_%s" % ("abcdefghijklmnopqrstuvwxyz"[i], arm) for i, arm in enumerate(ALL_ARMS)}
 SET_TEXT = {"bench": "the 40 scene-bearing bench scenarios", "generic": "the 35 plain requests of the generic run",
             "fresh": "the 30 fresh scenarios (llm_eval.FRESH, or FRESH3 with --set fresh3 or all3)",
@@ -323,6 +334,7 @@ def cmp_pairs(arms):
     out += [(x, "caption") for x in arms if x not in ("phrasebook", "caption")]
     out += [(x, "llm") for x in arms if (x in VARIANTS or x in STYLE_ARMS) and "llm" in arms]
     out += [(x, "wr_named") for x in arms if x in GROUND_ARMS and "wr_named" in arms]
+    out += [(x, "rg_caption") for x in arms if x in EXTRA_ARMS and "rg_caption" in arms]
     return tuple(out)
 
 
@@ -473,13 +485,17 @@ def scenarios(work, only=None):
     return rows
 
 
+def engine_of(r, arm):
+    return ENGINES["flow"] if arm in FLOW_BASE and r["model"] == "woosh" else r["model"]
+
+
 def jobs(rows, model):
     out = {}
     for r in rows:
-        if r["model"] != model:
-            continue
         rk = render_key(r)
         for arm in ARMS:
+            if engine_of(r, arm) != model:
+                continue
             text = r["prompts"][arm]
             cid = clip_id(model, str(rk), text)
             j = out.setdefault(cid, {"cid": cid, "model": model, "rkey": rk, "text": text, "uses": []})
@@ -512,28 +528,32 @@ def seeds(a):
 def cmd_render_woosh(a):
     sys.path.insert(1, SCRIPTS)
     import woosh_server as ws
-    opts = dict(ws.OPTIONS, **ws.ADOPTED["dflow"])
+    kind = getattr(a, "engine", "dflow")
+    model = ENGINES[kind]
+    opts = dict(ws.OPTIONS, **ws.ADOPTED[kind])
     frames = ws.parse_frames(None)
     t0 = time.perf_counter()
-    gen = ws.make_gen("dflow", frames["other"], 4, "dopri5", **opts)
+    gen = ws.make_gen(kind, frames["other"], 4, "dopri5", **opts)
     ws.prepare(gen, frames)
-    print("woosh dflow ready in %.1f s, %s" % (time.perf_counter() - t0, opts), flush=True)
+    print("woosh %s ready in %.1f s, %s" % (kind, time.perf_counter() - t0, opts), flush=True)
     out = []
-    for j in jobs(scenarios(a.work, a.only), "woosh"):
+    for j in jobs(scenarios(a.work, a.only), model):
         ms = []
         for v in seeds(a):
             t = time.perf_counter()
             raw = ws.render_key(gen, j["rkey"], v, frames, "tuned", prompt=j["text"])
             ms.append((time.perf_counter() - t) * 1000.0)
             y = ws.finish_key(raw, j["rkey"], AMP, True)
-            out.append(dict(save(a.work, j["cid"], v, y, ws.SR, a.first_seed, a.takes), cid=j["cid"], model="woosh",
+            out.append(dict(save(a.work, j["cid"], v, y, ws.SR, a.first_seed, a.takes), cid=j["cid"], model=model,
                             rkey=str(j["rkey"]), prompt=j["text"], v=v, sr=ws.SR, gen_ms=round(ms[-1], 2),
                             uses=j["uses"]))
         print("woosh %-60s median %.1f ms  %s  <- %s" % (str(j["rkey"])[:60], float(np.median(ms)), j["text"],
                                                          ",".join("%s:%s" % tuple(u) for u in j["uses"])), flush=True)
-    dump({"meta": {"model": "woosh-dflow", "options": opts, "frames": frames, "first_seed": a.first_seed,
+    dump({"meta": {"model": "woosh-" + kind, "options": opts, "frames": frames, "first_seed": a.first_seed,
                    "seeds": a.seeds, "takes": a.takes, "graph_error": gen.stats.get("graph_error"),
-                   "seconds": time.perf_counter() - t0}, "rows": out}, os.path.join(a.work, "render_woosh%s.json" % tag(a)))
+                   "nfe_median": float(np.median(gen.stats["nfe"])) if gen.stats.get("nfe") else None,
+                   "seconds": time.perf_counter() - t0}, "rows": out},
+         os.path.join(a.work, "render_woosh%s%s.json" % ("" if kind == "dflow" else "_" + kind, tag(a))))
     print("saved %d rows" % len(out), flush=True)
     return 0
 
@@ -591,7 +611,7 @@ def render_rows(work):
 
 
 def arm_clip(r, arm):
-    return clip_id(r["model"], str(render_key(r)), r["prompts"][arm])
+    return clip_id(engine_of(r, arm), str(render_key(r)), r["prompts"][arm])
 
 
 def judged(rows):
@@ -1300,7 +1320,7 @@ def cmd_page(a):
                 judged_.append("water %.2f [%.2f, %.2f]" % (wk["cons"][arms[0]], wk["cons_ci"][arms[0]][0],
                                                            wk["cons_ci"][arms[0]][1]))
             info["%s|%s" % (sid, letter)] = "%s | %s, amp %s | %s | takes (variants %d-%d): -40 dB after %s s, length %s s | prompt: %s" % (
-                ", ".join(arms), ge.MODEL_NAME[r["model"]], AMP, "; ".join(judged_) or "no validated judge for this sound",
+                ", ".join(arms), MODEL_NAME[engine_of(r, arms[0])], AMP, "; ".join(judged_) or "no validated judge for this sound",
                 first, first + a.takes - 1, " / ".join("%.2f" % n["t40"] for n in nums),
                 " / ".join("%.2f" % n["len"] for n in nums), nums[0]["prompt"])
             blocks.append("<div class='opt' data-s='%s' data-l='%s'><div class='let'>%s</div><div class='takes'>%s</div>"
@@ -1354,6 +1374,10 @@ def main(argv=None):
                                 "fresh requests, for development")
         if name in ("render-woosh", "render-sa3"):
             p.add_argument("--only", nargs="+", default=None)
+        if name == "render-woosh":
+            p.add_argument("--engine", choices=sorted(ENGINES), default="dflow",
+                           help="dflow renders every arm but the Flow arms; flow renders only the Flow arms "
+                                "(fl_phrasebook, fl_caption) on Woosh Flow with woosh_server.ADOPTED['flow']")
         if name == "judge-vocab":
             p.add_argument("--refs", default=os.path.join("data", "refs_heldout"))
         if name == "page":
@@ -1374,7 +1398,7 @@ def main(argv=None):
                            choices=list(STYLE_ARMS + GROUND_ARMS), help="arms to pick from, in tie-break order")
         if name == "confirm":
             p.add_argument("--parts", nargs="+", required=True, help="work folders with disjoint rows")
-            p.add_argument("--pick", required=True, choices=list(STYLE_ARMS + GROUND_ARMS))
+            p.add_argument("--pick", required=True, choices=list(STYLE_ARMS + GROUND_ARMS + EXTRA_ARMS + FLOW_ARMS))
             p.add_argument("--out", required=True)
         if name == "combine":
             p.add_argument("--parts", nargs="+", required=True, help="work folders whose judged seeds are pooled per row")
