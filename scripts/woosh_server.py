@@ -48,6 +48,10 @@ RETRY_S = 0.2
 LOAD_IDLE_S = 0.5
 LOAD_COMMIT_GB = 1.5
 FAIL_ENV = "SARGE_UPGRADE_FAIL"
+VERIFIER_DIR = os.path.join(WOOSH_HOME, "checkpoints", "Woosh-CLAP")
+VERIFIER_COMMIT_GB = 0.6
+PENDING_KEEP = 32
+BEST_LINE_EVERY = 10
 
 
 class Preempted(Exception):
@@ -828,8 +832,78 @@ def make_gen(kind, frames, steps=4, solver="dopri5", cond_cache=0, graph="none",
                ae_precision=ae_precision, batch_cfg=batch_cfg, time_dtype=time_dtype, mod_cache=mod_cache, share=share)
 
 
+class Verifier:
+    def __init__(self, path=None, device="cpu"):
+        self.path = path or VERIFIER_DIR
+        self.device = device
+        self.tower = None
+        self.sr = None
+        self.texts = {}
+        self.ms = []
+
+    def load(self):
+        import torch
+        from omegaconf import OmegaConf
+        from safetensors.torch import load_file
+        from woosh.module import audioretrieval_module as wam
+        from woosh.utils.loading import lazy_loading
+        cfg = OmegaConf.load(os.path.join(self.path, "config.yaml"))
+        arm = wam.AudioRetrievalModel
+
+        class Tower(torch.nn.Module):
+            forward_audio_model = arm.forward_audio_model
+            _get_audio_embedding = arm._get_audio_embedding
+            _batch_audio = arm._batch_audio
+            get_audio_embedding_from_data = arm.get_audio_embedding_from_data
+
+        tower = Tower()
+        tower.audio_config, tower.normalize = cfg.audio, bool(cfg.get("normalize", True))
+        with lazy_loading():
+            tower.audio_frontend, size = wam.get_audio_frontend_model(cfg.audio)
+        tower.audio_head = wam.get_audio_head_model(cfg.audio, cfg.shared_representation_size, size)
+        for name, val in (("sample_rate", cfg.audio.get("sample_rate", 32000)),
+                          ("eval_max_sec", cfg.audio.get("eval_max_sec", 60)),
+                          ("segment_length", cfg.audio.get("segment_length", 5))):
+            tower.register_buffer(name, torch.tensor(int(val), dtype=torch.int64), persistent=False)
+        tower.load_state_dict(load_file(os.path.join(self.path, "weights_audio.safetensors")), strict=True)
+        self.tower = tower.eval().to(self.device)
+        self.sr = int(cfg.audio.get("sample_rate", 32000))
+        return self
+
+    def text(self, ldm, text):
+        hit = self.texts.get(text)
+        if hit is not None:
+            return hit
+        import torch
+        c = next(m for m in ldm.conditioners.values() if hasattr(m, "sentence_head"))
+        tok, _ = c.tokenize_text([text])
+        dev = next(c.sentence_frontend.parameters()).device
+        with torch.inference_mode():
+            out = c.sentence_frontend(input_ids=tok["input_ids"].to(dev), attention_mask=tok["attention_mask"].to(dev),
+                                      return_dict=True)
+            e = c.sentence_head(out["last_hidden_state"][:, 0, :]).float()
+            e = torch.nn.functional.normalize(e, p=2, dim=1)[0].cpu()
+        self.texts[text] = e
+        return e
+
+    def score(self, y, sr, temb):
+        import torch
+        from math import gcd
+        from scipy.signal import resample_poly
+        m = np.asarray(y, np.float64)
+        m = m.mean(axis=1) if m.ndim == 2 else m
+        g = gcd(int(sr), self.sr)
+        m = resample_poly(m, self.sr // g, int(sr) // g).astype(np.float32)
+        t = time.perf_counter()
+        with torch.inference_mode():
+            e = self.tower.get_audio_embedding_from_data(m, device=self.device, use_tensor=True).float()[0].cpu()
+        self.ms.append((time.perf_counter() - t) * 1000.0)
+        return float((e * temb).sum())
+
+
 class Upgrade:
-    def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None, solver="dopri5"):
+    def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None, solver="dopri5",
+                 best=1, verifier=None):
         self.base, self.kind, self.frames, self.lock, self.opts = base, kind, frames, lock, dict(opts)
         self.solver = solver
         method, steps = UPGRADE_SOLVERS[solver]
@@ -848,6 +922,13 @@ class Upgrade:
         self.load_s = None
         self.mu = threading.Lock()
         self.thread = None
+        self.best = max(1, int(best))
+        self.verifier = verifier if self.best > 1 else None
+        self.verifier_state = "off" if self.verifier is None else "idle"
+        self.verifier_error = None
+        self.pending = OrderedDict()
+        self.candidates = 0
+        self.picked = [0] * self.best
 
     def stop(self):
         return self.waiting > 0 or self.clock() < self.abort_until
@@ -888,6 +969,8 @@ class Upgrade:
                     gen.capture(self.frames)
                 else:
                     prepare(gen, self.frames)
+            if self.verifier is not None:
+                self._load_verifier()
             gen.should_stop = self.stop
             self.gen = gen
             self.state = "ready"
@@ -895,17 +978,39 @@ class Upgrade:
             self.error = "%s: %s" % (type(e).__name__, e)
             self.state = "failed"
         self.load_s = time.perf_counter() - t
-        print("woosh upgrade %s %s after %.1f s%s" % (self.kind, self.state, self.load_s,
-                                                       ": " + self.error if self.error else ""), flush=True)
+        print("woosh upgrade %s %s after %.1f s%s%s" % (
+            self.kind, self.state, self.load_s, ": " + self.error if self.error else "",
+            "" if self.best == 1 else ", best of %d by the verifier: %s%s" % (
+                self.best, self.verifier_state, " (%s)" % self.verifier_error if self.verifier_error else "")),
+            flush=True)
+
+    def _load_verifier(self):
+        try:
+            cf = self.commit()
+            if cf is not None and cf < VERIFIER_COMMIT_GB:
+                raise MemoryError("%.1f GB of commit left, the verifier needs %.1f GB" % (cf, VERIFIER_COMMIT_GB))
+            self.verifier.load()
+            self.verifier_state = "ready"
+        except Exception as e:
+            self.verifier_error = "%s: %s" % (type(e).__name__, e)
+            self.verifier_state = "failed"
 
     def info(self):
-        return {"type": "upgrade", "engine": self.kind, "state": self.state, "error": self.error,
-                "renders": self.renders, "preempted": self.preempted, "failed": self.failed, "load_s": self.load_s,
-                "solver": self.solver}
+        out = {"type": "upgrade", "engine": self.kind, "state": self.state, "error": self.error,
+               "renders": self.renders, "preempted": self.preempted, "failed": self.failed, "load_s": self.load_s,
+               "solver": self.solver}
+        if self.best > 1:
+            out.update({"best": self.best, "verifier": self.verifier_state, "verifier_error": self.verifier_error,
+                        "candidates": self.candidates, "picked": list(self.picked),
+                        "verifier_ms": float(np.median(self.verifier.ms)) if self.verifier and self.verifier.ms
+                        else None})
+        return out
 
     def render(self, key, variant, prompts, prompt, amp, stereo, level):
         if self.gen is None:
             raise RuntimeError("upgrade %s is %s" % (self.kind, self.state))
+        if self.best > 1 and self.verifier_state == "ready":
+            return self._render_best(key, variant, prompts, prompt, amp, stereo, level)
         fail = os.environ.get(FAIL_ENV, "")
         with self.lock:
             try:
@@ -920,6 +1025,41 @@ class Upgrade:
                 raise
         self.renders += 1
         return finish_key(raw, key, amp, stereo, level=level)
+
+    def _render_best(self, key, variant, prompts, prompt, amp, stereo, level):
+        from sarge import verify
+        text = prompt_for(key, prompts, prompt)
+        tag = (str(key), int(variant), text, self.best, amp, bool(stereo), level)
+        got = self.pending.pop(tag, [])
+        fail = os.environ.get(FAIL_ENV, "")
+        want = verify.key_text(key)
+        try:
+            for j in range(len(got), self.best):
+                with self.lock:
+                    if fail and fail in str(key):
+                        raise RuntimeError("%s holds %r, the bench hook fails this render" % (FAIL_ENV, fail))
+                    raw = render_key(self.gen, key, verify.candidate_variant(variant, j), self.frames, prompts, prompt)
+                    temb = self.verifier.text(self.gen.ldm, want)
+                y = finish_key(raw, key, amp, stereo, level=level)
+                got.append((self.verifier.score(y, SR, temb), j, y))
+                self.candidates += 1
+        except Preempted:
+            self.preempted += 1
+            self.pending[tag] = got
+            while len(self.pending) > PENDING_KEEP:
+                self.pending.popitem(last=False)
+            raise
+        except Exception:
+            self.failed += 1
+            raise
+        _s, j, y = verify.pick(got)
+        self.picked[j] += 1
+        self.renders += 1
+        if self.renders % BEST_LINE_EVERY == 1:
+            print("woosh upgrade %s: best of %d, %d takes from %d candidates, picks by candidate %s, verifier %.0f ms "
+                  "a take on the cpu" % (self.kind, self.best, self.renders, self.candidates, self.picked,
+                                        float(np.median(self.verifier.ms)) if self.verifier.ms else -1.0), flush=True)
+        return y
 
 
 def body_peak(x, shape=None):
@@ -1085,6 +1225,13 @@ def main():
     ap.add_argument("--upgrade-solver", choices=sorted(UPGRADE_SOLVERS), default="dopri5",
                     help="--upgrade: the ODE solver of the Flow renders, dopri5 (adaptive, the default) or a fixed "
                          "solver with its step count (docs/hybrid.md)")
+    ap.add_argument("--upgrade-best", type=int, default=1,
+                    help="--upgrade: render N Flow candidates for each upgraded take and keep the one the verifier "
+                         "(Woosh-CLAP's audio tower on the CPU, text from the served text encoder) scores closest to "
+                         "the request words; 1 (default) renders one take as before (docs/hybrid.md)")
+    ap.add_argument("--upgrade-verifier", default=None,
+                    help="--upgrade-best: the Woosh-CLAP checkpoint folder (config.yaml and weights_audio.safetensors), "
+                         "default %s" % VERIFIER_DIR)
     args = ap.parse_args()
     if args.upgrade != "off" and args.upgrade == args.model:
         ap.error("--upgrade %s needs a different --model" % args.upgrade)
@@ -1092,6 +1239,10 @@ def main():
         ap.error("--upgrade-prompts needs --upgrade")
     if args.upgrade_solver != "dopri5" and args.upgrade == "off":
         ap.error("--upgrade-solver needs --upgrade")
+    if args.upgrade_best < 1:
+        ap.error("--upgrade-best takes 1 or more")
+    if (args.upgrade_best > 1 or args.upgrade_verifier) and args.upgrade == "off":
+        ap.error("--upgrade-best and --upgrade-verifier need --upgrade")
     startup.stage("woosh python up", at=_T_SCRIPT)
     startup.stage("woosh base imports", _T_SCRIPT)
     if args.parent_pid:
@@ -1123,10 +1274,14 @@ def main():
         ", graph failed: %s" % gen.stats["graph_error"] if gen.stats["graph_error"] else ""), flush=True)
     up = None
     if args.upgrade != "off":
-        up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]), solver=args.upgrade_solver)
+        up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]), solver=args.upgrade_solver,
+                     best=args.upgrade_best,
+                     verifier=Verifier(args.upgrade_verifier) if args.upgrade_best > 1 else None)
         print("woosh upgrade %s on request: it loads after an upgrade_load message, shares the autoencoder and the "
-              "text encoder, and yields to every served render; served prompts %s, upgrade prompts %s, solver %s"
-              % (args.upgrade, args.prompts, upgrade_style(args), args.upgrade_solver), flush=True)
+              "text encoder, and yields to every served render; served prompts %s, upgrade prompts %s, solver %s%s"
+              % (args.upgrade, args.prompts, upgrade_style(args), args.upgrade_solver,
+                 "" if args.upgrade_best == 1 else ", best of %d by %s" % (args.upgrade_best, up.verifier.path)),
+              flush=True)
 
     def served(key, req):
         up.enter()

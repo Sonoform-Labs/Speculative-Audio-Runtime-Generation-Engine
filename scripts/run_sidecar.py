@@ -109,7 +109,10 @@ def start_woosh(args, hold=False):
         ["--upgrade", args.woosh_upgrade] if getattr(args, "woosh_upgrade", "off") != "off" else []) + (
         ["--upgrade-prompts", final] if final != first else []) + (
         ["--upgrade-solver", args.woosh_upgrade_solver]
-        if getattr(args, "woosh_upgrade_solver", "dopri5") != "dopri5" else [])
+        if getattr(args, "woosh_upgrade_solver", "dopri5") != "dopri5" else []) + (
+        ["--upgrade-best", str(args.woosh_upgrade_best)] if getattr(args, "woosh_upgrade_best", 1) > 1 else []) + (
+        ["--upgrade-verifier", args.woosh_upgrade_verifier]
+        if getattr(args, "woosh_upgrade_best", 1) > 1 and getattr(args, "woosh_upgrade_verifier", None) else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -124,11 +127,16 @@ def start_woosh(args, hold=False):
     for line in proc.stdout:
         print("[woosh] " + line.rstrip(), flush=True)
         if "listening on" in line:
-            threading.Thread(target=lambda: [None for _ in proc.stdout], daemon=True).start()
+            threading.Thread(target=lambda: [late_line(x, args) for x in proc.stdout], daemon=True).start()
             print("woosh %s up in %.1f s" % (args.woosh_model, time.time() - t0), flush=True)
             startup.stage("woosh up", t0)
             return proc
     raise SystemExit("woosh server exited before listening (code %s)" % proc.poll())
+
+
+def late_line(line, args=None):
+    if getattr(args, "woosh_upgrade_best", 1) > 1 and line.startswith("woosh upgrade "):
+        print("[woosh] " + line.rstrip(), flush=True)
 
 
 def launch_woosh(args):
@@ -138,6 +146,7 @@ def launch_woosh(args):
     def pump():
         for line in proc.stdout:
             if up.is_set():
+                late_line(line, args)
                 continue
             print("[woosh] " + line.rstrip(), flush=True)
             if "listening on" in line:
@@ -235,6 +244,14 @@ def main(argv=None) -> int:
                     help="--woosh-upgrade flow: the ODE solver of the Flow re-renders, dopri5 (adaptive, about 86 "
                          "evaluations and 1.0 s a clip, the default) or a fixed solver with its step count, e.g. "
                          "rk4:8 at 32 evaluations (docs/hybrid.md)")
+    ap.add_argument("--woosh-upgrade-best", type=int, default=1,
+                    help="--woosh-upgrade flow: each upgraded take is the best of N Flow candidates as scored by a "
+                         "verifier outside the judge panel (Woosh-CLAP's audio tower on the CPU against the request "
+                         "words), so a key keeps distinct takes and none of them is a real recording; 1 (default) "
+                         "renders one candidate as before (docs/hybrid.md)")
+    ap.add_argument("--woosh-upgrade-verifier", default=None,
+                    help="--woosh-upgrade-best: the Woosh-CLAP checkpoint folder (config.yaml and "
+                         "weights_audio.safetensors), default WOOSH_HOME/checkpoints/Woosh-CLAP")
     ap.add_argument("--woosh-port", type=int, default=8771)
     ap.add_argument("--woosh-hf-cache", default=r"D:\hf_cache",
                     help="--generator hybrid: the HF cache that holds roberta-large for the Woosh text encoder")
@@ -383,6 +400,12 @@ def main(argv=None) -> int:
         raise SystemExit("--woosh-upgrade-solver %s needs --woosh-upgrade flow" % args.woosh_upgrade_solver)
     if args.first_prompt != "same" and args.woosh_upgrade == "off":
         raise SystemExit("--first-prompt %s needs --woosh-upgrade flow" % args.first_prompt)
+    if args.woosh_upgrade_best < 1:
+        raise SystemExit("--woosh-upgrade-best takes 1 or more")
+    if (args.woosh_upgrade_best > 1 or args.woosh_upgrade_verifier) and args.woosh_upgrade == "off":
+        raise SystemExit("--woosh-upgrade-best and --woosh-upgrade-verifier need --woosh-upgrade flow")
+    if args.woosh_upgrade_verifier and args.woosh_upgrade_best == 1:
+        raise SystemExit("--woosh-upgrade-verifier needs --woosh-upgrade-best 2 or more")
     if args.generator == "hybrid":
         prefetch.start_hybrid(HYBRID_GUNS["model_name"], args.woosh_model,
                               weights=lambda: weight_cache.locate(HYBRID_GUNS["model_name"], cache_dir_of(args)))
@@ -492,6 +515,7 @@ def main(argv=None) -> int:
           + ("  scene=on" if args.scene else "")
           + (f"  woosh-upgrade={args.woosh_upgrade} first-prompt={woosh_styles(args)[0]} "
              f"solver={args.woosh_upgrade_solver}" if args.woosh_upgrade != "off" else "")
+          + (f" best={args.woosh_upgrade_best}" if args.woosh_upgrade_best > 1 else "")
           + (f"  writer={writer.describe()} swap={args.writer_swap}" if writer is not None else ""),
           flush=True)
     if writer is not None:
