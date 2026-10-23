@@ -384,7 +384,7 @@ class StableAudio3Generator(Generator):
         if self.prompt_style.startswith("template:"):
             from ..prompts import template
             return template(self.prompt_style, key.event_type, key.material, key.intensity, key.context, key.phys,
-                            "sa3")
+                            "sa3", getattr(key, "scene", ""))
         if self.prompt_style == "detailed":
             from ..prompts import build
             return build(key.event_type, key.material, key.intensity, key.context)

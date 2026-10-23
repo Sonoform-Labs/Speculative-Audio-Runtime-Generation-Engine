@@ -320,7 +320,7 @@ def _main_kwargs(rs, monkeypatch, argv):
 
 
 def test_sidecar_writer_style_flag_defaults_to_v1(rs, monkeypatch, tmp_path):
-    assert tuple(rs.WRITER_STYLES) == tuple(w.STYLES)
+    assert tuple(rs.WRITER_STYLES) == tuple(w.STYLES) + (w.CANON_STYLE,)
     kw = _main_kwargs(rs, monkeypatch, ["--writer", "ollama", "--writer-store", str(tmp_path)])
     assert kw["writer"].style == "v1"
     kw = _main_kwargs(rs, monkeypatch, ["--writer", "ollama", "--writer-style", "texture", "--writer-store",

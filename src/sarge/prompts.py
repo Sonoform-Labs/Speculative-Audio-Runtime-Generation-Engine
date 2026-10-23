@@ -23,6 +23,13 @@ TEMPLATES = {
 }
 STYLES = ("tuned", "generic") + tuple(TEMPLATE + n for n in TEMPLATES)
 _SLOT = re.compile(r"\{(\w+)\}")
+LOOP_MOD = "+loop"
+MODS = (LOOP_MOD,)
+LOOP_WORDS = frozenset(("loop", "loops", "looped", "looping", "ambience", "ambiences", "ambient", "amb"))
+CONTINUOUS_FORM = ((r"\bA single short sound with a quick decay\b", "A continuous steady sound"),
+                   (r"\ba single short sound with a quick decay\b", "a continuous steady sound"),
+                   (r"\bone-shot, short, isolated\b", "continuous, steady"),
+                   (r"\bA single\b", "A continuous"), (r"\bsingle\b", "continuous"))
 
 SPACES = {
     "outdoor_open": {"foley": "exterior, open air", "gun": "exterior, open field, echo rolling away into the distance",
@@ -287,11 +294,39 @@ def generic(event, material="", intensity="normal", context="default", phys="", 
     return prefix + text if text else prefix.rstrip(", ")
 
 
+def _split_mods(body):
+    mods = set()
+    while True:
+        hit = [m for m in MODS if body.endswith(m) and len(body) > len(m)]
+        if not hit:
+            return body, frozenset(mods)
+        body = body[:-len(hit[0])]
+        mods.add(hit[0][1:])
+
+
+def template_mods(style):
+    s = str(style or "")
+    return _split_mods(s[len(TEMPLATE):])[1] if s.startswith(TEMPLATE) else frozenset()
+
+
+def continuous(event, scene="", canon=None):
+    from .scene import parse
+    marked = bool(set(split_words(event)) & LOOP_WORDS)
+    said = bool(canon.get("continuous")) if isinstance(canon, dict) else False
+    return parse(scene).get("act") == "loop" or marked or said
+
+
+def continuous_form(text):
+    for pat, rep in CONTINUOUS_FORM:
+        text = re.sub(pat, rep, text)
+    return text
+
+
 def parse_template(style):
     s = str(style or "")
     if not s.startswith(TEMPLATE):
         return None
-    body = s[len(TEMPLATE):]
+    body = _split_mods(s[len(TEMPLATE):])[0]
     tt = {TT_ON: True, TT_OFF: False}.get(body[-len(TT_ON):])
     name = body[:-len(TT_ON)] if tt is not None else body
     if name not in TEMPLATES:
@@ -313,10 +348,17 @@ def _phrase(words):
     return " ".join(words)
 
 
-def template_slots(event, material="", intensity="normal", context="default", phys=""):
-    ev = split_words(event)
+def canon_words(event, material, canon=None):
+    if not isinstance(canon, dict):
+        return event, material
+    return canon.get("name") or event, canon.get("material") or material
+
+
+def template_slots(event, material="", intensity="normal", context="default", phys="", drop=frozenset(), part=False):
+    ev = [w for w in split_words(event) if w not in drop]
     mat = split_words(material)
     mat = [] if mat and all(w in ev for w in mat) else mat
+    mat = [w for w in mat if not (part and w in ev)]
     iw = _field(intensity)
     lit = split_words(intensity)
     adj = split_words(" ".join(INTENSITY_ADJ.get(w, w) for w in iw))
@@ -339,10 +381,14 @@ def _sentence_case(text):
     return text.lstrip("{")[:1].isupper()
 
 
-def template(style, event, material="", intensity="normal", context="default", phys="", model="woosh"):
+def template(style, event, material="", intensity="normal", context="default", phys="", model="woosh", scene="",
+             canon=None):
     name, tt = parse_template(style)
     text, _tt, space = TEMPLATES[name]
-    slots = template_slots(event, material, intensity, context, phys)
+    loop = "loop" in template_mods(style)
+    ev, mat = canon_words(event, material, canon)
+    text = continuous_form(text) if loop and continuous(ev, scene, canon) else text
+    slots = template_slots(ev, mat, intensity, context, phys, LOOP_WORDS if loop else frozenset(), canon is not None)
     slots["space"] = slots["ctx"] or space
     out = _tidy(_SLOT.sub(lambda m: slots[m.group(1).lower()], text))
     out = out[:1].upper() + out[1:] if _sentence_case(text) else out
@@ -350,11 +396,12 @@ def template(style, event, material="", intensity="normal", context="default", p
     return prefix + out if out else prefix.rstrip(", ")
 
 
-def compose(style, key, prefix="", model="woosh"):
+def compose(style, key, prefix="", model="woosh", canon=None):
     if style == "generic":
         return generic(key.event_type, key.material, key.intensity, key.context, key.phys, prefix)
     if str(style or "").startswith(TEMPLATE):
-        return template(style, key.event_type, key.material, key.intensity, key.context, key.phys, model)
+        return template(style, key.event_type, key.material, key.intensity, key.context, key.phys, model,
+                        getattr(key, "scene", ""), canon)
     return build(key.event_type, key.material, key.intensity, key.context, key.phys)
 
 

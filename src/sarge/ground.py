@@ -53,6 +53,9 @@ ANCHOR_RULE = ("\nThe facts may end with captions that sound libraries gave to r
                "Write the action and the sound the way those captions describe it, and prefer their words for how the "
                "sound is made and how it sounds over words of your own. Never take an object, a person, a place or a "
                "second event from them that the facts do not mention.")
+CANON_ANCHOR_RULE = ("\nThe facts may end with captions that sound libraries gave to real recordings that sound "
+                     "similar. Use their words to find the standard name of the sound, and name only the sound the "
+                     "facts describe; never take an object, a material or a second event from them.")
 PARAMS = {"pool": POOL, "lex_event": LEX_EVENT, "lex_mat": LEX_MAT, "people_pen": PEOPLE_PEN, "multi_pen": MULTI_PEN,
           "count_pen": COUNT_PEN, "meta_pen": META_PEN, "near_dup": NEAR_DUP, "min_share": MIN_SHARE,
           "max_commas": MAX_COMMAS, "query": "request + request with context, summed, normalised",
@@ -309,6 +312,9 @@ class Grounder:
             for user, slots in st["examples"]:
                 anchored, _h = self.anchored(None, user)
                 exs.append((anchored, slots))
+            if st.get("kind") == wr.CANON_STYLE:
+                return dict(st, name=st["name"] + "+anchors", system=st["system"] + CANON_ANCHOR_RULE,
+                            examples=tuple(exs))
             out = wr._style(st["name"] + "+anchors", st["system"] + ANCHOR_RULE, tuple(exs), st["named"], st["form"],
                             st["banned"], st["collide"])
             out["ex_words"], out["leak"] = st["ex_words"], st["leak"]
@@ -341,7 +347,9 @@ class Grounder:
     def answer(self, key, text, backend, spec):
         if self.mode == "anchors":
             anchored, hits = self.anchored(key, text)
-            return backend.complete(wr.messages(anchored, spec)), self.info(hits)
+            msgs = wr.messages(anchored, spec)
+            return (backend.complete(msgs, spec["fmt"]) if spec.get("fmt") else backend.complete(msgs)), \
+                self.info(hits)
         slots, hits = self.slots(key, text, spec)
         return (json.dumps(slots) if slots else ""), self.info(hits)
 

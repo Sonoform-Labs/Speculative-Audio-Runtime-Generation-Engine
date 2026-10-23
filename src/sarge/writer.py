@@ -251,6 +251,7 @@ EX_WORDS = _ex_words(EXAMPLES)
 LEAK = _leak_words()
 DEFAULT_STYLE = "v1"
 STYLE_RULES = "named-1"
+CANON_STYLE = "canon"
 
 
 def _style(name, system, examples, named="", form="list", banned=BANNED, collide=False):
@@ -276,6 +277,9 @@ def style_of(style=None):
     if isinstance(style, dict):
         return style
     name = style or DEFAULT_STYLE
+    if name == CANON_STYLE:
+        from .canon import style as canon_style
+        return canon_style()
     if name not in STYLES:
         raise ValueError("unknown writer style %r (choose from %s)" % (name, ", ".join(STYLES)))
     return STYLES[name]
@@ -602,6 +606,9 @@ REPAIR_PASSES = 3
 
 def judge(raw, key, text, style=None):
     st = style_of(style)
+    if st.get("kind") == CANON_STYLE:
+        from .canon import judge as canon_judge
+        return canon_judge(raw, key, text, st)
     slots = parse_slots(raw, st.get("optional", ()))
     if slots is None:
         return {"failed": True, "flags": ["format"], "raw": raw}
@@ -644,6 +651,8 @@ def writer_id(ident, style=None):
                        collide=COLLIDE.pattern if st["collide"] else "", rules=STYLE_RULES)
         if st.get("optional"):
             payload["optional"] = list(st["optional"])
+        if st.get("canon"):
+            payload["canon"] = st["canon"]
     from .world import CONTACT_WORDS
     payload["contact_words"] = CONTACT_WORDS
     return hashlib.sha1(json.dumps(payload, sort_keys=True).encode("utf-8")).hexdigest()
@@ -905,9 +914,11 @@ class LlamaBackend:
             time.sleep(0.25)
         raise TimeoutError("llama-server did not get ready in %.0f s" % self.load_timeout)
 
-    def complete(self, msgs):
-        body = {"messages": msgs, "temperature": 0, "top_k": 1, "seed": SEED, "max_tokens": MAX_TOKENS,
-                "grammar": GBNF, "chat_template_kwargs": {"enable_thinking": False}}
+    def complete(self, msgs, fmt=None):
+        f = fmt or {}
+        body = {"messages": msgs, "temperature": 0, "top_k": 1, "seed": SEED,
+                "max_tokens": f.get("max_tokens", MAX_TOKENS), "grammar": f.get("gbnf", GBNF),
+                "chat_template_kwargs": {"enable_thinking": False}}
         out = _post(self.url + "/v1/chat/completions", body, self.timeout)
         return out["choices"][0]["message"].get("content") or ""
 
@@ -963,10 +974,12 @@ class OllamaBackend:
                     raise
             time.sleep(0.5)
 
-    def complete(self, msgs):
-        body = {"model": self.model, "messages": msgs, "stream": False, "format": SCHEMA, "keep_alive": "30m",
+    def complete(self, msgs, fmt=None):
+        f = fmt or {}
+        body = {"model": self.model, "messages": msgs, "stream": False, "format": f.get("schema", SCHEMA),
+                "keep_alive": "30m",
                 "options": {"temperature": 0, "top_k": 1, "seed": SEED, "num_thread": self.threads, "num_gpu": 0,
-                            "num_predict": MAX_TOKENS, "num_ctx": CTX, "num_batch": BATCH}}
+                            "num_predict": f.get("max_tokens", MAX_TOKENS), "num_ctx": CTX, "num_batch": BATCH}}
         if self.think:
             body["think"] = False
         try:
@@ -1192,6 +1205,8 @@ class PromptWriter:
         info = None
         if self.ground is not None:
             raw, info = self.ground.answer(key, text, self.backend, self.spec)
+        elif self.spec.get("fmt"):
+            raw = self.backend.complete(messages(text, self.spec), self.spec["fmt"])
         else:
             raw = self.backend.complete(messages(text, self.spec))
         ms = (time.perf_counter() - t0) * 1000.0
@@ -1286,7 +1301,12 @@ class PromptWriter:
 
 def build(kind, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DEFAULT_AFFINITY,
           store=os.path.join(".cache", "writer"), when=WHEN, readonly=False, log_path=None, log=None, style=None,
-          ground=None, ground_index=None, ground_k=None):
+          ground=None, ground_index=None, ground_k=None, template=None, backend=None):
+    if style == CANON_STYLE:
+        from .canon import TEMPLATE, style as canon_style
+        if kind == "ground" or ground not in (None, "", "off", "anchors"):
+            raise ValueError("the canon writer style needs a language model (--writer llama or ollama)")
+        style = canon_style(template or TEMPLATE)
     style_of(style)
     if kind in (None, "", "off"):
         return None
@@ -1303,6 +1323,8 @@ def build(kind, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DE
         backend = GroundBackend(grounder)
     elif grounder is not None and grounder.mode != "anchors":
         raise ValueError("--writer-ground %s needs no model: use --writer ground" % grounder.mode)
+    elif backend is not None:
+        pass
     elif kind == "llama":
         backend = LlamaBackend(model, binary, port, threads, affinity, log_path=log_path)
     elif kind == "ollama":

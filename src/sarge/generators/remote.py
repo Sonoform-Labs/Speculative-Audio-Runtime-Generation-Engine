@@ -44,6 +44,7 @@ class RemoteGenerator(Generator):
         self.connect_timeout = float(connect_timeout)
         self.sample_rate = int(sample_rate)
         self.prompts: dict = {}
+        self.send_scene = False
         self._sock = None
 
     def _connect(self):
@@ -79,11 +80,17 @@ class RemoteGenerator(Generator):
                     raise
 
     def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None,
-                 engine: str | None = None) -> AudioClip:
+                 engine: str | None = None, pool=None, texts=None) -> AudioClip:
         req = {"type": "gen", "event_type": key.event_type, "material": key.material,
                "intensity": key.intensity, "context": key.context, "variant": int(variant)}
         if key.phys:
             req["phys"] = key.phys
+        if self.send_scene and getattr(key, "scene", ""):
+            req["scene"] = key.scene
+        if pool:
+            req["pool"] = list(pool)
+        if texts:
+            req["texts"] = dict(texts)
         prompt = prompt or self.prompts.get(str(key))
         if prompt:
             req["prompt"] = prompt

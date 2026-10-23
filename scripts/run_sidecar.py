@@ -44,7 +44,9 @@ HYBRID_GUNS = {"model_name": "medium", "sampler_type": "pingpong", "steps": 8, "
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TIER_COST_MS = {"quality": 28.0, "default": 28.0, "fast": 25.0}
 WOOSH_COST_MS = {"dflow": 50.0, "flow": 1010.0}
-WRITER_STYLES = ("v1", "named", "texture", "title", "caption")
+WRITER_STYLES = ("v1", "named", "texture", "title", "caption", "canon")
+POOL_SOURCES = ("canon", "ground", "named")
+SCORE_MODES = ("request", "event-min")
 WRITER_GROUND = ("off", "anchors", "words", "caption")
 UPGRADE_SOLVERS = ("dopri5", "rk4:8", "rk4:16", "midpoint:16", "midpoint:32")
 
@@ -112,7 +114,11 @@ def start_woosh(args, hold=False):
         if getattr(args, "woosh_upgrade_solver", "dopri5") != "dopri5" else []) + (
         ["--upgrade-best", str(args.woosh_upgrade_best)] if getattr(args, "woosh_upgrade_best", 1) > 1 else []) + (
         ["--upgrade-verifier", args.woosh_upgrade_verifier]
-        if getattr(args, "woosh_upgrade_best", 1) > 1 and getattr(args, "woosh_upgrade_verifier", None) else [])
+        if getattr(args, "woosh_upgrade_best", 1) > 1 and getattr(args, "woosh_upgrade_verifier", None) else []) + (
+        ["--upgrade-score", args.woosh_upgrade_score]
+        if getattr(args, "woosh_upgrade_score", "request") != "request" else []) + (
+        ["--upgrade-vram-free", str(args.woosh_upgrade_vram_free)]
+        if getattr(args, "woosh_upgrade_vram_free", 0) else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -249,6 +255,18 @@ def main(argv=None) -> int:
                          "verifier outside the judge panel (Woosh-CLAP's audio tower on the CPU against the request "
                          "words), so a key keeps distinct takes and none of them is a real recording; 1 (default) "
                          "renders one candidate as before (docs/hybrid.md)")
+    ap.add_argument("--woosh-upgrade-pool", default="off",
+                    help="--woosh-upgrade-best: a comma list of generic prompt sources (%s) whose prompts join the "
+                         "key's own prompt as Flow candidates; the first upgraded take of a key renders N candidates "
+                         "of every prompt, the verifier keeps the prompt with the best mean score for the key and "
+                         "best of N picks every take after that. canon and named run the CPU writer "
+                         "model, ground the caption index. Off by default" % ", ".join(POOL_SOURCES))
+    ap.add_argument("--woosh-upgrade-vram-free", type=int, default=0,
+                    help="--woosh-upgrade flow: the worker loads Flow only once the card reports at least this many "
+                         "MiB free, so the upgrade waits for room on the GPU; 0 (default) loads as before")
+    ap.add_argument("--woosh-upgrade-score", choices=SCORE_MODES, default="request",
+                    help="--woosh-upgrade-best: request scores a candidate against the request words; event-min takes "
+                         "the lower of that and the score against the event words alone. Default request")
     ap.add_argument("--woosh-upgrade-verifier", default=None,
                     help="--woosh-upgrade-best: the Woosh-CLAP checkpoint folder (config.yaml and "
                          "weights_audio.safetensors), default WOOSH_HOME/checkpoints/Woosh-CLAP")
@@ -406,6 +424,11 @@ def main(argv=None) -> int:
         raise SystemExit("--woosh-upgrade-best and --woosh-upgrade-verifier need --woosh-upgrade flow")
     if args.woosh_upgrade_verifier and args.woosh_upgrade_best == 1:
         raise SystemExit("--woosh-upgrade-verifier needs --woosh-upgrade-best 2 or more")
+    if (args.woosh_upgrade_vram_free and args.woosh_upgrade == "off") or args.woosh_upgrade_vram_free < 0:
+        raise SystemExit("--woosh-upgrade-vram-free takes 0 or more MiB and needs --woosh-upgrade flow")
+    if (args.woosh_upgrade_pool != "off" or args.woosh_upgrade_score != "request") and args.woosh_upgrade_best < 2:
+        raise SystemExit("--woosh-upgrade-pool and --woosh-upgrade-score need --woosh-upgrade flow and "
+                         "--woosh-upgrade-best 2 or more")
     if args.generator == "hybrid":
         prefetch.start_hybrid(HYBRID_GUNS["model_name"], args.woosh_model,
                               weights=lambda: weight_cache.locate(HYBRID_GUNS["model_name"], cache_dir_of(args)))
@@ -487,6 +510,9 @@ def main(argv=None) -> int:
     writer = make_writer(args)
     if writer is not None:
         extra.update(writer=writer, writer_swap=args.writer_swap, writer_yield=args.writer_yield)
+    pool = make_pool(args, writer)
+    if pool is not None:
+        extra.update(prompt_pool=pool, writer_yield=args.writer_yield)
     cache_dir = None if args.no_cache else args.cache_dir
     cleared = 0
     if cache_dir and os.path.isdir(cache_dir):
@@ -516,10 +542,14 @@ def main(argv=None) -> int:
           + (f"  woosh-upgrade={args.woosh_upgrade} first-prompt={woosh_styles(args)[0]} "
              f"solver={args.woosh_upgrade_solver}" if args.woosh_upgrade != "off" else "")
           + (f" best={args.woosh_upgrade_best}" if args.woosh_upgrade_best > 1 else "")
+          + (f" score={args.woosh_upgrade_score}" if args.woosh_upgrade_score != "request" else "")
+          + (f"  pool={pool.describe()}" if pool is not None else "")
           + (f"  writer={writer.describe()} swap={args.writer_swap}" if writer is not None else ""),
           flush=True)
     if writer is not None:
         writer.start()
+    if pool is not None:
+        pool.start()
     print("ctrl-c to stop", flush=True)
 
     stop = threading.Event()
@@ -530,11 +560,40 @@ def main(argv=None) -> int:
         print("shutting down")
     finally:
         server.deepening = False
+        if pool is not None:
+            pool.stop()
         if writer is not None:
             writer.stop()
         server.shutdown()
         server.server_close()
     return 0
+
+
+def template_of(args):
+    from sarge.prompts import parse_template
+    style = getattr(args, "prompts", None)
+    return style if parse_template(style) else None
+
+
+def make_pool(args, writer):
+    if getattr(args, "woosh_upgrade_pool", "off") == "off":
+        return None
+    from sarge import pool as prompt_pool
+    sources = [x.strip() for x in str(args.woosh_upgrade_pool).split(",") if x.strip()]
+    store = args.writer_store
+    if not os.path.isdir(store) and os.path.splitext(store)[1]:
+        store = os.path.dirname(store)
+    try:
+        affinity = int(str(args.writer_affinity), 0)
+        p = prompt_pool.build(sources, primary=writer, model=args.writer_model, binary=args.writer_bin,
+                              port=args.writer_port, threads=args.writer_threads, affinity=affinity, store=store,
+                              when=tuple(w.strip() for w in args.writer_when.split(",") if w.strip()),
+                              log_path=os.path.join(store, "llama-server.log"), template=template_of(args),
+                              ground_index=args.writer_ground_index)
+    except (FileNotFoundError, ValueError) as e:
+        raise SystemExit("--woosh-upgrade-pool %s: %s" % (args.woosh_upgrade_pool, e))
+    os.makedirs(store, exist_ok=True)
+    return p
 
 
 def make_writer(args):
@@ -565,7 +624,7 @@ def make_writer(args):
                                 log_path=os.path.join(store if os.path.isdir(store) or not os.path.splitext(store)[1]
                                                       else os.path.dirname(store), "llama-server.log"),
                                 ground=args.writer_ground, ground_index=args.writer_ground_index,
-                                ground_k=args.writer_ground_k)
+                                ground_k=args.writer_ground_k, template=template_of(args))
     except (FileNotFoundError, ValueError) as e:
         raise SystemExit("--writer %s: %s" % (args.writer, e))
     if args.writer != "store":

@@ -37,6 +37,11 @@ def side_for(key, mode="families", gun_families=GUN_FAMILIES, gun_classes=GUN_CL
     return "guns" if family_for(key.event_type) in gun_families else "rest"
 
 
+def scene_words(style) -> bool:
+    from ..prompts import template_mods
+    return "loop" in template_mods(style)
+
+
 class UpgradeFailed(RuntimeError):
     def __init__(self, message, unreachable=False):
         super().__init__(message)
@@ -96,11 +101,15 @@ class RoutedGenerator(Generator):
         self._up = self._ctl = None
         self._up_busy = threading.Event()
         self.upgrade_stats = {"renders": 0, "preempted": 0, "failed": 0, "aborts_sent": 0}
+        self.send_scene = scene_words(getattr(guns, "prompt_style", ""))
+        if self.send_scene and hasattr(rest, "send_scene"):
+            rest.send_scene = True
 
     def _remote(self):
         from .remote import RemoteGenerator
         r = RemoteGenerator(host=self.woosh_host, port=self.woosh_port)
         r.prompts = self.prompts
+        r.send_scene = self.send_scene
         return r
 
     def _abort_upgrade(self):
@@ -125,14 +134,15 @@ class RoutedGenerator(Generator):
             self._up = None
             return {"state": "unreachable", "error": str(e)}
 
-    def upgrade_take(self, key: CacheKey, variant: int, prompt: str | None = None):
+    def upgrade_take(self, key: CacheKey, variant: int, prompt: str | None = None, pool=None, texts=None):
         if not self.upgrade or self.route(key) == "guns":
             return None
         if self._up is None:
             self._up = self._remote()
         self._up_busy.set()
+        extra = {k: v for k, v in (("pool", pool), ("texts", texts)) if v}
         try:
-            clip = self._up.generate(key, variant=variant, prompt=prompt, engine=self.upgrade)
+            clip = self._up.generate(key, variant=variant, prompt=prompt, engine=self.upgrade, **extra)
         except (ConnectionError, OSError) as e:
             self._up = None
             self.upgrade_stats["failed"] += 1

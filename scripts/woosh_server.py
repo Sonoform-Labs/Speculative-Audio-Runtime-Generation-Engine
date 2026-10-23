@@ -51,7 +51,9 @@ FAIL_ENV = "SARGE_UPGRADE_FAIL"
 VERIFIER_DIR = os.path.join(WOOSH_HOME, "checkpoints", "Woosh-CLAP")
 VERIFIER_COMMIT_GB = 0.6
 PENDING_KEEP = 32
+CHOICE_KEEP = 4096
 BEST_LINE_EVERY = 10
+SCORE_MODES = ("request", "event-min")
 
 
 class Preempted(Exception):
@@ -186,6 +188,17 @@ def commit_free_gb():
         if not ctypes.WinDLL("psapi").GetPerformanceInfo(ctypes.byref(p), p.cb):
             return None
         return (p.CommitLimit - p.CommitTotal) * p.PageSize / 2 ** 30
+    except Exception:
+        return None
+
+
+def free_vram_mib():
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            return None
+        free, _total = torch.cuda.mem_get_info()
+        return free / 2 ** 20
     except Exception:
         return None
 
@@ -898,13 +911,16 @@ class Verifier:
         with torch.inference_mode():
             e = self.tower.get_audio_embedding_from_data(m, device=self.device, use_tensor=True).float()[0].cpu()
         self.ms.append((time.perf_counter() - t) * 1000.0)
-        return float((e * temb).sum())
+        return min(float((e * x).sum()) for x in (temb if isinstance(temb, tuple) else (temb,)))
 
 
 class Upgrade:
     def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None, solver="dopri5",
-                 best=1, verifier=None):
+                 best=1, verifier=None, score="request", vram_free=0, vram=None):
         self.base, self.kind, self.frames, self.lock, self.opts = base, kind, frames, lock, dict(opts)
+        self.vram_free = max(0, int(vram_free or 0))
+        self.vram = vram or free_vram_mib
+        self.vram_wait_s = 0.0
         self.solver = solver
         method, steps = UPGRADE_SOLVERS[solver]
         self.make = make or (lambda: make_gen(kind, frames["other"], steps, method, share=base, **self.opts))
@@ -929,6 +945,9 @@ class Upgrade:
         self.pending = OrderedDict()
         self.candidates = 0
         self.picked = [0] * self.best
+        self.score_mode = score
+        self.choice = OrderedDict()
+        self.pool_picks = {}
 
     def stop(self):
         return self.waiting > 0 or self.clock() < self.abort_until
@@ -961,6 +980,7 @@ class Upgrade:
             cf = self.commit()
             if cf is not None and cf < LOAD_COMMIT_GB:
                 raise MemoryError("%.1f GB of commit left, the load needs %.1f GB" % (cf, LOAD_COMMIT_GB))
+            self._wait_vram()
             gen = self.make()
             while self.clock() - self.last_request < LOAD_IDLE_S or self.clock() < self.abort_until:
                 time.sleep(RETRY_S)
@@ -984,6 +1004,17 @@ class Upgrade:
                 self.best, self.verifier_state, " (%s)" % self.verifier_error if self.verifier_error else "")),
             flush=True)
 
+    def _wait_vram(self):
+        if not self.vram_free:
+            return
+        t = self.clock()
+        while True:
+            got = self.vram()
+            if got is None or got >= self.vram_free:
+                self.vram_wait_s = self.clock() - t
+                return
+            time.sleep(RETRY_S)
+
     def _load_verifier(self):
         try:
             cf = self.commit()
@@ -1004,13 +1035,21 @@ class Upgrade:
                         "candidates": self.candidates, "picked": list(self.picked),
                         "verifier_ms": float(np.median(self.verifier.ms)) if self.verifier and self.verifier.ms
                         else None})
+        if self.score_mode != "request":
+            out["score"] = self.score_mode
+        if self.vram_free:
+            out.update({"vram_free_mib": self.vram_free, "vram_wait_s": self.vram_wait_s})
+        if self.choice:
+            out.update({"pool_keys": len(self.choice), "pool_picks": dict(self.pool_picks)})
         return out
 
-    def render(self, key, variant, prompts, prompt, amp, stereo, level):
+    def render(self, key, variant, prompts, prompt, amp, stereo, level, pool=None, texts=None):
         if self.gen is None:
             raise RuntimeError("upgrade %s is %s" % (self.kind, self.state))
+        if self.best > 1 and self.verifier_state == "ready" and pool:
+            return self._render_pool(key, variant, prompts, prompt, amp, stereo, level, pool, texts)
         if self.best > 1 and self.verifier_state == "ready":
-            return self._render_best(key, variant, prompts, prompt, amp, stereo, level)
+            return self._render_best(key, variant, prompts, prompt, amp, stereo, level, texts)
         fail = os.environ.get(FAIL_ENV, "")
         with self.lock:
             try:
@@ -1026,28 +1065,52 @@ class Upgrade:
         self.renders += 1
         return finish_key(raw, key, amp, stereo, level=level)
 
-    def _render_best(self, key, variant, prompts, prompt, amp, stereo, level):
+    def _want(self, key, texts):
+        from sarge import verify
+        t = texts if isinstance(texts, dict) else {}
+        req = t.get("request") or verify.key_text(key)
+        if self.score_mode != "event-min":
+            return req, None
+        return req, t.get("event") or verify.event_text(key)
+
+    def _emb(self, want):
+        req, ev = want
+        a = self.verifier.text(self.gen.ldm, req)
+        return a if ev is None else (a, self.verifier.text(self.gen.ldm, ev))
+
+    def _keep(self, tag, got):
+        self.pending[tag] = got
+        while len(self.pending) > PENDING_KEEP:
+            self.pending.popitem(last=False)
+
+    def _say_best(self):
+        if self.renders % BEST_LINE_EVERY == 1:
+            print("woosh upgrade %s: best of %d, %d takes from %d candidates, picks by candidate %s, verifier %.0f ms "
+                  "a take on the cpu%s" % (self.kind, self.best, self.renders, self.candidates, self.picked,
+                                          float(np.median(self.verifier.ms)) if self.verifier.ms else -1.0,
+                                          ", prompt pool picks %s over %d keys" % (self.pool_picks, len(self.choice))
+                                          if self.choice else ""), flush=True)
+
+    def _render_best(self, key, variant, prompts, prompt, amp, stereo, level, texts=None):
         from sarge import verify
         text = prompt_for(key, prompts, prompt)
         tag = (str(key), int(variant), text, self.best, amp, bool(stereo), level)
         got = self.pending.pop(tag, [])
         fail = os.environ.get(FAIL_ENV, "")
-        want = verify.key_text(key)
+        want = self._want(key, texts)
         try:
             for j in range(len(got), self.best):
                 with self.lock:
                     if fail and fail in str(key):
                         raise RuntimeError("%s holds %r, the bench hook fails this render" % (FAIL_ENV, fail))
                     raw = render_key(self.gen, key, verify.candidate_variant(variant, j), self.frames, prompts, prompt)
-                    temb = self.verifier.text(self.gen.ldm, want)
+                    temb = self._emb(want)
                 y = finish_key(raw, key, amp, stereo, level=level)
                 got.append((self.verifier.score(y, SR, temb), j, y))
                 self.candidates += 1
         except Preempted:
             self.preempted += 1
-            self.pending[tag] = got
-            while len(self.pending) > PENDING_KEEP:
-                self.pending.popitem(last=False)
+            self._keep(tag, got)
             raise
         except Exception:
             self.failed += 1
@@ -1055,10 +1118,53 @@ class Upgrade:
         _s, j, y = verify.pick(got)
         self.picked[j] += 1
         self.renders += 1
-        if self.renders % BEST_LINE_EVERY == 1:
-            print("woosh upgrade %s: best of %d, %d takes from %d candidates, picks by candidate %s, verifier %.0f ms "
-                  "a take on the cpu" % (self.kind, self.best, self.renders, self.candidates, self.picked,
-                                        float(np.median(self.verifier.ms)) if self.verifier.ms else -1.0), flush=True)
+        self._say_best()
+        return y
+
+    def _render_pool(self, key, variant, prompts, prompt, amp, stereo, level, pool, texts=None):
+        from sarge import verify
+        base = prompt_for(key, prompts, prompt)
+        cands = [base]
+        for p in pool:
+            if isinstance(p, str) and p.strip() and p not in cands:
+                cands.append(p)
+        ck = (str(key), tuple(cands))
+        if ck in self.choice:
+            self.choice.move_to_end(ck)
+            return self._render_best(key, variant, prompts, cands[self.choice[ck]], amp, stereo, level, texts)
+        tag = ("pool",) + ck + (int(variant), self.best, amp, bool(stereo), level)
+        got = self.pending.pop(tag, [])
+        fail = os.environ.get(FAIL_ENV, "")
+        want = self._want(key, texts)
+        order = [(i, j) for i in range(len(cands)) for j in range(self.best)]
+        try:
+            for i, j in order[len(got):]:
+                with self.lock:
+                    if fail and fail in str(key):
+                        raise RuntimeError("%s holds %r, the bench hook fails this render" % (FAIL_ENV, fail))
+                    raw = render_key(self.gen, key, verify.candidate_variant(variant, j), self.frames, prompts,
+                                     cands[i])
+                    temb = self._emb(want)
+                y = finish_key(raw, key, amp, stereo, level=level)
+                got.append((self.verifier.score(y, SR, temb), i, j, y))
+                self.candidates += 1
+        except Preempted:
+            self.preempted += 1
+            self._keep(tag, got)
+            raise
+        except Exception:
+            self.failed += 1
+            raise
+        means = [float(np.mean([s for s, i, _j, _y in got if i == k])) for k in range(len(cands))]
+        c = verify.choose(means)
+        self.choice[ck] = c
+        while len(self.choice) > CHOICE_KEEP:
+            self.choice.popitem(last=False)
+        self.pool_picks[c] = self.pool_picks.get(c, 0) + 1
+        _s, j, y = verify.pick([(s, j, y) for s, i, j, y in got if i == c])
+        self.picked[j] += 1
+        self.renders += 1
+        self._say_best()
         return y
 
 
@@ -1232,6 +1338,14 @@ def main():
     ap.add_argument("--upgrade-verifier", default=None,
                     help="--upgrade-best: the Woosh-CLAP checkpoint folder (config.yaml and weights_audio.safetensors), "
                          "default %s" % VERIFIER_DIR)
+    ap.add_argument("--upgrade-vram-free", type=int, default=0,
+                    help="--upgrade: load Flow only once the card reports at least this many MiB free, checking "
+                         "every 0.2 s, so the upgrade waits for room on the GPU (the verifier itself runs on the CPU "
+                         "and needs none); 0 (default) loads as before")
+    ap.add_argument("--upgrade-score", choices=SCORE_MODES, default="request",
+                    help="--upgrade-best: request scores a candidate against the request words; event-min takes the "
+                         "lower of that and the score against the event words alone, so a take has to sound like the "
+                         "event as well as the material. Default request")
     args = ap.parse_args()
     if args.upgrade != "off" and args.upgrade == args.model:
         ap.error("--upgrade %s needs a different --model" % args.upgrade)
@@ -1243,6 +1357,12 @@ def main():
         ap.error("--upgrade-best takes 1 or more")
     if (args.upgrade_best > 1 or args.upgrade_verifier) and args.upgrade == "off":
         ap.error("--upgrade-best and --upgrade-verifier need --upgrade")
+    if args.upgrade_score != "request" and args.upgrade_best < 2:
+        ap.error("--upgrade-score needs --upgrade-best 2 or more")
+    if args.upgrade_vram_free and args.upgrade == "off":
+        ap.error("--upgrade-vram-free needs --upgrade")
+    if args.upgrade_vram_free < 0:
+        ap.error("--upgrade-vram-free takes 0 or more")
     startup.stage("woosh python up", at=_T_SCRIPT)
     startup.stage("woosh base imports", _T_SCRIPT)
     if args.parent_pid:
@@ -1276,11 +1396,14 @@ def main():
     if args.upgrade != "off":
         up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]), solver=args.upgrade_solver,
                      best=args.upgrade_best,
-                     verifier=Verifier(args.upgrade_verifier) if args.upgrade_best > 1 else None)
+                     verifier=Verifier(args.upgrade_verifier) if args.upgrade_best > 1 else None,
+                     score=args.upgrade_score, vram_free=args.upgrade_vram_free)
         print("woosh upgrade %s on request: it loads after an upgrade_load message, shares the autoencoder and the "
               "text encoder, and yields to every served render; served prompts %s, upgrade prompts %s, solver %s%s"
               % (args.upgrade, args.prompts, upgrade_style(args), args.upgrade_solver,
-                 "" if args.upgrade_best == 1 else ", best of %d by %s" % (args.upgrade_best, up.verifier.path)),
+                 ("" if args.upgrade_best == 1 else ", best of %d by %s" % (args.upgrade_best, up.verifier.path)) +
+                 ("" if args.upgrade_score == "request" else ", score %s" % args.upgrade_score) +
+                 ("" if not args.upgrade_vram_free else ", loads once %d MiB are free" % args.upgrade_vram_free)),
               flush=True)
 
     def served(key, req):
@@ -1313,13 +1436,13 @@ def main():
                     continue
                 try:
                     key = CacheKey(req["event_type"], req["material"], req.get("intensity", "normal"),
-                                   req.get("context", "default"), req.get("phys", ""))
+                                   req.get("context", "default"), req.get("phys", ""), "", req.get("scene", ""))
                     t = time.perf_counter()
                     if up is not None and req.get("engine"):
                         if req["engine"] != up.kind:
                             raise ValueError("unknown engine %r, this worker upgrades to %s" % (req["engine"], up.kind))
                         y = up.render(key, req.get("variant", 0), upgrade_style(args), req.get("prompt"), args.amp,
-                                      args.stereo, args.level)
+                                      args.stereo, args.level, pool=req.get("pool"), texts=req.get("texts"))
                     elif up is not None:
                         y = finish_key(served(key, req), key, args.amp, args.stereo, level=args.level)
                     else:

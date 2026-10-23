@@ -259,7 +259,7 @@ class _Handler(socketserver.BaseRequestHandler):
             key = self._key_from(body)
         except (KeyError, TypeError):
             raise FrameError("bad_fields", "event needs event_type and material", fatal=False)
-        if getattr(self.server, "writer", None) is not None:
+        if _writes(self.server):
             _writer_seen(self.server, key)
         self._await_inflight(key)
         t1 = time.perf_counter()
@@ -350,7 +350,7 @@ class _Handler(socketserver.BaseRequestHandler):
                                           cls=_cls(srv, et)), True)
             raw.append(("intent", pk, srv.intent_lead_s, prob))
             pending.append((pk, prob))
-            if getattr(srv, "writer", None) is not None:
+            if _writes(srv):
                 _writer_want(srv, pk, "predict", srv.intent_lead_s)
         proposals = srv.fusion.fuse(raw)
         if proposals:
@@ -385,6 +385,7 @@ class _Handler(socketserver.BaseRequestHandler):
                 with engine_lock:
                     for k in prompts:
                         self.server.writer_owned.discard(k)
+            if _writes(self.server):
                 for ck in keys:
                     if str(ck) not in prompts:
                         _writer_want(self.server, ck, "manifest")
@@ -453,7 +454,7 @@ class _Handler(socketserver.BaseRequestHandler):
                     et = key.event_type or _kind(self.server, src)
                 if et:
                     raw.append((src, _with_phys(self.server, replace(key, event_type=et)), eta, conf))
-        if getattr(self.server, "writer", None) is not None:
+        if _writes(self.server):
             for _src, k2, eta, _conf in raw:
                 _writer_want(self.server, k2, "predict", eta)
         with engine_lock:
@@ -489,7 +490,7 @@ class _Handler(socketserver.BaseRequestHandler):
             parsed.append(self._key_from(k))
         w = getattr(self.server, "writer", None)
         counts = {"known": 0, "queued": 0}
-        if w is not None:
+        if _writes(self.server):
             for key in parsed:
                 got = _writer_want(self.server, key, "manifest")
                 if got in counts:
@@ -742,7 +743,14 @@ def _writer_deliver(server, key, rec):
     return True
 
 
+def _writes(server):
+    return getattr(server, "writer", None) is not None or getattr(server, "prompt_pool", None) is not None
+
+
 def _writer_want(server, key, why, eta=None):
+    pool = getattr(server, "prompt_pool", None)
+    if pool is not None:
+        pool.want(key, why, eta)
     w = getattr(server, "writer", None)
     if w is None:
         return None
@@ -959,6 +967,47 @@ def _upgrade_blocked(server, key, prompt, now):
     return rec["dead"] or now < rec["until"]
 
 
+def _pool_backends(pool, writer):
+    out = []
+    mine = getattr(writer, "backend", None)
+    for w in getattr(pool, "owned", ()):
+        b = getattr(w, "backend", None)
+        if (callable(getattr(b, "pause", None)) and getattr(b, "name", "") != "ground" and b is not mine
+                and all(b is not o for o in out)):
+            out.append(b)
+    return out
+
+
+def _game_prompt(server, key, pm):
+    k = str(key)
+    owned = getattr(server, "writer_owned", None)
+    return k in pm and (owned is None or k not in owned)
+
+
+def _upgrade_extra(server, key, pm=None):
+    pool = getattr(server, "prompt_pool", None)
+    w = getattr(server, "writer", None)
+    pm = _prompts(server) or {} if pm is None else pm
+    if _game_prompt(server, key, pm):
+        return {}
+    out = {}
+    rec = w.lookup(key) if w is not None else None
+    texts = rec.get("texts") if rec else None
+    if pool is not None:
+        prompts = pool.prompts(key, "woosh")
+        if prompts:
+            out["pool"] = prompts
+        texts = texts or pool.texts(key)
+    if isinstance(texts, dict) and texts:
+        out["texts"] = dict(texts)
+    return out
+
+
+def _pool_waits(server, key, pm):
+    pool = getattr(server, "prompt_pool", None)
+    return pool is not None and not _game_prompt(server, key, pm) and not pool.ready(key)
+
+
 def _upgrade_pick(server, g, now=None):
     eng = server.engine
     pm = _prompts(server) or {}
@@ -974,7 +1023,7 @@ def _upgrade_pick(server, g, now=None):
         st = server.upgrade_stage.get(key)
         if st is not None and st["prompt"] != prompt:
             server.upgrade_stage.pop(key, None)
-        if _upgrade_blocked(server, key, prompt, now):
+        if _upgrade_blocked(server, key, prompt, now) or _pool_waits(server, key, pm):
             continue
         for c in _upgrade_pending(server, key, eng.cache.get(key) or []):
             if (key, c.variant_id) not in eng.inflight:
@@ -1092,9 +1141,10 @@ def _upgrade_step(server):
         _upgrade_say(server, drained, True)
         return False
     key, orig, prompt = pick
+    extra = _upgrade_extra(server, key)
     t = time.perf_counter()
     try:
-        clip = g.upgrade_take(key, orig.variant_id, prompt)
+        clip = g.upgrade_take(key, orig.variant_id, prompt, **extra)
     except Exception as e:
         _upgrade_error(server, key, orig.variant_id, prompt, e, (time.perf_counter() - t) * 1e3)
         return not getattr(e, "unreachable", False)
@@ -1252,7 +1302,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
           concurrent_gen: bool = False, keep_warm_ms: float = 0.0, sibling_on_miss: bool = False,
           cache_async: bool = False, rapid_hz: float = RAPID_HZ, read_class: bool = False, clock=None,
           scene: bool = False, writer=None, writer_swap: str = "revalidate", writer_yield: bool = True,
-          upgrade: str | None = None, **engine_kwargs) -> SfxServer:
+          upgrade: str | None = None, prompt_pool=None, **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
@@ -1284,6 +1334,9 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     if writer is not None and writer_yield and callable(getattr(getattr(writer, "backend", None), "pause", None)):
         from ..writer import Yielding
         engine.gen = Yielding(engine.gen, writer.backend)
+    for b in _pool_backends(prompt_pool, writer) if writer_yield else ():
+        from ..writer import Yielding
+        engine.gen = Yielding(engine.gen, b)
     server = SfxServer((host, port), engine, default_pcm=pcm, recv_timeout=recv_timeout)
     server.world = bool(world)
     server.last_phys = {}
@@ -1316,6 +1369,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.upgrade_block = 0.0
     server.upgrade_done = {}
     server.upgrade_stage = {}
+    server.prompt_pool = prompt_pool
     _upgrade_init(server)
     if writer is not None:
         writer.on_written = lambda key, rec: _writer_written(server, key, rec)
