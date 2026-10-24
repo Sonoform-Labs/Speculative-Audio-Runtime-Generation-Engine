@@ -54,6 +54,7 @@ PENDING_KEEP = 32
 CHOICE_KEEP = 4096
 BEST_LINE_EVERY = 10
 SCORE_MODES = ("request", "event-min")
+VRAM_SAVES = ("share", "encoder")
 
 
 class Preempted(Exception):
@@ -192,6 +193,33 @@ def commit_free_gb():
         return None
 
 
+def release_cache(torch):
+    if torch is None or not torch.cuda.is_available():
+        return False
+    torch.cuda.synchronize()
+    torch.cuda.empty_cache()
+    return True
+
+
+def drop_encoder(gen):
+    ae = getattr(getattr(getattr(gen, "ldm", None), "autoencoder", None), "autoencoder", None)
+    enc = getattr(ae, "encoder", None)
+    if enc is None:
+        return 0
+    n = sum(t.numel() * t.element_size() for t in list(enc.parameters()) + list(enc.buffers()) if t.is_cuda)
+    enc.to("meta")
+    release_cache(getattr(gen, "torch", None))
+    return n
+
+
+def parse_saves(spec):
+    names = [x.strip() for x in str(spec or "").split(",") if x.strip()]
+    bad = [x for x in names if x not in VRAM_SAVES]
+    if bad:
+        raise ValueError("unknown vram saving %s (choose from %s)" % (", ".join(bad), ", ".join(VRAM_SAVES)))
+    return frozenset(names)
+
+
 def free_vram_mib():
     try:
         import torch
@@ -271,7 +299,8 @@ def reuse_parts(base, dtype=None):
             if mine:
                 raise RuntimeError("the %s checkpoint does not match the model built for it" % path)
             return read(self, only_return_state_dict=only_return_state_dict, strict=strict)
-        if any(t.is_meta for t in own.values() if t is not None):
+        kept = {id(t) for m in used for t in m.state_dict(keep_vars=True).values() if t is not None}
+        if any(t.is_meta for t in own.values() if t is not None and id(t) not in kept):
             raise RuntimeError("weights missing for part of %s" % type(self).__name__)
         return None
 
@@ -358,7 +387,10 @@ def load(kind, share=None, dit_dtype=None):
         gc.collect()
         startup.stage("woosh %s shares %s with the served model" % (kind, ", ".join(shared) or "nothing"), t)
     t = time.time()
-    ldm = ldm.eval().to("cuda")
+    if any(p.is_meta for p in ldm.parameters()):
+        ldm = ldm.eval()._apply(lambda x: x if x.is_meta else x.to("cuda"))
+    else:
+        ldm = ldm.eval().to("cuda")
     startup.stage("woosh to cuda", t)
     return torch, ldm, cfg
 
@@ -500,7 +532,7 @@ class ModConst:
         return self.vals
 
 
-def graphed(torch, fn, warm=3):
+def graphed(torch, fn, warm=3, pool=None):
     s = torch.cuda.Stream()
     s.wait_stream(torch.cuda.current_stream())
     with torch.cuda.stream(s):
@@ -509,7 +541,7 @@ def graphed(torch, fn, warm=3):
     torch.cuda.current_stream().wait_stream(s)
     torch.cuda.synchronize()
     g = torch.cuda.CUDAGraph()
-    with torch.cuda.graph(g):
+    with torch.cuda.graph(g, pool=pool):
         out = fn()
     torch.cuda.synchronize()
     return g, out
@@ -529,6 +561,7 @@ class Gen:
         torch, ldm, cfg = load(kind) if share is None else load(kind, share=share.ldm, dit_dtype=precision)
         if share is not None and ldm.autoencoder is share.ldm.autoencoder:
             ae_precision = share.ae_precision
+        self.share, self.share_pool = share, False
         self.should_stop = None
         t = time.time()
         self.torch, self.ldm, self.cfg = torch, ldm, cfg
@@ -768,6 +801,14 @@ class Gen:
             res_nc = ldm._denoise_dict_no_param(y, t, nc)["x_hat"]
         return res + self.cfg * (res - res_nc)
 
+    def graph_pool(self):
+        if not self.share_pool:
+            return None
+        for b in (getattr(self.share, "buckets", None) or {}).values():
+            if b is not None and b.get("g") is not None:
+                return b["g"].pool()
+        return None
+
     def _capture_flow(self, cond, n):
         torch = self.torch
         try:
@@ -781,11 +822,12 @@ class Gen:
                 with torch.inference_mode(), self._amp():
                     return self._v(st["y"], st["t"], st["cond"], nc)
 
-            g, st["out"] = graphed(torch, body)
+            pool = self.graph_pool()
+            g, st["out"] = graphed(torch, body, pool=pool)
             g_ae = None
             if self.graph in ("ae", "full"):
                 st["z"] = torch.zeros(1, 128, n, device="cuda")
-                g_ae, st["audio"] = graphed(torch, self._ae_fn(st, n))
+                g_ae, st["audio"] = graphed(torch, self._ae_fn(st, n), pool=g.pool() if self.share_pool else None)
             self.buckets[n] = {"g": g, "g_ae": g_ae, "st": st}
             self.stats["graphs"] += 1 + int(g_ae is not None)
         except Exception as e:
@@ -916,8 +958,9 @@ class Verifier:
 
 class Upgrade:
     def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None, solver="dopri5",
-                 best=1, verifier=None, score="request", vram_free=0, vram=None):
+                 best=1, verifier=None, score="request", vram_free=0, vram=None, saves=()):
         self.base, self.kind, self.frames, self.lock, self.opts = base, kind, frames, lock, dict(opts)
+        self.saves = frozenset(saves or ())
         self.vram_free = max(0, int(vram_free or 0))
         self.vram = vram or free_vram_mib
         self.vram_wait_s = 0.0
@@ -982,6 +1025,8 @@ class Upgrade:
                 raise MemoryError("%.1f GB of commit left, the load needs %.1f GB" % (cf, LOAD_COMMIT_GB))
             self._wait_vram()
             gen = self.make()
+            if "share" in self.saves:
+                gen.share_pool = True
             while self.clock() - self.last_request < LOAD_IDLE_S or self.clock() < self.abort_until:
                 time.sleep(RETRY_S)
             with self.lock:
@@ -1039,6 +1084,8 @@ class Upgrade:
             out["score"] = self.score_mode
         if self.vram_free:
             out.update({"vram_free_mib": self.vram_free, "vram_wait_s": self.vram_wait_s})
+        if self.saves:
+            out["vram_save"] = sorted(self.saves)
         if self.choice:
             out.update({"pool_keys": len(self.choice), "pool_picks": dict(self.pool_picks)})
         return out
@@ -1065,13 +1112,14 @@ class Upgrade:
         self.renders += 1
         return finish_key(raw, key, amp, stereo, level=level)
 
-    def _want(self, key, texts):
+    def _want(self, key, texts, style=None):
         from sarge import verify
         t = texts if isinstance(texts, dict) else {}
-        req = t.get("request") or verify.key_text(key)
+        m = verify.style_texts(style) if style else {}
+        req = t.get("request") or verify.key_text(key, **m)
         if self.score_mode != "event-min":
             return req, None
-        return req, t.get("event") or verify.event_text(key)
+        return req, t.get("event") or verify.event_text(key, **m)
 
     def _emb(self, want):
         req, ev = want
@@ -1097,7 +1145,7 @@ class Upgrade:
         tag = (str(key), int(variant), text, self.best, amp, bool(stereo), level)
         got = self.pending.pop(tag, [])
         fail = os.environ.get(FAIL_ENV, "")
-        want = self._want(key, texts)
+        want = self._want(key, texts, prompts)
         try:
             for j in range(len(got), self.best):
                 with self.lock:
@@ -1135,7 +1183,7 @@ class Upgrade:
         tag = ("pool",) + ck + (int(variant), self.best, amp, bool(stereo), level)
         got = self.pending.pop(tag, [])
         fail = os.environ.get(FAIL_ENV, "")
-        want = self._want(key, texts)
+        want = self._want(key, texts, prompts)
         order = [(i, j) for i in range(len(cands)) for j in range(self.best)]
         try:
             for i, j in order[len(got):]:
@@ -1342,6 +1390,12 @@ def main():
                     help="--upgrade: load Flow only once the card reports at least this many MiB free, checking "
                          "every 0.2 s, so the upgrade waits for room on the GPU (the verifier itself runs on the CPU "
                          "and needs none); 0 (default) loads as before")
+    ap.add_argument("--upgrade-vram-save", default="",
+                    help="--upgrade: generic VRAM savings, a comma list of %s. share captures the Flow graphs into "
+                         "the served model's graph pool, which is safe because one lock serialises every render and "
+                         "every graph output is read before the lock is released; encoder puts the autoencoder's "
+                         "encoder, which generation never runs, on the meta device before the warm-up. Empty "
+                         "(default) changes nothing" % ", ".join(VRAM_SAVES))
     ap.add_argument("--upgrade-score", choices=SCORE_MODES, default="request",
                     help="--upgrade-best: request scores a candidate against the request words; event-min takes the "
                          "lower of that and the score against the event words alone, so a take has to sound like the "
@@ -1363,6 +1417,12 @@ def main():
         ap.error("--upgrade-vram-free needs --upgrade")
     if args.upgrade_vram_free < 0:
         ap.error("--upgrade-vram-free takes 0 or more")
+    try:
+        saves = parse_saves(args.upgrade_vram_save)
+    except ValueError as e:
+        ap.error(str(e))
+    if saves and args.upgrade == "off":
+        ap.error("--upgrade-vram-save needs --upgrade")
     startup.stage("woosh python up", at=_T_SCRIPT)
     startup.stage("woosh base imports", _T_SCRIPT)
     if args.parent_pid:
@@ -1384,6 +1444,8 @@ def main():
         import sarge.stereo
         startup.stage("woosh finishing imports", t)
     gen = make_gen(args.model, frames["other"], args.steps, args.solver, **opts)
+    if "encoder" in saves:
+        startup.stage("woosh autoencoder encoder off the card, %.0f MB" % (drop_encoder(gen) / 2 ** 20))
     lock = threading.Lock()
     t0 = time.perf_counter()
     warm = prepare(gen, frames)
@@ -1397,13 +1459,14 @@ def main():
         up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]), solver=args.upgrade_solver,
                      best=args.upgrade_best,
                      verifier=Verifier(args.upgrade_verifier) if args.upgrade_best > 1 else None,
-                     score=args.upgrade_score, vram_free=args.upgrade_vram_free)
+                     score=args.upgrade_score, vram_free=args.upgrade_vram_free, saves=saves)
         print("woosh upgrade %s on request: it loads after an upgrade_load message, shares the autoencoder and the "
               "text encoder, and yields to every served render; served prompts %s, upgrade prompts %s, solver %s%s"
               % (args.upgrade, args.prompts, upgrade_style(args), args.upgrade_solver,
                  ("" if args.upgrade_best == 1 else ", best of %d by %s" % (args.upgrade_best, up.verifier.path)) +
                  ("" if args.upgrade_score == "request" else ", score %s" % args.upgrade_score) +
-                 ("" if not args.upgrade_vram_free else ", loads once %d MiB are free" % args.upgrade_vram_free)),
+                 ("" if not args.upgrade_vram_free else ", loads once %d MiB are free" % args.upgrade_vram_free) +
+                 ("" if not saves else ", vram savings %s" % ",".join(sorted(saves)))),
               flush=True)
 
     def served(key, req):

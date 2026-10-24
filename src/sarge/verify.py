@@ -1,6 +1,6 @@
 import re
 
-from .prompts import LOOP_MOD, template
+from .prompts import CLEAN_MOD, LOOP_MOD, template, template_mods
 
 CAPTION = "template:caption"
 CAND_STRIDE = 4096
@@ -14,19 +14,25 @@ def _strip(t):
 
 
 def request_text(event, material="", intensity="normal", context="default", phys="", canon=None, scene="",
-                 loop=False):
-    style = CAPTION + (LOOP_MOD if loop else "")
+                 loop=False, clean=False):
+    style = CAPTION + (LOOP_MOD if loop else "") + (CLEAN_MOD if clean else "")
     return _strip(template(style, event, material, intensity, context, phys, "woosh", scene, canon))
 
 
-def key_text(key, canon=None, loop=False):
+def key_text(key, canon=None, loop=False, clean=False):
     return request_text(key.event_type, key.material, key.intensity, key.context, key.phys, canon,
-                        getattr(key, "scene", ""), loop)
+                        getattr(key, "scene", ""), loop, clean)
 
 
-def event_text(key, canon=None, loop=False):
+def event_text(key, canon=None, loop=False, clean=False):
     c = dict(canon, material="") if isinstance(canon, dict) else None
-    return request_text(key.event_type, "", key.intensity, key.context, key.phys, c, getattr(key, "scene", ""), loop)
+    return request_text(key.event_type, "", key.intensity, key.context, key.phys, c, getattr(key, "scene", ""), loop,
+                        clean)
+
+
+def style_texts(style):
+    mods = template_mods(style)
+    return {"loop": "loop" in mods, "clean": "clean" in mods}
 
 
 def candidate_variant(variant, j):

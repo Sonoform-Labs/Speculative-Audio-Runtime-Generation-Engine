@@ -113,10 +113,9 @@ def compose(canon, key, model, template=TEMPLATE):
 
 
 def texts(canon, key, template=TEMPLATE):
-    from .prompts import template_mods
-    from .verify import event_text, key_text
-    loop = "loop" in template_mods(template)
-    return {"request": key_text(key, canon, loop), "event": event_text(key, canon, loop)}
+    from .verify import event_text, key_text, style_texts
+    m = style_texts(template)
+    return {"request": key_text(key, canon, **m), "event": event_text(key, canon, **m)}
 
 
 def judge(raw, key, text, spec):

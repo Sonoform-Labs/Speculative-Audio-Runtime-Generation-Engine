@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import re
 
-from .words import split_words
+from .words import clean_phrase, split_words
 
 SA3_PREFIX = "TrackType: SFX, "
 WOOSH_PREFIX = ""
@@ -24,7 +24,8 @@ TEMPLATES = {
 STYLES = ("tuned", "generic") + tuple(TEMPLATE + n for n in TEMPLATES)
 _SLOT = re.compile(r"\{(\w+)\}")
 LOOP_MOD = "+loop"
-MODS = (LOOP_MOD,)
+CLEAN_MOD = "+clean"
+MODS = (LOOP_MOD, CLEAN_MOD)
 LOOP_WORDS = frozenset(("loop", "loops", "looped", "looping", "ambience", "ambiences", "ambient", "amb"))
 CONTINUOUS_FORM = ((r"\bA single short sound with a quick decay\b", "A continuous steady sound"),
                    (r"\ba single short sound with a quick decay\b", "a continuous steady sound"),
@@ -385,8 +386,11 @@ def template(style, event, material="", intensity="normal", context="default", p
              canon=None):
     name, tt = parse_template(style)
     text, _tt, space = TEMPLATES[name]
-    loop = "loop" in template_mods(style)
+    mods = template_mods(style)
+    loop = "loop" in mods
     ev, mat = canon_words(event, material, canon)
+    if "clean" in mods:
+        ev, mat = clean_phrase(ev), clean_phrase(mat)
     text = continuous_form(text) if loop and continuous(ev, scene, canon) else text
     slots = template_slots(ev, mat, intensity, context, phys, LOOP_WORDS if loop else frozenset(), canon is not None)
     slots["space"] = slots["ctx"] or space

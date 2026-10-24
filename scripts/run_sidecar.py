@@ -49,6 +49,7 @@ POOL_SOURCES = ("canon", "ground", "named")
 SCORE_MODES = ("request", "event-min")
 WRITER_GROUND = ("off", "anchors", "words", "caption")
 UPGRADE_SOLVERS = ("dopri5", "rk4:8", "rk4:16", "midpoint:16", "midpoint:32")
+VRAM_SAVES = ("share", "encoder")
 
 
 def check_first(style):
@@ -118,7 +119,9 @@ def start_woosh(args, hold=False):
         ["--upgrade-score", args.woosh_upgrade_score]
         if getattr(args, "woosh_upgrade_score", "request") != "request" else []) + (
         ["--upgrade-vram-free", str(args.woosh_upgrade_vram_free)]
-        if getattr(args, "woosh_upgrade_vram_free", 0) else [])
+        if getattr(args, "woosh_upgrade_vram_free", 0) else []) + (
+        ["--upgrade-vram-save", args.woosh_upgrade_vram_save]
+        if getattr(args, "woosh_upgrade_vram_save", "") else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -264,6 +267,12 @@ def main(argv=None) -> int:
     ap.add_argument("--woosh-upgrade-vram-free", type=int, default=0,
                     help="--woosh-upgrade flow: the worker loads Flow only once the card reports at least this many "
                          "MiB free, so the upgrade waits for room on the GPU; 0 (default) loads as before")
+    ap.add_argument("--woosh-upgrade-vram-save", default="",
+                    help="--woosh-upgrade flow: generic VRAM savings in the Woosh worker, a comma list of %s: share "
+                         "captures the Flow graphs into the served DFlow graph pool (one lock already serialises "
+                         "every render), about 50 MiB; encoder takes the autoencoder's encoder, which generation "
+                         "never runs, off the card before the warm-up, about 440 MiB. Neither changes a sample of "
+                         "audio. Empty (default) changes nothing" % ", ".join(VRAM_SAVES))
     ap.add_argument("--woosh-upgrade-score", choices=SCORE_MODES, default="request",
                     help="--woosh-upgrade-best: request scores a candidate against the request words; event-min takes "
                          "the lower of that and the score against the event words alone. Default request")
@@ -426,6 +435,11 @@ def main(argv=None) -> int:
         raise SystemExit("--woosh-upgrade-verifier needs --woosh-upgrade-best 2 or more")
     if (args.woosh_upgrade_vram_free and args.woosh_upgrade == "off") or args.woosh_upgrade_vram_free < 0:
         raise SystemExit("--woosh-upgrade-vram-free takes 0 or more MiB and needs --woosh-upgrade flow")
+    saves = [x.strip() for x in str(args.woosh_upgrade_vram_save).split(",") if x.strip()]
+    if any(x not in VRAM_SAVES for x in saves) or (saves and args.woosh_upgrade == "off"):
+        raise SystemExit("--woosh-upgrade-vram-save takes a comma list of %s and needs --woosh-upgrade flow"
+                         % ", ".join(VRAM_SAVES))
+    args.woosh_upgrade_vram_save = ",".join(saves)
     if (args.woosh_upgrade_pool != "off" or args.woosh_upgrade_score != "request") and args.woosh_upgrade_best < 2:
         raise SystemExit("--woosh-upgrade-pool and --woosh-upgrade-score need --woosh-upgrade flow and "
                          "--woosh-upgrade-best 2 or more")
@@ -543,6 +557,7 @@ def main(argv=None) -> int:
              f"solver={args.woosh_upgrade_solver}" if args.woosh_upgrade != "off" else "")
           + (f" best={args.woosh_upgrade_best}" if args.woosh_upgrade_best > 1 else "")
           + (f" score={args.woosh_upgrade_score}" if args.woosh_upgrade_score != "request" else "")
+          + (f" vram-save={args.woosh_upgrade_vram_save}" if args.woosh_upgrade_vram_save else "")
           + (f"  pool={pool.describe()}" if pool is not None else "")
           + (f"  writer={writer.describe()} swap={args.writer_swap}" if writer is not None else ""),
           flush=True)
