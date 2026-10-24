@@ -1206,6 +1206,63 @@ def _upgrade_step(server):
     return True
 
 
+def _meaning_sources(server):
+    from ..canon import asks_firearm
+    out = []
+    for w in [getattr(server, "writer", None)] + list(getattr(getattr(server, "prompt_pool", None), "writers", ())):
+        if w is not None and asks_firearm(getattr(w, "spec", None)) and all(w is not o for o in out):
+            out.append(w)
+    return out
+
+
+def _meaning_lookup(sources):
+    from ..canon import firearm_of
+
+    def lookup(key):
+        for w in sources:
+            ans = firearm_of(w.lookup(key))
+            if ans is not None:
+                return ans
+        return None
+
+    return lookup
+
+
+def _route_step(server):
+    g = _routed(server)
+    flips = getattr(g, "flips", None) if g is not None else None
+    if not callable(flips):
+        return False
+    eng = server.engine
+    done = None
+    with engine_lock:
+        for key in flips():
+            if key in eng.claims or any(k == key for k, _v in eng.inflight):
+                continue
+            side = g.settle(key)
+            held = bool(eng.cache.get(key))
+            keep = held and side == "rest" and bool(server.upgrade)
+            if held and not keep:
+                eng.cache.pop(key, None)
+                eng.recent.pop(key, None)
+                _upgrade_drop(server, key)
+                _bump_rev(server, key)
+            eng.stats["route_flips"] = eng.stats.get("route_flips", 0) + 1
+            done = (key, side, held, keep)
+            break
+    if done is None:
+        return False
+    key, side, held, keep = done
+    w = getattr(server, "writer", None)
+    rec = w.lookup(key) if w is not None else None
+    if rec:
+        _writer_deliver(server, key, rec)
+    if getattr(server, "event_log", None) is not None:
+        _log(server, {"type": "route_flip", "t": time.time(), "key": str(key), "side": side, "held": held,
+                      "kept_for_upgrade": keep})
+    return True
+
+
 def _writer_written(server, key, rec):
     _writer_deliver(server, key, rec)
     if getattr(server, "event_log", None) is not None:
@@ -1243,6 +1300,8 @@ def _deepen_loop(server):
                     batch, stat = planner(max_items=getattr(server, "deepen_batch", 1))
             if held:
                 _idle(server, 0.5)
+                continue
+            if not batch and getattr(server, "route_meaning", False) and _route_step(server):
                 continue
             if not batch and getattr(server, "writer", None) is not None and (
                     _writer_step(server) or _writer_fill_step(server)):
@@ -1361,7 +1420,13 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.writer_pending = {}
     server.writer_fill = {}
     server.writer_rendering = None
-    server.prompt_rev = {} if writer is not None or upgrade else None
+    server.prompt_pool = prompt_pool
+    routed = _routed(server)
+    server.route_meaning = getattr(routed, "route_mode", None) == "meaning"
+    if server.route_meaning:
+        sources = _meaning_sources(server)
+        routed.meaning = _meaning_lookup(sources) if sources else None
+    server.prompt_rev = {} if writer is not None or upgrade or server.route_meaning else None
     server.upgrade = upgrade or None
     server.upgrade_state = "idle"
     server.upgrade_t0 = time.monotonic()
@@ -1369,7 +1434,6 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.upgrade_block = 0.0
     server.upgrade_done = {}
     server.upgrade_stage = {}
-    server.prompt_pool = prompt_pool
     _upgrade_init(server)
     if writer is not None:
         writer.on_written = lambda key, rec: _writer_written(server, key, rec)

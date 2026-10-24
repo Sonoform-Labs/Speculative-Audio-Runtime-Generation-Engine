@@ -355,9 +355,10 @@ def canon_words(event, material, canon=None):
     return canon.get("name") or event, canon.get("material") or material
 
 
-def template_slots(event, material="", intensity="normal", context="default", phys="", drop=frozenset(), part=False):
-    ev = [w for w in split_words(event) if w not in drop]
-    mat = split_words(material)
+def template_slots(event, material="", intensity="normal", context="default", phys="", drop=frozenset(), part=False,
+                   split=split_words):
+    ev = [w for w in split(event) if w not in drop]
+    mat = split(material)
     mat = [] if mat and all(w in ev for w in mat) else mat
     mat = [w for w in mat if not (part and w in ev)]
     iw = _field(intensity)
@@ -389,10 +390,12 @@ def template(style, event, material="", intensity="normal", context="default", p
     mods = template_mods(style)
     loop = "loop" in mods
     ev, mat = canon_words(event, material, canon)
+    split = split_words
     if "clean" in mods:
-        ev, mat = clean_phrase(ev), clean_phrase(mat)
+        ev, mat, split = clean_phrase(ev), clean_phrase(mat), str.split
     text = continuous_form(text) if loop and continuous(ev, scene, canon) else text
-    slots = template_slots(ev, mat, intensity, context, phys, LOOP_WORDS if loop else frozenset(), canon is not None)
+    slots = template_slots(ev, mat, intensity, context, phys, LOOP_WORDS if loop else frozenset(), canon is not None,
+                           split)
     slots["space"] = slots["ctx"] or space
     out = _tidy(_SLOT.sub(lambda m: slots[m.group(1).lower()], text))
     out = out[:1].upper() + out[1:] if _sentence_case(text) else out

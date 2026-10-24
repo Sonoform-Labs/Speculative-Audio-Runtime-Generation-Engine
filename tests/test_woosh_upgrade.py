@@ -24,6 +24,7 @@ STEP = CacheKey("footstep", "gravel", "normal")
 GUN = CacheKey("shoot", "pistol", "normal")
 WOOD = CacheKey("footstep", "wood", "normal")
 CAP = "template:caption+tt"
+NO_SAVE = ["--woosh-upgrade-vram-save", "none"]
 HEAD_EVENT_FIELDS = ["type", "t_recv", "key", "served", "variant", "concurrent", "await_ms", "lock_wait_ms",
                      "engine_ms", "gen_ms", "encode_ms", "send_ms", "bytes", "meta_only", "client"]
 
@@ -578,8 +579,9 @@ def _rest_cmd(rs, monkeypatch, argv):
 def test_first_prompt_defaults_to_same_and_leaves_the_worker_and_the_generator_as_before(rs, monkeypatch):
     off_kw, off = _rest_cmd(rs, monkeypatch, ["--prompts", CAP])
     assert off[-2:] == ["--prompts", CAP] and "--upgrade-prompts" not in off and "first_prompt" not in off_kw
-    up_kw, up = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow"])
-    same_kw, same = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--first-prompt", CAP])
+    up_kw, up = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow"] + NO_SAVE)
+    same_kw, same = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--first-prompt", CAP]
+                              + NO_SAVE)
     assert up[-4:] == ["--prompts", CAP, "--upgrade", "flow"] and same == up
     assert "first_prompt" not in up_kw and "first_prompt" not in same_kw and up_kw["prompt_style"] == CAP
     tuned_kw, tuned = _rest_cmd(rs, monkeypatch, [])
@@ -587,10 +589,11 @@ def test_first_prompt_defaults_to_same_and_leaves_the_worker_and_the_generator_a
 
 
 def test_first_prompt_tuned_sends_the_phrasebook_to_first_hits_and_the_template_to_flow_and_guns(rs, monkeypatch):
-    kw, cmd = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--first-prompt", "tuned"])
+    kw, cmd = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--first-prompt", "tuned"]
+                        + NO_SAVE)
     assert "--prompts" not in cmd and cmd[-4:] == ["--upgrade", "flow", "--upgrade-prompts", CAP]
     assert kw["first_prompt"] == "tuned" and kw["prompt_style"] == CAP and kw["upgrade"] == "flow"
-    kw, cmd = _rest_cmd(rs, monkeypatch, ["--woosh-upgrade", "flow", "--first-prompt", CAP])
+    kw, cmd = _rest_cmd(rs, monkeypatch, ["--woosh-upgrade", "flow", "--first-prompt", CAP] + NO_SAVE)
     assert cmd[-6:] == ["--prompts", CAP, "--upgrade", "flow", "--upgrade-prompts", "tuned"]
     assert kw["first_prompt"] == CAP and kw["prompt_style"] == "detailed"
     with pytest.raises(SystemExit):
@@ -600,11 +603,13 @@ def test_first_prompt_tuned_sends_the_phrasebook_to_first_hits_and_the_template_
 
 
 def test_upgrade_solver_defaults_to_dopri5_and_reaches_the_worker_only_when_set(rs, monkeypatch):
-    _kw, up = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow"])
+    _kw, up = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow"] + NO_SAVE)
     assert "--upgrade-solver" not in up
-    _kw, fast = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "rk4:8"])
+    _kw, fast = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "rk4:8"]
+                          + NO_SAVE)
     assert fast[-2:] == ["--upgrade-solver", "rk4:8"] and fast[:-2] == up
-    _kw, same = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "dopri5"])
+    _kw, same = _rest_cmd(rs, monkeypatch, ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "dopri5"]
+                          + NO_SAVE)
     assert same == up
     with pytest.raises(SystemExit):
         _main_kwargs(rs, monkeypatch, ["--woosh-upgrade-solver", "rk4:8"])

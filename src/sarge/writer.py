@@ -14,7 +14,7 @@ import urllib.request
 
 from . import scene as scenes
 from .types import CacheKey
-from .words import split_words
+from .words import code_phrase, split_words
 
 VERSION = "sarge-writer-1"
 SLOTS = ("source", "action", "sound")
@@ -169,11 +169,12 @@ def _body(field, name=""):
     return ([name] if name else []) + ([phrase] if phrase and phrase != name else [])
 
 
-def key_text(key):
+def key_text(key, codes=False):
     sc = scenes.parse(key.scene)
-    ev = _phrase(key.event_type)
+    name = code_phrase if codes else _phrase
+    ev = name(key.event_type)
     lines = ["event: " + (ev or "sound")]
-    mat = _phrase(key.material)
+    mat = name(key.material)
     if mat and not all(w in ev.split() for w in mat.split()):
         lines.append("material: " + mat)
     src = sc.get("src", "")
@@ -604,11 +605,11 @@ def repair(slots, flags, text, style=None):
 REPAIR_PASSES = 3
 
 
-def judge(raw, key, text, style=None):
+def judge(raw, key, text, style=None, ask=None):
     st = style_of(style)
     if st.get("kind") == CANON_STYLE:
         from .canon import judge as canon_judge
-        return canon_judge(raw, key, text, st)
+        return canon_judge(raw, key, text, st, ask)
     slots = parse_slots(raw, st.get("optional", ()))
     if slots is None:
         return {"failed": True, "flags": ["format"], "raw": raw}
@@ -832,7 +833,8 @@ class LlamaBackend:
     name = "llama"
 
     def __init__(self, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DEFAULT_AFFINITY,
-                 host="127.0.0.1", timeout=120.0, load_timeout=600.0, log_path=None):
+                 host="127.0.0.1", timeout=120.0, load_timeout=600.0, log_path=None, slots=1):
+        self.slots = max(1, int(slots))
         self.model, self.digest = resolve_model(model or DEFAULT_MODEL)
         self.binary = find_binary(binary)
         self.port = int(port)
@@ -882,12 +884,16 @@ class LlamaBackend:
         return self._runtime
 
     def ident(self):
-        return {"backend": self.name, "model": self.digest, "runtime": self.runtime(), "threads": self.threads,
-                "grammar": GBNF}
+        out = {"backend": self.name, "model": self.digest, "runtime": self.runtime(), "threads": self.threads,
+               "grammar": GBNF}
+        if self.slots > 1:
+            out["slots"] = self.slots
+        return out
 
     def command(self):
         return [self.binary, "--model", self.model, "--host", self.host, "--port", str(self.port), "-ngl", "0",
-                "--device", "none", "-t", str(self.threads), "-tb", str(self.threads), "-np", "1", "-c", str(CTX),
+                "--device", "none", "-t", str(self.threads), "-tb", str(self.threads), "-np", str(self.slots),
+                "-c", str(CTX * self.slots),
                 "-b", str(BATCH), "-ub", str(BATCH), "--jinja", "--no-webui", "--threads-http", "2",
                 "--cache-ram", "0"]
 
@@ -919,6 +925,8 @@ class LlamaBackend:
         body = {"messages": msgs, "temperature": 0, "top_k": 1, "seed": SEED,
                 "max_tokens": f.get("max_tokens", MAX_TOKENS), "grammar": f.get("gbnf", GBNF),
                 "chat_template_kwargs": {"enable_thinking": False}}
+        if getattr(self, "slots", 1) > 1 and f.get("slot") is not None:
+            body["id_slot"] = int(f["slot"]) % self.slots
         out = _post(self.url + "/v1/chat/completions", body, self.timeout)
         return out["choices"][0]["message"].get("content") or ""
 
@@ -1200,7 +1208,7 @@ class PromptWriter:
         return n
 
     def write(self, key):
-        text = key_text(key)
+        text = key_text(key, bool(self.spec.get("codes")))
         t0 = time.perf_counter()
         info = None
         if self.ground is not None:
@@ -1209,8 +1217,10 @@ class PromptWriter:
             raw = self.backend.complete(messages(text, self.spec), self.spec["fmt"])
         else:
             raw = self.backend.complete(messages(text, self.spec))
+        ask = self.spec.get("ask") if self.ground is None else None
+        answer = self.backend.complete(messages(text, ask), ask["fmt"]) if ask else None
         ms = (time.perf_counter() - t0) * 1000.0
-        rec = judge(raw, key, text, self.spec)
+        rec = judge(raw, key, text, self.spec, answer) if ask else judge(raw, key, text, self.spec)
         rec.update(key=key_fields(key), text=text, ms=round(ms, 1), t=round(time.time(), 3), attempt=1)
         if self.style != DEFAULT_STYLE:
             rec["style"] = self.style
@@ -1301,12 +1311,12 @@ class PromptWriter:
 
 def build(kind, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DEFAULT_AFFINITY,
           store=os.path.join(".cache", "writer"), when=WHEN, readonly=False, log_path=None, log=None, style=None,
-          ground=None, ground_index=None, ground_k=None, template=None, backend=None):
+          ground=None, ground_index=None, ground_k=None, template=None, backend=None, firearm=False):
     if style == CANON_STYLE:
         from .canon import TEMPLATE, style as canon_style
         if kind == "ground" or ground not in (None, "", "off", "anchors"):
             raise ValueError("the canon writer style needs a language model (--writer llama or ollama)")
-        style = canon_style(template or TEMPLATE)
+        style = canon_style(template or TEMPLATE, firearm)
     style_of(style)
     if kind in (None, "", "off"):
         return None
@@ -1326,7 +1336,9 @@ def build(kind, model="", binary=None, port=DEFAULT_PORT, threads=4, affinity=DE
     elif backend is not None:
         pass
     elif kind == "llama":
-        backend = LlamaBackend(model, binary, port, threads, affinity, log_path=log_path)
+        from .canon import SLOTS_WITH_ASK
+        backend = LlamaBackend(model, binary, port, threads, affinity, log_path=log_path,
+                               slots=SLOTS_WITH_ASK if firearm else 1)
     elif kind == "ollama":
         backend = OllamaBackend(model, port, threads)
     else:

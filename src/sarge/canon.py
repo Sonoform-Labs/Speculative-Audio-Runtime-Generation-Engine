@@ -62,7 +62,33 @@ SCHEMA = {"type": "object", "properties": {
     "name": {"type": "string", "maxLength": 40},
     "material": {"type": "string", "maxLength": 30},
     "continuous": {"type": "string", "enum": ["yes", "no"]}}, "required": list(SLOTS)}
-FMT = {"gbnf": GBNF, "schema": SCHEMA, "max_tokens": MAX_TOKENS}
+FMT = {"gbnf": GBNF, "schema": SCHEMA, "max_tokens": MAX_TOKENS, "slot": 0}
+FIREARM = "is this a firearm discharge or firearm handling sound"
+ASK_SYSTEM = (
+    "You sort sounds for the audio engine of a game. You get facts about one moment in a game: the event name a "
+    "developer typed, and sometimes the material, what made the sound, the objects, the action and the room. "
+    "Developers type odd names: slang, model numbers, sound words, made-up words, file names with numbers and "
+    "prefixes.\n"
+    "Answer one field.\n"
+    "firearm: yes when this is a firearm discharge or firearm handling sound, that is a gun of any kind being fired, "
+    "or a gun being loaded, reloaded, cocked, racked, dry fired, drawn, holstered or otherwise handled; no for every "
+    "other sound.\n"
+    "Rules.\n"
+    "Use what you know about games, weapons, slang and model numbers.\n"
+    "Decide from what makes the sound, never from one word of the name alone."
+)
+ASK_EXAMPLES = (
+    ("event: flintlock prime\nmade by: player", {"firearm": "yes"}),
+    ("event: blunderbuss boom", {"firearm": "yes"}),
+    ("event: stapler snap\nmaterial: steel", {"firearm": "no"}),
+    ("event: hearth crackle\nmade by: world\naction: loop\nroom: small", {"firearm": "no"}),
+)
+ASK_GBNF = 'root ::= "{\\"firearm\\": \\"" ("yes" | "no") "\\"}"\n'
+ASK_SCHEMA = {"type": "object", "properties": {"firearm": {"type": "string", "enum": ["yes", "no"]}},
+              "required": ["firearm"]}
+ASK_FMT = {"gbnf": ASK_GBNF, "schema": ASK_SCHEMA, "max_tokens": 16, "slot": 1}
+ASK = {"system": ASK_SYSTEM, "examples": ASK_EXAMPLES, "fmt": ASK_FMT}
+SLOTS_WITH_ASK = 2
 
 
 def parse_slots(raw):
@@ -74,6 +100,15 @@ def parse_slots(raw):
         return None
     out = {k: " ".join(str(d.get(k) or "").split()).strip(" ,.;").lower() for k in SLOTS}
     return out if out["name"] else None
+
+
+def parse_ask(raw):
+    try:
+        d = json.loads(raw)
+    except (TypeError, ValueError):
+        return ""
+    v = str(d.get("firearm") or "").strip().lower() if isinstance(d, dict) else ""
+    return v if v in ("yes", "no") else ""
 
 
 def check(slots, text):
@@ -95,15 +130,28 @@ def check(slots, text):
     return flags
 
 
-def canon_of(slots, flags=()):
+def canon_of(slots, flags=(), firearm=""):
     keep = "material:unsourced" not in flags
-    return {"name": " ".join(split_words(slots["name"])),
-            "material": " ".join(split_words(slots["material"])) if keep else "",
-            "continuous": slots.get("continuous") == "yes"}
+    out = {"name": " ".join(split_words(slots["name"])),
+           "material": " ".join(split_words(slots["material"])) if keep else "",
+           "continuous": slots.get("continuous") == "yes"}
+    if firearm in ("yes", "no"):
+        out["firearm"] = firearm == "yes"
+    return out
+
+
+def firearm_of(rec):
+    c = rec.get("canon") if isinstance(rec, dict) and not rec.get("failed") else None
+    f = c.get("firearm") if isinstance(c, dict) else None
+    return f if isinstance(f, bool) else None
+
+
+def asks_firearm(spec):
+    return bool(isinstance(spec, dict) and spec.get("ask"))
 
 
 def fatal(flags):
-    return [f for f in flags if not f.startswith("material:")]
+    return [f for f in flags if not f.startswith(("material:", "firearm:"))]
 
 
 def compose(canon, key, model, template=TEMPLATE):
@@ -118,37 +166,56 @@ def texts(canon, key, template=TEMPLATE):
     return {"request": key_text(key, canon, **m), "event": event_text(key, canon, **m)}
 
 
-def judge(raw, key, text, spec):
+def judge(raw, key, text, spec, ask=None):
     slots = parse_slots(raw)
+    extra = {"raw_firearm": ask} if asks_firearm(spec) else {}
     if slots is None:
-        return {"failed": True, "flags": ["format"], "raw": raw}
+        return dict({"failed": True, "flags": ["format"], "raw": raw}, **extra)
     flags = check(slots, text)
+    answer = parse_ask(ask) if asks_firearm(spec) else ""
+    if asks_firearm(spec) and not answer:
+        flags.append("firearm:value")
     if fatal(flags):
-        return {"failed": True, "flags": flags, "slots": slots, "raw": raw}
-    c = canon_of(slots, flags)
+        return dict({"failed": True, "flags": flags, "slots": slots, "raw": raw}, **extra)
+    c = canon_of(slots, flags, answer)
     tpl = spec.get("template") or TEMPLATE
-    return {"slots": slots, "flags": flags, "repaired": bool(flags), "canon": c, "woosh": compose(c, key, "woosh", tpl),
-            "sa3": compose(c, key, "sa3", tpl), "texts": texts(c, key, tpl), "raw": raw}
+    return dict({"slots": slots, "flags": flags, "repaired": bool(flags), "canon": c,
+                 "woosh": compose(c, key, "woosh", tpl), "sa3": compose(c, key, "sa3", tpl),
+                 "texts": texts(c, key, tpl), "raw": raw}, **extra)
 
 
-def ident(template=TEMPLATE):
-    return {"version": VERSION, "gbnf": GBNF, "schema": SCHEMA, "max_tokens": MAX_TOKENS, "template": template,
-            "max_name_words": MAX_NAME_WORDS}
+def keeps_codes(template=TEMPLATE, firearm=False):
+    from .prompts import template_mods
+    return bool(firearm) or "clean" in template_mods(template)
 
 
-def style(template=TEMPLATE):
+def ident(template=TEMPLATE, firearm=False):
+    out = {"version": VERSION, "gbnf": GBNF, "schema": SCHEMA, "max_tokens": MAX_TOKENS, "template": template,
+           "max_name_words": MAX_NAME_WORDS}
+    if firearm:
+        out["firearm"] = {"question": FIREARM, "system": ASK_SYSTEM, "examples": ASK_EXAMPLES, "gbnf": ASK_GBNF,
+                          "max_tokens": ASK_FMT["max_tokens"]}
+    if keeps_codes(template, firearm):
+        out["codes"] = True
+    return out
+
+
+def style(template=TEMPLATE, firearm=False):
     from . import writer as wr
     from .prompts import parse_template
     if parse_template(template) is None:
         raise ValueError("the canon writer needs a template:NAME prompt style, got %r" % (template,))
-    return {"name": "canon", "system": SYSTEM, "examples": EXAMPLES, "named": "", "form": "canon",
-            "banned": wr.BANNED_OPEN, "collide": False, "ex_words": (), "leak": frozenset(), "kind": "canon",
-            "template": template, "fmt": FMT, "canon": ident(template)}
+    out = {"name": "canon", "system": SYSTEM, "examples": EXAMPLES, "named": "", "form": "canon",
+           "banned": wr.BANNED_OPEN, "collide": False, "ex_words": (), "leak": frozenset(), "kind": "canon",
+           "template": template, "fmt": FMT, "canon": ident(template, firearm), "codes": keeps_codes(template, firearm)}
+    if firearm:
+        out["ask"] = ASK
+    return out
 
 
 def describe(rec):
     c = rec.get("canon") if isinstance(rec, dict) else None
     if not c:
         return ""
-    return "%s%s%s" % (c["name"], " / " + c["material"] if c["material"] else "",
-                       " (continuous)" if c["continuous"] else "")
+    return "%s%s%s%s" % (c["name"], " / " + c["material"] if c["material"] else "",
+                         " (continuous)" if c["continuous"] else "", " (firearm)" if c.get("firearm") else "")

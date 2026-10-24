@@ -4,10 +4,10 @@ import re
 
 _BOUNDARY = re.compile(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])")
 _SPLIT = re.compile(r"[^a-z0-9]+")
-_CAMEL = re.compile(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
+_CAMEL = re.compile(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z0-9])(?=[A-Z][a-z])")
 _TOKEN = re.compile(r"[^A-Za-z0-9]+")
 _TAKE = re.compile(r"(?:v|ver|var|take|tk|alt)?[0-9]+")
-_GLUED = re.compile(r"([a-z]{3,})[0-9]+")
+_GLUED_TAKE = re.compile(r"([a-z]{3,})(?:0[0-9]+|[0-9])")
 FORMAT_WORDS = frozenset(("sfx", "sfxs", "fx", "snd", "sound", "sounds", "audio", "wav", "ogg", "mp3", "aif", "aiff",
                           "flac"))
 ENGINE_WORDS = frozenset(("prefab", "clone", "instance", "lod", "mesh", "gameobject", "geo", "sm", "prop", "variant"))
@@ -40,13 +40,31 @@ def clean_words(text) -> list:
             continue
         if not out and t in LEAD_WORDS and i < len(toks) - 1:
             continue
-        m = _GLUED.fullmatch(t)
+        m = _GLUED_TAKE.fullmatch(t) if i == len(toks) - 1 else None
         out.append(m.group(1) if m else t)
-    return split_words(" ".join(out)) if out else split_words(text)
+    return out if out else split_words(text)
 
 
 def clean_phrase(text) -> str:
     return " ".join(clean_words(text))
+
+
+def code_words(text) -> list:
+    toks = name_tokens(text)
+    out = []
+    for i, t in enumerate(toks):
+        m = _GLUED_TAKE.fullmatch(t) if i == len(toks) - 1 else None
+        out.extend([m.group(1), t[len(m.group(1)):]] if m else [t])
+    return out
+
+
+def code_phrase(text) -> str:
+    return " ".join(code_words(text))
+
+
+def is_code(word) -> bool:
+    w = str(word or "")
+    return any(c.isdigit() for c in w) and any(c.isalpha() for c in w)
 
 
 def inflects(word: str, stem: str) -> bool:

@@ -86,6 +86,8 @@ class CachedGenerator(Generator):
     def _path(self, key: CacheKey, variant: int, prompt: str | None = None) -> str:
         g = self.inner
         tag = getattr(g, "post_tag", "")
+        side = g.route_tag(key) if callable(getattr(g, "route_tag", None)) else ""
+        tag = tag + "|" + side if side else tag
         sig = "|".join(str(x) for x in (
             CACHE_SCHEMA,
             getattr(g, "name", "?"), getattr(g, "model_name", ""),

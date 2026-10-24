@@ -958,8 +958,9 @@ class Verifier:
 
 class Upgrade:
     def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None, solver="dopri5",
-                 best=1, verifier=None, score="request", vram_free=0, vram=None, saves=()):
+                 best=1, verifier=None, score="request", vram_free=0, vram=None, saves=(), guard=False):
         self.base, self.kind, self.frames, self.lock, self.opts = base, kind, frames, lock, dict(opts)
+        self.guard = bool(guard)
         self.saves = frozenset(saves or ())
         self.vram_free = max(0, int(vram_free or 0))
         self.vram = vram or free_vram_mib
@@ -1088,6 +1089,8 @@ class Upgrade:
             out["vram_save"] = sorted(self.saves)
         if self.choice:
             out.update({"pool_keys": len(self.choice), "pool_picks": dict(self.pool_picks)})
+        if self.guard:
+            out["pool_guard"] = True
         return out
 
     def render(self, key, variant, prompts, prompt, amp, stereo, level, pool=None, texts=None):
@@ -1114,8 +1117,8 @@ class Upgrade:
 
     def _want(self, key, texts, style=None):
         from sarge import verify
-        t = texts if isinstance(texts, dict) else {}
-        m = verify.style_texts(style) if style else {}
+        t = texts if isinstance(texts, dict) and not self.guard else {}
+        m = verify.guard_texts(style) if self.guard else verify.style_texts(style) if style else {}
         req = t.get("request") or verify.key_text(key, **m)
         if self.score_mode != "event-min":
             return req, None
@@ -1204,7 +1207,7 @@ class Upgrade:
             self.failed += 1
             raise
         means = [float(np.mean([s for s, i, _j, _y in got if i == k])) for k in range(len(cands))]
-        c = verify.choose(means)
+        c = verify.choose_guarded(means) if self.guard else verify.choose(means)
         self.choice[ck] = c
         while len(self.choice) > CHOICE_KEEP:
             self.choice.popitem(last=False)
@@ -1400,6 +1403,11 @@ def main():
                     help="--upgrade-best: request scores a candidate against the request words; event-min takes the "
                          "lower of that and the score against the event words alone, so a take has to sound like the "
                          "event as well as the material. Default request")
+    ap.add_argument("--upgrade-pool-guard", action="store_true",
+                    help="--upgrade-best: score every candidate prompt and every take against the cleaned request "
+                         "words of the key (sarge.verify.key_text with clean on) and ignore the texts a request "
+                         "carries, so a pool prompt is kept for the key only when its takes score at least as well "
+                         "as the key's own prompt against the typed name. Off by default")
     args = ap.parse_args()
     if args.upgrade != "off" and args.upgrade == args.model:
         ap.error("--upgrade %s needs a different --model" % args.upgrade)
@@ -1413,6 +1421,8 @@ def main():
         ap.error("--upgrade-best and --upgrade-verifier need --upgrade")
     if args.upgrade_score != "request" and args.upgrade_best < 2:
         ap.error("--upgrade-score needs --upgrade-best 2 or more")
+    if args.upgrade_pool_guard and args.upgrade_best < 2:
+        ap.error("--upgrade-pool-guard needs --upgrade-best 2 or more")
     if args.upgrade_vram_free and args.upgrade == "off":
         ap.error("--upgrade-vram-free needs --upgrade")
     if args.upgrade_vram_free < 0:
@@ -1459,12 +1469,14 @@ def main():
         up = Upgrade(gen, args.upgrade, frames, lock, dict(OPTIONS, **ADOPTED[args.upgrade]), solver=args.upgrade_solver,
                      best=args.upgrade_best,
                      verifier=Verifier(args.upgrade_verifier) if args.upgrade_best > 1 else None,
-                     score=args.upgrade_score, vram_free=args.upgrade_vram_free, saves=saves)
+                     score=args.upgrade_score, vram_free=args.upgrade_vram_free, saves=saves,
+                     guard=args.upgrade_pool_guard)
         print("woosh upgrade %s on request: it loads after an upgrade_load message, shares the autoencoder and the "
               "text encoder, and yields to every served render; served prompts %s, upgrade prompts %s, solver %s%s"
               % (args.upgrade, args.prompts, upgrade_style(args), args.upgrade_solver,
                  ("" if args.upgrade_best == 1 else ", best of %d by %s" % (args.upgrade_best, up.verifier.path)) +
                  ("" if args.upgrade_score == "request" else ", score %s" % args.upgrade_score) +
+                 ("" if not args.upgrade_pool_guard else ", pool guarded by the cleaned request words") +
                  ("" if not args.upgrade_vram_free else ", loads once %d MiB are free" % args.upgrade_vram_free) +
                  ("" if not saves else ", vram savings %s" % ",".join(sorted(saves)))),
               flush=True)

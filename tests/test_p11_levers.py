@@ -57,7 +57,7 @@ def test_clean_drops_format_engine_take_and_side_marks_and_keeps_the_rest():
     assert c("Play_Zorbo_Krell") == "zorbo krell" and c("A_Zorbo") == "zorbo"
     assert c("Zib_A_Zab") == "zib a zab" and c("Play") == "play" and c("A") == "a"
     assert c("Prop_Zorbo_Prefab") == "zorbo" and c("snd-zorbo-krell.wav") == "zorbo krell"
-    assert c("Xk47_Zorbo") == "xk 47 zorbo" and c("Zorbo_9mm") == "zorbo 9 mm" and c("V8_Zorbo") == "v 8 zorbo"
+    assert c("Xk47_Zorbo") == "xk47 zorbo" and c("Zorbo_9mm") == "zorbo 9mm" and c("V8_Zorbo") == "v8 zorbo"
     assert c("Zorbo_01_Krell") == "zorbo krell" and c("SFXZorboKrell") == "zorbo krell"
     assert c("Zorbo_Krell_A_02") == "zorbo krell"
     assert c("SFX_01") == "sfx 01" and c("A__B") == "a b" and c("") == "" and c(None) == ""
@@ -272,13 +272,25 @@ def test_drop_encoder_moves_only_the_encoder_off_the_device(ws, monkeypatch):
     assert ws.drop_encoder(types.SimpleNamespace()) == 0
 
 
-def test_sidecar_vram_save_flag_reaches_the_worker_only_when_set(monkeypatch):
+def test_sidecar_vram_save_is_on_with_the_flow_upgrade_unless_opted_out(monkeypatch):
     base = ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "midpoint:16"]
+    off, _ = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-vram-save", "none"])
+    assert "--upgrade-vram-save" not in off
     cmd, _ = _rest_cmd(monkeypatch, base)
-    assert "--upgrade-vram-save" not in cmd
-    got, _ = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-vram-save", "share, encoder"])
-    assert got[len(cmd):] == ["--upgrade-vram-save", "share,encoder"]
+    assert cmd[len(off):] == ["--upgrade-vram-save", "share,encoder"] and cmd[:len(off)] == off
+    for spec in ("auto", "share, encoder", "encoder,share"):
+        got, _ = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-vram-save", spec])
+        assert got[len(off):] == ["--upgrade-vram-save", "share,encoder" if spec != "encoder,share" else spec]
+    one, _ = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-vram-save", "share"])
+    assert one[len(off):] == ["--upgrade-vram-save", "share"]
+    for spec in ("none", "off"):
+        got, _ = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-vram-save", spec])
+        assert got == off
+    plain, _ = _rest_cmd(monkeypatch, ["--prompts", CAP])
+    assert "--upgrade-vram-save" not in plain and "--upgrade" not in plain
     import run_sidecar as rs
+    assert rs.vram_saves("auto", "off") == "" and rs.vram_saves("none", "flow") == ""
+    assert rs.vram_saves("auto", "flow") == "share,encoder"
     for bad in (["--woosh-upgrade-vram-save", "share"], base + ["--woosh-upgrade-vram-save", "free"]):
         with pytest.raises(SystemExit):
             rs.main(["--generator", "hybrid", "--no-cache", "--woosh-python", sys.executable] + bad)

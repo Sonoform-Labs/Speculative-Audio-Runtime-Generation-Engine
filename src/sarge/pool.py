@@ -45,13 +45,20 @@ def decided(w, key):
 
 
 class PromptPool:
-    def __init__(self, writers, primary=None):
+    def __init__(self, writers, primary=None, route=()):
         self.writers = [w for w in writers if w is not None]
         self.primary = primary
         self.owned = [w for w in self.writers if w is not primary]
+        self.route = [w for w in route if w is not None]
 
     def describe(self):
-        return ", ".join(w.describe() for w in self.writers)
+        return ", ".join(w.describe() + (" (route only)" if self.route_only(w) else "") for w in self.writers)
+
+    def route_only(self, w):
+        return any(w is r for r in self.route)
+
+    def offered(self):
+        return [w for w in self.writers if not self.route_only(w)]
 
     def want(self, key, why="seen", eta=None):
         for w in self.owned:
@@ -62,7 +69,7 @@ class PromptPool:
 
     def prompts(self, key, route="woosh"):
         out = []
-        for w in self.writers:
+        for w in self.offered():
             rec = w.lookup(key)
             p = rec.get(route) if rec else None
             if p and p not in out:
@@ -70,7 +77,7 @@ class PromptPool:
         return out
 
     def texts(self, key):
-        for w in [self.primary] + self.writers:
+        for w in [self.primary] + self.offered():
             rec = w.lookup(key) if w is not None else None
             if rec and isinstance(rec.get("texts"), dict):
                 return dict(rec["texts"])
@@ -89,7 +96,8 @@ class PromptPool:
 
 
 def build(sources, primary=None, model="", binary=None, port=wr.DEFAULT_PORT, threads=4, affinity=wr.DEFAULT_AFFINITY,
-          store=None, when=wr.WHEN, log_path=None, template=None, ground_index=None, log=None):
+          store=None, when=wr.WHEN, log_path=None, template=None, ground_index=None, log=None, firearm=False,
+          route_sources=()):
     names = [s for s in sources if s]
     bad = [s for s in names if s not in SOURCES]
     if bad or not names:
@@ -104,16 +112,20 @@ def build(sources, primary=None, model="", binary=None, port=wr.DEFAULT_PORT, th
             shared = SharedBackend(base)
             primary.backend = shared
         else:
-            shared = SharedBackend(wr.LlamaBackend(model, binary, port, threads, affinity, log_path=log_path))
-    writers = []
+            from .canon import SLOTS_WITH_ASK
+            shared = SharedBackend(wr.LlamaBackend(model, binary, port, threads, affinity, log_path=log_path,
+                                                   slots=SLOTS_WITH_ASK if firearm and "canon" in names else 1))
+    writers, route = [], []
     for s in names:
         if primary is not None and same_source(primary, s):
-            writers.append(primary)
-            continue
-        if s == "ground":
-            writers.append(wr.build("ground", store=store, when=when, ground="caption", ground_index=ground_index,
-                                    threads=threads, log=log))
+            w = primary
+        elif s == "ground":
+            w = wr.build("ground", store=store, when=when, ground="caption", ground_index=ground_index,
+                         threads=threads, log=log)
         else:
-            writers.append(wr.build("llama", store=store, when=when, style=s, template=template, backend=shared,
-                                    log=log))
-    return PromptPool(writers, primary)
+            w = wr.build("llama", store=store, when=when, style=s, template=template, backend=shared, log=log,
+                         firearm=firearm and s == "canon")
+        writers.append(w)
+        if s in route_sources:
+            route.append(w)
+    return PromptPool(writers, primary, route)

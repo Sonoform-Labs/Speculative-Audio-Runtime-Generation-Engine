@@ -622,3 +622,206 @@ D:\Python\sarge-research\modal\runpinned.py scripts\run_sidecar.py --generator h
 ```
 
 Appending `--woosh-upgrade-vram-save share,encoder` to that line serves the same audio sample for sample and brought the build's scripted session from 11,496 to 10,996 MiB. The pick's line, kept for a later round, swaps `--prompts template:caption+tt` for `--prompts template:caption+tt+clean` and adds `--scene --woosh-upgrade-pool canon --woosh-upgrade-vram-save share,encoder`. In the B4 line every p11 flag stays off.
+
+## Round p12: a guarded pool, routing by meaning, kept model codes and VRAM savings by default, chosen on 900-939 and confirmed on new data
+
+The p12 round built four generic levers. A guarded pool (`--woosh-upgrade-pool-guard`) scores every candidate caption and every take against the cleaned request words, so a canonical caption survives only when its takes match the typed name at least as well as the clean caption's. Routing by meaning (`--route meaning`) lets the canonical writer answer, per key and cached in its record, whether a sound is a firearm discharge or firearm handling sound, with whole-word matching on the cleaned name until it answers. `+clean` now keeps model codes glued to letters (Kar98, AR15, M4A1). And the Flow worker's two VRAM savings are on by default whenever `--woosh-upgrade flow` is set (`--woosh-upgrade-vram-save auto`, opt out with `none`). The selection rule, written before any render, ranked five candidates on the known scenarios and the routing movers at variants 900-939 and picked A3, p11's unguarded caption pool, at 37 of 53 decision rows against 35 for the rejected meaning arm, 34 for the guarded pool and 33 for B4. The confirmation on variants 940-979 and FRESH8, 64 scenarios rendered for the first time, turned A3 down a second time. It reaches 0.9 on 72 of 117 held-out decision rows against 58 for B4 and 29 for today's engine, and its pooled score sits 0.107 above B4's, but three rows count against it under the guard and its first-hit gun fill misses the runtime bound by 0.35 ms. B4 stays the configuration for Unity. Counting the five judge-capped rows, the pick has 73 of 122 and B4 58. "Above 0.9 on everything" fails by 45 rows under the pick and by 59 under B4.
+
+| held out | rows | today ≥ 0.9 | B4 ≥ 0.9 | clean K ≥ 0.9 | pick ≥ 0.9 | guarded G ≥ 0.9 | pooled today / B4 / K / pick / G | pick minus B4 [95%] | pick minus today [95%] |
+|---|---|---|---|---|---|---|---|---|---|
+| known, variants 940-979 | 47 | 21 | 34 | 34 | 35 | 36 | 0.729 / 0.885 / 0.885 / 0.910 / 0.908 | +0.025 [-0.014, +0.078] | +0.181 [+0.099, +0.270] |
+| FRESH8, first render | 70 | 8 | 24 | 23 | 37 | 30 | 0.349 / 0.542 / 0.524 / 0.704 / 0.615 | +0.162 [+0.087, +0.238] | +0.355 [+0.250, +0.453] |
+| all decision rows | 117 | 29 | 58 | 57 | 72 | 66 | 0.502 / 0.680 / 0.669 / 0.786 / 0.732 | +0.107 [+0.058, +0.160] | +0.285 [+0.211, +0.356] |
+| with the 5 capped rows | 122 | 29 | 58 | 57 | 73 | 66 | 0.487 / 0.652 / 0.642 / 0.763 / 0.707 | | |
+
+The differences are this recheck's bootstrap over rows (4,000 draws, seed 271828); the round's land within 0.005 of them. R2 (72 rows against 58) and R3 (pooled lower bound +0.058, worst set +0.025) pass. R1 fails on three counted rows: y_shotty_blam_v2 (-0.80 [-0.90, -0.66]) and y_boomstick_blast_01 (-0.20 [-0.38, -0.03]), two shotguns on SA3, and y_jaw_breaker_swing (-0.20 [-0.46, -0.03]) on Woosh. R4 fails because the pick's first-hit gun fill sits 5.35 ms above G0's against a 5 ms bound. Against today's engine both configurations are CONFIRMED: the pick at +0.285 and B4 at +0.178 [+0.109, +0.248]. Six more drops over 0.10 reach zero and count as noise: both water steps (-0.17 each, counted in p11), b_window_rifle (-0.28), y_rpg7_warhead_hit (-0.26), y_jar_drop_kitchen_break (-0.14) and y_dynamite_stick_bang_01 (-0.12).
+
+### What was rechecked
+
+**The confirmation numbers.** `scratchpad/verify12/recompute12.py` reads units.json, vocab.json, water.json and verifier.json from `data/_gate/p12/confirm/judge_outputs.zip` (byte-identical to the copies under `G:\sarge\p12\conf`, as are the four render files), takes each type's judges at 0.6 s and rebuilds every row from the per-take hits. Best of four is the closed form over all 91,390 four-take subsets, and the pool shares are enumerated over the same subsets from the verifier scores alone, with the guarded choice checked against `verify.choose_guarded` on 3,000 random cases. All 122 rows, all five arms (today H, B4, clean K, pick P, guarded G) and both pool shares agree with `confirm_p12.json` to 1e-9. Intervals drawn with a different seed land within 0.027 of the round's at the 95th percentile (0.045 at worst), and every row keeps its guard verdict for the pick and for G. The literal served takes (64 pick rows and 47 B4 rows at 0.9 over 99 Woosh decision rows, against 61 and 46 by the expectation) match row for row, as do the wrong-way counts (15 of 81 rows for the pick's dominant candidate, 21 of 85 for B4). The cause labels, rebuilt from rule 7 by separate code, match the round's on all 45 rows under 0.9. The judges and real rates equal flowpath W, the water judge equals lev10's, and the 49 known scenarios carry push09's keys, render keys, caption and phrasebook prompts and B4 verifier texts unchanged. The runtime verdict comes straight from the three gate files: gun fill +5.346 ms and Woosh fill +0.849 ms over G0 for the pick, +4.323 and +0.524 for B4.
+
+**The selection.** `scratchpad/verify12/sel_recompute12.py` rebuilds all seven arms on the 58 selection rows from `G:\sarge\p12\sel`, each from the arm specification its scenario row carries. Every point score and every guard verdict, under a separate bootstrap seed, matches `select_p12.json`, and rule 7 applied to the recomputed numbers ranks A3 (37), A4m (35, rejected on z_handcannon_discharge_v3 and z_ui_click_confirm_02), A4 (34), B4cm (34, rejected on the same two rows) and B4 (33), so it returns A3. The selection's analysis script `s12_select.py` carries the digest it had at 02:42, before the first render.
+
+**Rules before renders, and no confirmation data in the selection.** The selection rule hashes to fdc0d0f1 and was written at 02:37:58. Its 8,640 clip and cut files are dated 02:51:01 to 03:21:00, all at 900-939, and its result followed at 03:58:49. FRESH8 (`fresh8.py`, d07fc198) dates from 04:17:37, its check from 04:17:46 and the confirmation rule (ba2cd51e) from 04:27:03. The confirmation's analysis code (`c12_conf.py`) was written at 04:23:12 and the scenario files at 04:33:33, and its 24,240 clip and cut files run from 04:37:14 to 05:40:20, all at 940-979, before the judge outputs of 07:00 and 07:09. All 46 digests in the selection's `rules_sha1.txt` and all 60 in the confirmation's still match. No FRESH8 event name, scenario id or render key appears in any of 115 selection-round and build files, no selection file cites a variant at 940-979, and every source edit of the round is dated 00:13 to 02:06:07, before both rules.
+
+**FRESH8 is new.** `scratchpad/verify12/fresh8_indep.py` gathered 467 earlier eval names from every scenario file under G:\sarge, data\_gate and the session scratchpads, generic_eval's key sets, the e2e and vocab_eval keys, scenes40, the p10 canonicaliser sets, the p11 clean table, the p12 route table (423 names) and the firearm question's 44 dev names. Under four token readings (a wide or a narrow prefix list, digits split from letters or kept as codes) with light stems, no FRESH8 name equals an earlier one and none shares all its content words with one in either direction.
+
+**No evaluation judge chose anything.** The served choice code (`verify.py`, `pool.py`, `canon.py`, `words.py`, `routed.py`, `writer.py`, `prompts.py`, the sidecar server, `woosh_server.py` and `run_sidecar.py`) names no AST, PANNs, laion CLAP or water judge, and the prep, render and verifier tools of both stages read no judge output. Rebuilding the caption, clean and canonical prompts, the canonical records from their raw writer output, all four verifier texts and both candidate lists from shipped code reproduces all 113 confirmation scenarios. The 13,360 saved verifier scores equal the dot products of the saved audio and text embeddings exactly, and Woosh-CLAP's config and audio tower are byte-identical between the bench folder and the served one. Judge outputs chose the arm in the selection, on 900-939 as its rule says, and the page rows for display.
+
+**Verifier leakage.** On the pick's dominant takes the verifier's per-take score tracks AST hits at a mean Spearman of 0.20, CLAP at 0.19 and PANNs at 0.16, below the judges' agreement with each other (0.23 to 0.30). The pick's served-hit gain over B4 is largest on PANNs, the judge with no family tie to Woosh-CLAP (+0.126), against +0.080 on AST and +0.059 on CLAP, Woosh-CLAP's nearest relative. The pool keeps the caption with the higher plain hit rate on 75% of rows under AST and under PANNs and 68% under CLAP, so its choice leans toward no sibling. Scored by PANNs alone the pick gains +0.095 [+0.046, +0.149] over B4 and reaches 0.9 on 72 judged rows against 61; dropping CLAP leaves +0.113 and dropping AST +0.105. Sibling agreement carries none of the measurable gain this round either.
+
+**The code.** Nothing the four levers add names a sound, a material or a game. The whole-word fallback reuses routed.py's DISCHARGE_WORDS and FIREARM_WORDS, generic firearm class words that date from b74b3cf, now matched on the cleaned name. The firearm question carries four few-shot examples: "flintlock prime" and "blunderbuss boom" answered yes, "stapler snap" and "hearth crackle" answered no. None is an eval name, but two are near copies of the question's dev names Flintlock_Fire_02 and Blunderbuss_Boom, so the build's 43 of 44 on its dev set is partly in-sample, and "blunderbuss boom" answered yes is a likely reason SFX_Boom_Big_01, an explosion, moved to SA3 in the route table. The digit rule is generic: a single digit or a 0-led number glued to the last word reads as a take number (Footstep3, Step02) and every other code stays whole, so a model code such as Springfield03 would still lose its digits at the end of a name. The 19 new tests use invented names (Zorbo, Krell, Zk98, QX15).
+
+**Tests, flags off and the page.** The CPU suite passes 669 of 669. `startup_compare.py`, rerun on both saved flags-off outputs (the build's from 02:25, after the last source edit at 02:06, and the confirmation's from 07:28), reports 75 of 75 clips identical to `baseline_warm_1`, max abs 0.0, PASS. The page `data/_gate/push09d/page/index.html` holds the 12 rows that rule 9 gives when repeats are skipped by scenario, in its order; all 72 takes match the rule's sources sample for sample and its script passes `node --check`. Skipping repeats by row name would give the second water place to w:y_cannonball_jump_lake, whose takes would repeat the judged cannonball row's audio, so the page's reading is the sensible one. Outside the intro "today" and "pick" appear in the two headings and "pick" in the two buttons, as on the p11 page.
+
+**Unity's saved scene.** The launcher in `D:\PSfxUnityTest\Assets\WalkArena.unity`, last saved on October 17, carries `--generator hybrid --realtime --stereo --amp --detailed-prompts --learn --cache-dir D:\Python\SAGE\.cache\sfx_bake` and none of B4's flags. Unless the line was changed in the Inspector without a save, Unity plays today's engine with no Flow upgrade at all, while every report of this push has assumed B4.
+
+### What the round found
+
+The guard fixed the failure it was built for, and the confirmation found a different one. On the p11 takes the guarded pool clears five of p11's six counted rows offline; `scratchpad/verify12/offline_six.py` reproduces the build's guarded score on 14 rows from the saved embeddings, among them the tank shell at 1.00, the sneaker at 0.99 and the fishtank at 0.66. On the new data only one of the pick's three counted rows comes from the pool. y_jaw_breaker_swing keeps "jaw swing" in every subset, though those takes score 0.02 by themselves and the clean caption's 0.34. The other two are SA3 shotguns, where no pool runs and the clean caption only drops a take number. SA3 moves a long way on one token: "shotty blam v 2" scores 0.97 and "shotty blam" 0.18, "boomstick blast 01" 0.81 and "boomstick blast" 0.61. These are slang names SA3 does not know, and the tokens that happened to steer it were the ones cleaning removes. Over the 18 SA3 rows the pick averages -0.057 against B4.
+
+The pool's gain is still the canonical caption. On the 53 two-candidate Woosh rows where the pool mostly keeps it, the pick averages +0.232 over B4, 34 rows up and 8 down; on the 23 where the clean caption dominates it averages +0.052, and the 23 single-candidate rows do not move. The guarded pool keeps less of that gain on the new data, 66 rows at 0.9 and +0.053 over B4, and it would carry four counted rows against B4 (y_dynamite_stick_bang_01 -0.35, y_rpg7_warhead_hit -0.51 and both shotguns). Ranking every take against the typed name discards the canonical caption exactly where it helps: y_fs_trainer_gym_floor_r is 1.00 under the pick and 0.04 under G, y_cannonball_jump_lake 1.00 and 0.20, y_menu_nav_clack_03 1.00 and 0.24. The two stages also disagree row by row on what the guard costs. b_window_rifle sat at 1.00 under A3 and 0.78 under A4 at 900-939, and here at 0.72 under the pick and 1.00 under G.
+
+Kept model codes did little. On the six decision rows whose names hold a code, clean K minus B4 averages -0.062: y_glock19_pop_indoor rose from 0.16 to 0.33 and y_rpg7_warhead_hit fell from 0.71 to 0.20, and the pick's 0.99 on the Glock comes from the canonical "gun shot". On the 40 FRESH8 rows where cleaning changes the prompt or the verifier text, K minus B4 is -0.031 [-0.101, +0.031]. Name cleaning alone is a coin toss on odd names, and on the gun tier it is the larger risk of the two caption changes.
+
+Routing by meaning helped where a word misled the families router and hurt where the writer misread a name. At 900-939 z_heel_click_parquet rose from 0.03 on SA3 to 0.95 and 0.98 on Woosh and b_explosion from 0.87 to 1.00, while z_ui_click_confirm_02 fell from 1.00 on SA3 to 0.64 and 0.67 and z_handcannon_discharge_v3 fell to 0.00 on SA3 with its typed words, where A3 had reached 0.92 through the canonical "gun shot" on Flow. Both meaning arms were rejected on those two rows, and the lever stays behind its flag.
+
+The savings are the round's one clean result. They changed no sample on 320 of 320 takes in 8 jobs at 940-979 or on 1,680 of 1,680 takes in the selection's 42 paired jobs at 900-939 (rechecked here from the saved arrays), B4's scripted session now peaks at 11,008 MiB where it reached 11,511 at HEAD, and they reach any line with `--woosh-upgrade flow` without a new flag.
+
+### Every confirmation row
+
+Point values are this recheck's (equal to the round's); intervals are the round's 95% bootstraps under the rule's seed, with the guard verdict on the pick minus B4. G is the guarded pool, context only. Causes follow rule 7 of `RULE_P12_confirm.txt` for the pick, applied mechanically with the first label primary; "today's engine X" and "B4 X" mark rows where that configuration beats the pick by more than 0.10, and "V wrong way" marks rows where the verifier's AUC for the all-judge hit on the pick's dominant candidate falls under 0.5.
+
+| row | set | type | today H | B4 [95%] | clean K | pick [95%] | guarded G | pick minus B4 [paired 95%] | cause if under |
+|---|---|---|---|---|---|---|---|---|---|
+| b_step_water | known | footstep | 0.41 | 0.26 [0.07, 0.52] | 0.26 | 0.09 [0.02, 0.20] | 0.25 | -0.17 [-0.40, +0.01] noise | wrong sound (PANNs hears Drip in 16 of 40, all-judge hit 0.00); today's engine 0.41; B4 0.26 |
+| g_footstep_water | known | footstep | 0.41 | 0.26 [0.07, 0.51] | 0.26 | 0.09 [0.02, 0.22] | 0.25 | -0.17 [-0.39, +0.01] noise | wrong sound (PANNs hears Drip in 16 of 40, all-judge hit 0.00); today's engine 0.41; B4 0.26 |
+| g_melee_hit_body | known | punch | 0.23 | 0.61 [0.23, 0.94] | 0.61 | 0.64 [0.28, 0.95] | 0.65 | +0.02 [-0.43, +0.47] | take, interval to 0.95 |
+| b_snow_step | known | footstep | 0.98 | 0.43 [0.15, 0.75] | 0.43 | 0.68 [0.40, 1.00] | 0.75 | +0.25 [-0.05, +0.56] | soft class (real snow 0.88, pick more than 0.10 under it); take, interval to 1.00; today's engine 0.98 |
+| b_window_rifle | known | glass_break | 0.77 | 1.00 [0.81, 1.00] | 1.00 | 0.72 [0.44, 1.00] | 1.00 | -0.28 [-0.51, +0.00] noise | take, interval to 1.00; B4 1.00 |
+| b_step_wood | known | footstep | 0.68 | 0.76 [0.29, 1.00] | 0.76 | 0.76 [0.29, 1.00] | 0.76 | +0.00 [+0.00, +0.00] | soft class (real wood 0.84); take, interval to 1.00 |
+| g_footstep_wood | known | footstep | 0.68 | 0.76 [0.30, 1.00] | 0.76 | 0.76 [0.30, 1.00] | 0.76 | +0.00 [+0.00, +0.00] | soft class (real wood 0.84); take, interval to 1.00 |
+| b_glass_shatter | known | glass_break | 0.71 | 0.76 [0.43, 0.97] | 0.76 | 0.82 [0.50, 1.00] | 0.99 | +0.06 [-0.25, +0.38] | soft class (real drinking glass 0.47); take, interval to 1.00 |
+| g_glass_shatter_glass | known | glass_break | 0.68 | 0.84 [0.53, 1.00] | 0.84 | 0.84 [0.53, 1.00] | 0.84 | +0.00 [+0.00, +0.00] | take, interval to 1.00 |
+| b_step_stone | known | footstep | 0.40 | 0.85 [0.47, 1.00] | 0.85 | 0.85 [0.47, 1.00] | 0.85 | +0.00 [+0.00, +0.00] | take, interval to 1.00 |
+| g_footstep_stone | known | footstep | 0.40 | 0.85 [0.47, 1.00] | 0.85 | 0.85 [0.47, 1.00] | 0.85 | +0.00 [+0.00, +0.00] | take, interval to 1.00 |
+| g_break_window | known | glass_break | 0.71 | 0.89 [0.59, 1.00] | 0.89 | 0.89 [0.59, 1.00] | 0.89 | +0.00 [+0.00, +0.00] | take, interval to 1.00 |
+| b_explosion | known | explosion (SA3) | 1.00 | 0.90 [0.70, 1.00] | 0.90 | 0.90 [0.70, 1.00] | 0.90 | +0.00 [+0.00, +0.00] |  |
+| b_pistol_shot | known | pistol (SA3) | 1.00 | 0.93 [0.79, 1.00] | 0.93 | 0.93 [0.79, 1.00] | 0.93 | +0.00 [+0.00, +0.00] |  |
+| g_shoot_pistol | known | pistol (SA3) | 1.00 | 0.93 [0.79, 1.00] | 0.93 | 0.93 [0.79, 1.00] | 0.93 | +0.00 [+0.00, +0.00] |  |
+| b_dog_bark | known | dog_bark | 0.15 | 0.96 [0.87, 1.00] | 0.96 | 0.99 [0.98, 1.00] | 1.00 | +0.03 [-0.00, +0.12] |  |
+| g_car_door_slam_car | known | door_slam | 0.35 | 1.00 [0.99, 1.00] | 1.00 | 1.00 [0.99, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| b_car_door_slam | known | door_slam | 0.90 | 1.00 [0.84, 1.00] | 1.00 | 1.00 [0.84, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| b_bottle_shot_pistol | known | glass_break | 0.55 | 0.00 [0.00, 0.00] | 0.00 | 1.00 [0.76, 1.00] | 0.05 | +1.00 [+0.76, +1.00] |  |
+| b_car_horn | known | horn | 0.10 | 0.98 [0.67, 1.00] | 0.98 | 1.00 [1.00, 1.00] | 1.00 | +0.02 [+0.00, +0.33] |  |
+| b_door_creak | known | door_open | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| b_keyboard_typing | known | ui_click | 0.42 | 0.99 [0.65, 1.00] | 0.99 | 1.00 [1.00, 1.00] | 1.00 | +0.01 [+0.00, +0.35] |  |
+| b_punch | known | punch | 0.58 | 1.00 [0.75, 1.00] | 1.00 | 1.00 [0.75, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| b_rifle_shot | known | rifle (SA3) | 0.99 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| b_step_grass | known | footstep | 0.27 | 1.00 [0.94, 1.00] | 1.00 | 1.00 [0.94, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| b_step_gravel | known | footstep | 1.00 | 1.00 [0.74, 1.00] | 1.00 | 1.00 [0.74, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| b_sword_clash | known | sword | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_bullet_impact_glass | known | glass_break | 1.00 | 1.00 [0.94, 1.00] | 1.00 | 1.00 [0.75, 1.00] | 1.00 | +0.00 [-0.23, +0.01] |  |
+| g_car_horn_car | known | horn | 0.00 | 1.00 [0.98, 1.00] | 1.00 | 1.00 [0.98, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_dog_bark_dog | known | dog_bark | 0.78 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_door_creak_wood | known | door_open | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_explosion_large_debris | known | explosion (SA3) | 1.00 | 1.00 [0.97, 1.00] | 1.00 | 1.00 [0.97, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_footstep_gravel | known | footstep | 1.00 | 1.00 [0.73, 1.00] | 1.00 | 1.00 [0.73, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_footsteps_concrete_concrete | known | footstep | 0.82 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_keyboard_click_plastic | known | ui_click (SA3) | 0.38 | 1.00 [0.80, 1.00] | 1.00 | 1.00 [0.80, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_pistol_shot_9mm | known | pistol (SA3) | 0.97 | 1.00 [0.97, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.03] |  |
+| g_playerfootstep_snow | known | footstep | 0.85 | 0.60 [0.22, 1.00] | 0.60 | 1.00 [0.90, 1.00] | 1.00 | +0.40 [+0.00, +0.77] |  |
+| g_punch_body | known | punch | 0.58 | 1.00 [0.75, 1.00] | 1.00 | 1.00 [0.75, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_shoot_rifle | known | rifle (SA3) | 0.99 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_shotgun_fire_shotgun | known | shotgun (SA3) | 0.86 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_splash_water | known | splash | 0.65 | 1.00 [0.82, 1.00] | 1.00 | 1.00 [0.82, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| g_sword_clash_steel | known | sword | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| w:b_drip_puddle | known | water | 1.00 | 1.00 [0.88, 1.00] | 1.00 | 1.00 [0.88, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| w:b_step_water | known | water | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| w:g_footstep_water | known | water | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| w:g_splash_water | known | water | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| w:g_water_drip_water | known | water | 1.00 | 1.00 [0.88, 1.00] | 1.00 | 1.00 [0.88, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_anchor_drop_harbor_01 | FRESH8 | splash | 0.00 | 0.00 [0.00, 0.00] | 0.00 | 0.00 [0.00, 0.00] | 0.00 | +0.00 [+0.00, +0.00] | wrong sound (AST hears Speech in 14 of 40, all-judge hit 0.00) |
+| y_knuckle_sandwich_r | FRESH8 | punch | 0.19 | 0.00 [0.00, 0.00] | 0.00 | 0.00 [0.00, 0.00] | 0.00 | +0.00 [+0.00, +0.00] | wrong sound (AST hears Sound effect in 24 of 40, all-judge hit 0.00); today's engine 0.19 |
+| y_mirror_crack_fall_01 | FRESH8 | glass_break (SA3) | 0.00 | 0.00 [0.00, 0.00] | 0.00 | 0.00 [0.00, 0.00] | 0.00 | +0.00 [+0.00, +0.00] | wrong sound (AST hears Slap, smack in 28 of 40, all-judge hit 0.00) |
+| y_rickshaw_parp_02 | FRESH8 | horn | 0.07 | 0.00 [0.00, 0.00] | 0.00 | 0.00 [0.00, 0.00] | 0.00 | +0.00 [+0.00, +0.00] | wrong sound (AST hears Vehicle in 37 of 40, all-judge hit 0.00) |
+| y_stiletto_tile_lobby | FRESH8 | footstep | 0.03 | 0.00 [0.00, 0.00] | 0.00 | 0.00 [0.00, 0.01] | 0.00 | +0.00 [+0.00, +0.01] | wrong sound (PANNs hears Silence in 12 of 40, all-judge hit 0.03); V wrong way (AUC 0.23) |
+| y_jaw_breaker_swing | FRESH8 | punch | 0.47 | 0.22 [0.05, 0.48] | 0.22 | 0.02 [0.00, 0.06] | 0.15 | -0.20 [-0.46, -0.03] counted | wrong sound (AST hears Sound effect in 18 of 40, all-judge hit 0.00); today's engine 0.47; B4 0.22 |
+| y_snubby_crack_hvy_r | FRESH8 | pistol (SA3) | 0.00 | 0.03 [0.00, 0.08] | 0.03 | 0.03 [0.00, 0.08] | 0.03 | +0.00 [-0.05, +0.06] | wrong sound (AST hears Static in 9 of 40, all-judge hit 0.00) |
+| y_ak47_single_crack_l | FRESH8 | rifle (SA3) | 0.71 | 0.06 [0.00, 0.15] | 0.03 | 0.03 [0.00, 0.09] | 0.03 | -0.03 [-0.15, +0.06] | wrong sound (AST hears Tick in 12 of 40, all-judge hit 0.00); today's engine 0.71 |
+| w:y_anchor_drop_harbor_01 | FRESH8 | water | 0.00 | 0.08 [0.00, 0.26] | 0.09 | 0.08 [0.00, 0.27] | 0.08 | +0.01 [-0.21, +0.23] | wrong sound (water judges' joint hit 0.03) |
+| y_springfield03_crack | FRESH8 | rifle (SA3) | 0.57 | 0.09 [0.00, 0.21] | 0.09 | 0.09 [0.00, 0.15] | 0.09 | -0.00 [-0.15, +0.12] | wrong sound (AST hears Tick in 14 of 40, all-judge hit 0.00); today's engine 0.57 |
+| y_creek_crossing_boots_03 | FRESH8 | footstep | 0.99 | 0.00 [0.00, 0.00] | 0.04 | 0.11 [0.01, 0.31] | 0.04 | +0.11 [+0.01, +0.31] | wrong sound (PANNs hears Drip in 18 of 40, all-judge hit 0.03); today's engine 0.99; V wrong way (AUC 0.03) |
+| y_gas_canister_blowup | FRESH8 | explosion | 0.00 | 0.23 [0.00, 0.47] | 0.23 | 0.14 [0.00, 0.32] | 0.23 | -0.09 [-0.22, +0.00] | wrong sound (AST hears Sound effect in 17 of 40, all-judge hit 0.10); V wrong way (AUC 0.12) |
+| y_shotty_blam_v2 | FRESH8 | shotgun (SA3) | 0.23 | 0.97 [0.91, 1.00] | 0.18 | 0.18 [0.05, 0.30] | 0.18 | -0.80 [-0.90, -0.66] counted | model (SA3 clean caption); B4 0.97 |
+| y_creep_floorboards_old | FRESH8 | footstep | 0.44 | 0.10 [0.00, 0.28] | 0.10 | 0.19 [0.02, 0.39] | 0.10 | +0.08 [-0.10, +0.25] | wrong sound (PANNs hears Music in 7 of 40, all-judge hit 0.03); today's engine 0.44 |
+| y_wpn_revolver_bang_04 | FRESH8 | pistol | 0.00 | 0.24 [0.01, 0.48] | 0.00 | 0.22 [0.07, 0.47] | 0.03 | -0.01 [-0.33, +0.33] | wrong sound (PANNs hears Hammer in 14 of 40, all-judge hit 0.00) |
+| y_kayak_capsize_river | FRESH8 | splash | 0.00 | 0.13 [0.00, 0.36] | 0.13 | 0.34 [0.08, 0.53] | 0.20 | +0.21 [+0.01, +0.33] | wrong sound (AST hears Sound effect in 10 of 40, all-judge hit 0.03) |
+| y_boot_scuff_concrete_01 | FRESH8 | footstep | 0.13 | 0.21 [0.04, 0.42] | 0.20 | 0.44 [0.19, 0.62] | 0.52 | +0.23 [-0.12, +0.50] | wrong sound (PANNs hears Scrape in 7 of 40, all-judge hit 0.07); V wrong way (AUC 0.23) |
+| y_rpg7_warhead_hit | FRESH8 | explosion | 0.11 | 0.71 [0.38, 0.98] | 0.20 | 0.45 [0.20, 0.70] | 0.20 | -0.26 [-0.64, +0.20] noise | wrong sound (AST hears Music in 25 of 40, all-judge hit 0.10); B4 0.71 |
+| w:y_puddle_stomp_kid_02 | FRESH8 | water | 0.03 | 0.31 [0.08, 0.65] | 0.34 | 0.46 [0.18, 0.68] | 0.38 | +0.15 [-0.25, +0.41] | model or shape (takes 0.72 s long, 40 dB decay 0.52 s); V wrong way (AUC 0.26) |
+| y_slipper_shuffle_lino_02 | FRESH8 | footstep | 0.58 | 0.29 [0.07, 0.57] | 0.29 | 0.46 [0.19, 0.72] | 0.40 | +0.16 [-0.21, +0.52] | model or shape (takes 0.98 s long, 40 dB decay 0.42 s); today's engine 0.58; V wrong way (AUC 0.46) |
+| y_storefront_pane_bust | FRESH8 | glass_break | 0.00 | 0.06 [0.00, 0.17] | 0.06 | 0.57 [0.23, 0.88] | 0.06 | +0.51 [+0.18, +0.83] | wrong sound (AST hears Coin (dropping) in 25 of 40, all-judge hit 0.30) |
+| y_chandelier_crash_ballroom | FRESH8 | glass_break | 0.23 | 0.00 [0.00, 0.00] | 0.00 | 0.60 [0.31, 0.76] | 0.53 | +0.60 [+0.31, +0.76] | wrong sound (PANNs hears Music in 33 of 40, all-judge hit 0.23) |
+| y_boomstick_blast_01 | FRESH8 | shotgun (SA3) | 0.66 | 0.81 [0.68, 0.91] | 0.61 | 0.61 [0.46, 0.74] | 0.61 | -0.20 [-0.38, -0.03] counted | wrong sound (AST hears Explosion in 25 of 40, all-judge hit 0.45); B4 0.81 |
+| y_jar_drop_kitchen_break | FRESH8 | glass_break | 0.93 | 0.77 [0.46, 1.00] | 0.77 | 0.63 [0.36, 0.89] | 0.75 | -0.14 [-0.49, +0.24] noise | model or shape (takes 0.97 s long, 40 dB decay 0.51 s); today's engine 0.93; B4 0.77 |
+| y_scimitar_ring_hit | FRESH8 | sword | 0.03 | 0.00 [0.00, 0.00] | 0.00 | 0.63 [0.36, 0.92] | 0.13 | +0.63 [+0.36, +0.92] | take, interval to 0.92 |
+| y_knockout_hook_heavy | FRESH8 | punch | 0.51 | 0.24 [0.01, 0.56] | 0.24 | 0.69 [0.44, 0.88] | 0.24 | +0.45 [+0.08, +0.77] | model or shape (takes 0.68 s long, 40 dB decay 0.44 s) |
+| y_ftsteps_cobble_run_02 | FRESH8 | footstep | 0.36 | 0.53 [0.23, 0.82] | 0.75 | 0.71 [0.33, 1.00] | 0.73 | +0.18 [-0.32, +0.67] | take, interval to 1.00 |
+| y_claymore_trip_blast | FRESH8 | explosion (SA3) | 0.14 | 0.73 [0.53, 0.86] | 0.73 | 0.73 [0.53, 0.86] | 0.73 | +0.00 [+0.00, +0.00] | model (SA3 clean caption) |
+| y_pc_sandal_boardwalk_l | FRESH8 | footstep | 0.03 | 0.00 [0.00, 0.00] | 0.10 | 0.73 [0.35, 1.00] | 0.68 | +0.73 [+0.35, +1.00] | take, interval to 1.00 |
+| y_puddle_stomp_kid_02 | FRESH8 | footstep | 0.04 | 0.54 [0.16, 0.78] | 0.86 | 0.81 [0.44, 1.00] | 0.86 | +0.27 [-0.11, +0.72] | take, interval to 1.00 |
+| y_dynamite_stick_bang_01 | FRESH8 | explosion | 0.08 | 0.94 [0.73, 1.00] | 0.54 | 0.82 [0.55, 0.95] | 0.58 | -0.12 [-0.41, +0.11] noise | wrong sound (PANNs hears Vehicle in 24 of 40, all-judge hit 0.62); take, interval to 0.95; B4 0.94 |
+| y_terrier_yelp_short | FRESH8 | dog_bark | 0.28 | 0.90 [0.72, 1.00] | 0.90 | 0.87 [0.70, 0.98] | 0.90 | -0.03 [-0.09, +0.04] | wrong sound (PANNs hears Animal in 21 of 40, all-judge hit 0.90); take, interval to 0.98; V wrong way (AUC 0.29) |
+| y_gate_hinge_creak_02 | FRESH8 | door_open | 0.91 | 0.30 [0.11, 0.57] | 0.54 | 0.89 [0.69, 1.00] | 0.56 | +0.60 [+0.32, +0.81] | take, interval to 1.00; V wrong way (AUC 0.49) |
+| y_greenhouse_panel_smashed_r | FRESH8 | glass_break | 0.32 | 0.84 [0.51, 1.00] | 1.00 | 0.92 [0.66, 1.00] | 1.00 | +0.08 [-0.15, +0.39] |  |
+| w:y_bog_slog_waders_02 | FRESH8 | water | 0.00 | 1.00 [1.00, 1.00] | 1.00 | 0.96 [0.76, 1.00] | 0.96 | -0.04 [-0.24, +0.00] |  |
+| y_bog_slog_waders_02 | FRESH8 | footstep | 0.27 | 0.40 [0.11, 0.72] | 0.22 | 0.97 [0.64, 1.00] | 0.93 | +0.57 [+0.16, +0.84] |  |
+| y_office_entrance_slammed | FRESH8 | door_slam | 0.46 | 0.79 [0.55, 0.99] | 0.79 | 0.97 [0.91, 1.00] | 0.81 | +0.18 [+0.01, +0.38] |  |
+| y_bottle_smash_barfight | FRESH8 | glass_break | 0.32 | 1.00 [0.73, 1.00] | 1.00 | 0.97 [0.75, 1.00] | 0.96 | -0.03 [-0.14, +0.11] |  |
+| y_melee_uppercut_chin_l | FRESH8 | punch | 0.31 | 0.54 [0.21, 0.91] | 1.00 | 0.98 [0.87, 1.00] | 1.00 | +0.44 [+0.06, +0.76] |  |
+| y_glock19_pop_indoor | FRESH8 | pistol | 0.00 | 0.16 [0.00, 0.36] | 0.33 | 0.99 [0.78, 1.00] | 0.88 | +0.82 [+0.59, +0.98] |  |
+| y_fridge_door_whump_01 | FRESH8 | door_slam | 0.39 | 0.94 [0.83, 1.00] | 0.99 | 0.99 [0.97, 1.00] | 0.99 | +0.05 [+0.00, +0.16] |  |
+| y_npc_sidearm_discharge_03 | FRESH8 | pistol | 0.00 | 1.00 [0.88, 1.00] | 0.91 | 1.00 [0.88, 1.00] | 0.95 | -0.00 [-0.10, +0.11] |  |
+| y_screen_door_clack_r | FRESH8 | door_slam | 0.68 | 0.90 [0.65, 0.99] | 0.94 | 1.00 [0.99, 1.00] | 0.94 | +0.10 [+0.01, +0.35] |  |
+| y_truck_cab_door_thud | FRESH8 | door_slam | 0.64 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | -0.00 [-0.00, +0.00] |  |
+| w:y_cannonball_jump_lake | FRESH8 | water | 0.04 | 0.64 [0.27, 0.93] | 0.64 | 1.00 [1.00, 1.00] | 0.64 | +0.36 [+0.07, +0.73] |  |
+| w:y_creek_crossing_boots_03 | FRESH8 | water | 0.13 | 0.88 [0.57, 1.00] | 0.78 | 1.00 [1.00, 1.00] | 0.78 | +0.12 [+0.00, +0.43] |  |
+| w:y_kayak_capsize_river | FRESH8 | water | 0.04 | 0.98 [0.84, 1.00] | 0.98 | 1.00 [0.89, 1.00] | 0.98 | +0.02 [-0.02, +0.09] |  |
+| y_blade_unsheathe_fast | FRESH8 | sword | 0.58 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_bloodhound_bay_loud | FRESH8 | dog_bark | 0.23 | 0.94 [0.81, 1.00] | 0.94 | 1.00 [1.00, 1.00] | 0.99 | +0.06 [+0.00, +0.19] |  |
+| y_brawler_smack_face | FRESH8 | punch | 0.82 | 0.24 [0.00, 0.57] | 0.24 | 1.00 [1.00, 1.00] | 1.00 | +0.76 [+0.43, +1.00] |  |
+| y_cannonball_jump_lake | FRESH8 | splash | 0.00 | 0.20 [0.02, 0.34] | 0.20 | 1.00 [0.89, 1.00] | 0.20 | +0.80 [+0.63, +0.98] |  |
+| y_checkbox_toggle_on | FRESH8 | ui_click | 0.77 | 1.00 [0.91, 1.00] | 1.00 | 1.00 [0.71, 1.00] | 1.00 | +0.00 [-0.28, +0.06] |  |
+| y_closet_ajar_slow | FRESH8 | door_open | 0.97 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_corgi_bork_happy | FRESH8 | dog_bark | 0.03 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_frag_nade_boom_02 | FRESH8 | explosion | 0.00 | 0.18 [0.00, 0.44] | 0.00 | 1.00 [0.91, 1.00] | 0.96 | +0.82 [+0.55, +0.99] |  |
+| y_fs_trainer_gym_floor_r | FRESH8 | footstep | 0.00 | 0.22 [0.00, 0.48] | 0.04 | 1.00 [0.81, 1.00] | 0.04 | +0.78 [+0.48, +1.00] |  |
+| y_guard_hound_alert_r | FRESH8 | dog_bark | 0.08 | 0.65 [0.41, 0.83] | 0.64 | 1.00 [1.00, 1.00] | 1.00 | +0.35 [+0.17, +0.59] |  |
+| y_keypad_digit_push_r | FRESH8 | ui_click | 0.66 | 1.00 [1.00, 1.00] | 0.87 | 1.00 [0.80, 1.00] | 0.87 | +0.00 [-0.20, +0.00] |  |
+| y_longsword_parry_clash | FRESH8 | sword | 0.93 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_march_dirt_road_squad | FRESH8 | footstep | 0.44 | 1.00 [0.95, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.05] |  |
+| y_menu_nav_clack_03 | FRESH8 | ui_click | 0.37 | 0.15 [0.01, 0.35] | 0.23 | 1.00 [0.78, 1.00] | 0.24 | +0.85 [+0.57, +0.98] |  |
+| y_mosin91_bolt_shot | FRESH8 | rifle (SA3) | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_mouse_lmb_press | FRESH8 | ui_click | 0.35 | 1.00 [0.69, 1.00] | 1.00 | 1.00 [0.70, 1.00] | 1.00 | +0.00 [-0.25, +0.24] |  |
+| y_npc_tiptoe_carpet_03 | FRESH8 | footstep | 0.48 | 0.00 [0.00, 0.00] | 0.00 | 1.00 [0.72, 1.00] | 0.91 | +1.00 [+0.72, +1.00] |  |
+| y_riot_shotgun_discharge | FRESH8 | shotgun (SA3) | 0.96 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_sprint_gravel_path_v3 | FRESH8 | footstep | 1.00 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [0.94, 1.00] | 1.00 | +0.00 [-0.06, +0.00] |  |
+| y_toggle_switch_flick_r | FRESH8 | ui_click | 0.84 | 0.95 [0.61, 1.00] | 0.85 | 1.00 [0.80, 1.00] | 1.00 | +0.05 [-0.17, +0.37] |  |
+| y_truck_airhorn_long | FRESH8 | horn | 0.17 | 0.87 [0.55, 1.00] | 0.87 | 1.00 [1.00, 1.00] | 1.00 | +0.13 [+0.00, +0.45] |  |
+| y_vault_hatch_unlatch | FRESH8 | door_open | 0.76 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+| y_veh_klaxon_old_02 | FRESH8 | horn | 0.66 | 1.00 [1.00, 1.00] | 1.00 | 1.00 [1.00, 1.00] | 1.00 | +0.00 [+0.00, +0.00] |  |
+
+Judge-capped rows of these sets, kept out of every count. FRESH8 holds no metal step and no rain, so the five capped rows are all known ones. b_iron_boots_step reaches 0.92 under the pick for the same reason as in p11: the canonical caption drops "iron boot" and asks for a plain stone footstep.
+
+| row | type | today H | B4 | clean K | pick [95%] | guarded G | cap |
+|---|---|---|---|---|---|---|---|
+| b_iron_boots_step | footstep | 0.13 | 0.00 | 0.00 | 0.92 [0.60, 1.00] | 0.50 | real metal steps 0.17 |
+| b_step_metal | footstep | 0.14 | 0.00 | 0.00 | 0.00 [0.00, 0.00] | 0.00 | real metal steps 0.17 |
+| g_footstep_metal | footstep | 0.14 | 0.00 | 0.00 | 0.00 [0.00, 0.00] | 0.00 | real metal steps 0.17 |
+| w:b_rain_tin_roof | water | 0.30 | 0.03 | 0.03 | 0.06 [0.00, 0.11] | 0.06 | real rain 0.66 on the water judge |
+| w:g_rain_on_roof_metal | water | 0.00 | 0.00 | 0.00 | 0.03 [0.00, 0.13] | 0.01 | real rain 0.66 on the water judge |
+
+### What remains, and why
+
+Under the pick 45 decision rows stay under 0.9, and under B4 59. Wrong sound is the largest group (24, 22 of them FRESH8), followed by take luck (11), model or shape (6) and soft judge classes (4). The pick turns 18 of B4's misses into rows at 0.9 and loses 4 (b_window_rifle, y_dynamite_stick_bang_01, y_terrier_yelp_short and y_shotty_blam_v2). Thirty-six decision rows reach 0.9 under no configuration of this round, today's engine included, and six stay at or under 0.10 in all five: y_stiletto_tile_lobby, y_rickshaw_parp_02, y_anchor_drop_harbor_01 and its water row, y_snubby_crack_hvy_r and y_mirror_crack_fall_01.
+
+The wrong-sound rows are names whose words point somewhere else or that the models do not read, and the canonical writer misreads many of the same names: "rickshaw rumble" for a parp, "tile impact" for a stiletto step, "knuckle hit" for a knuckle sandwich, "water splash" for a creek crossing in boots, "impact" and "explosion" for the two slang shotguns. The gun tier is where this costs most. AK47 and Springfield03 score 0.03 and 0.09 on SA3 from the clean caption, where today's phrasebook reaches 0.71 and 0.57, and the writer names AK47 and the snub revolver "gun shot", a name that never reaches SA3. Sending its name to the gun tier would help those rows and hurt the shotguns it calls an impact and an explosion, so that is a trade for a rule written in advance, with no table behind it.
+
+Eleven rows depend on the take, with intervals that reach 0.9, and the verifier ranks the pick's dominant takes the wrong way on 15 of 81 Woosh rows (y_creek_crossing_boots_03 at AUC 0.03, y_gas_canister_blowup at 0.12). Labels near the line move between seed blocks again: b_window_rifle went from 1.00 under A3 at 900-939 to 0.72 here, both wood steps from 0.66 at 860-899 to 0.76, both water steps from 0.34 to 0.09. Four rows sit on soft judge classes (wood steps at 0.84 of real, snow 0.88, drinking glass 0.47), and today's engine still beats the pick on b_snow_step (0.98 against 0.68). Six carry the model-or-shape label, among them y_shotty_blam_v2, y_claymore_trip_blast on SA3 and y_jar_drop_kitchen_break, where today's engine has 0.93.
+
+The next round has two generic fixes to test. Leaving `+clean` off SA3 captions would have made every SA3 row equal B4's by construction and removed two of the three counted rows; a floor that drops a pool candidate whose takes score near zero against the clean text addresses the third. Both have to be chosen on new variants under a rule written first: this round's confirmation data shows where the problems are and so can no longer test the fixes.
+
+### Runtime
+
+The pick's line ran under Unity's environment at a desktop load of 1,243 MiB. Startup peaked at 10,526 MiB (226 to spare), the peak after READY reached 10,854 (567 to spare) and READY sat at 9,588, 590 under G0's plus 150. First hits on guns came 5.35 ms above G0, over the 5 ms bound, and on Woosh 0.85 ms above. B4 in the same sitting measured +4.32 and +0.52 and passes every bound, and the same pick line measured +4.4 ms in the selection, so the bound sits inside run-to-run noise; by the rule it still fails. The scripted session peaked at 11,009 MiB for the pick (412 to spare) and 11,008 for B4 (413). The pick upgrades more slowly: first hit to swap has a median of 81.6 s against 76.6 s for B4, the session lag a median of 31.2 s against 20.2 s, Flow takes make up 15 of 84 first-pass Woosh plays against 20 of 84, and the lowest free commit falls to 3.56 GB from 4.96. G0 exits with code 1 from upgrade_gate's fixed 9,830 MiB READY bound (its READY was 10,028), which decides nothing. D: holds 24.5 GiB after this check.
+
+### Unity launcher for the p12 round
+
+The pick was not confirmed, so the launcher should run B4. The scene saved on October 17 does not: its `arguments` field stops at `--cache-dir`, which runs today's engine. Leave `pythonExe` (`D:\Python\SAGE\.venv214\Scripts\python.exe`), `workingDir` (`D:\Python\SAGE`), `hfHome` (`F:\AI\cache\hf`) and `port` (8765) as the scene carries them, set `arguments` to the line below and save the scene:
+
+```
+D:\Python\sarge-research\modal\runpinned.py scripts\run_sidecar.py --generator hybrid --realtime --stereo --amp --detailed-prompts --learn --cache-dir D:\Python\SAGE\.cache\sfx_bake --prompts template:caption+tt --woosh-upgrade flow --woosh-upgrade-solver midpoint:16 --woosh-upgrade-best 4
+```
+
+The VRAM savings now come with `--woosh-upgrade flow` by default and serve the same audio sample for sample; `--woosh-upgrade-vram-save none` turns them off. Every other p12 flag stays off in this line: routing stays `families`, and there is no pool, no guard and no `+clean`. The pick's line, kept for a later round, swaps `--prompts template:caption+tt` for `--prompts template:caption+tt+clean` and adds `--scene --woosh-upgrade-pool canon`.

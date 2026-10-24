@@ -612,7 +612,7 @@ def _rest_cmd(monkeypatch, argv):
 
 def test_sidecar_new_flags_default_off_and_reach_the_worker_only_when_set(monkeypatch, tmp_path):
     base = ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "midpoint:16",
-            "--woosh-upgrade-best", "4"]
+            "--woosh-upgrade-best", "4", "--woosh-upgrade-vram-save", "none"]
     cmd, cap = _rest_cmd(monkeypatch, base)
     assert "--upgrade-score" not in cmd and "prompt_pool" not in cap and "writer" not in cap
     ev, _ = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-score", "event-min"])
@@ -694,7 +694,8 @@ def test_flow_load_waits_for_room_on_the_card_only_when_asked(ws, monkeypatch):
 
 
 def test_sidecar_vram_flag_reaches_the_worker_only_when_set(monkeypatch):
-    base = ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "midpoint:16"]
+    base = ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "midpoint:16",
+            "--woosh-upgrade-vram-save", "none"]
     cmd, _ = _rest_cmd(monkeypatch, base)
     assert "--upgrade-vram-free" not in cmd
     got, _ = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-vram-free", "1500"])

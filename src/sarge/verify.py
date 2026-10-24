@@ -45,3 +45,11 @@ def pick(scored):
 
 def choose(means):
     return max(range(len(means)), key=lambda i: (means[i], -i))
+
+
+def choose_guarded(means):
+    return max(range(len(means)), key=lambda i: (means[i], i > 0, -i))
+
+
+def guard_texts(style):
+    return dict(style_texts(style) if style else {"loop": False}, clean=True)

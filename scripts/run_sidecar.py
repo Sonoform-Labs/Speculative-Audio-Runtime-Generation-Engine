@@ -50,6 +50,8 @@ SCORE_MODES = ("request", "event-min")
 WRITER_GROUND = ("off", "anchors", "words", "caption")
 UPGRADE_SOLVERS = ("dopri5", "rk4:8", "rk4:16", "midpoint:16", "midpoint:32")
 VRAM_SAVES = ("share", "encoder")
+VRAM_AUTO, VRAM_NONE = "auto", ("none", "off")
+ROUTE_MODES = ("families", "words", "class", "single", "meaning")
 
 
 def check_first(style):
@@ -100,6 +102,7 @@ def start_woosh(args, hold=False):
     if not os.path.isfile(args.woosh_python):
         raise SystemExit("woosh python not found: %s" % args.woosh_python)
     first, final = woosh_styles(args)
+    saves = vram_saves(getattr(args, "woosh_upgrade_vram_save", ""), getattr(args, "woosh_upgrade", "off"))
     pin = os.path.join(os.path.dirname(REPO), "sarge-research", "modal", "runpinned.py")
     cmd = [args.woosh_python, "-u"] + ([pin] if os.path.isfile(pin) else []) + [
         os.path.join(REPO, "scripts", "woosh_server.py"), "--model", args.woosh_model,
@@ -120,8 +123,8 @@ def start_woosh(args, hold=False):
         if getattr(args, "woosh_upgrade_score", "request") != "request" else []) + (
         ["--upgrade-vram-free", str(args.woosh_upgrade_vram_free)]
         if getattr(args, "woosh_upgrade_vram_free", 0) else []) + (
-        ["--upgrade-vram-save", args.woosh_upgrade_vram_save]
-        if getattr(args, "woosh_upgrade_vram_save", "") else [])
+        ["--upgrade-vram-save", saves] if saves else []) + (
+        ["--upgrade-pool-guard"] if getattr(args, "woosh_upgrade_pool_guard", False) else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -267,12 +270,20 @@ def main(argv=None) -> int:
     ap.add_argument("--woosh-upgrade-vram-free", type=int, default=0,
                     help="--woosh-upgrade flow: the worker loads Flow only once the card reports at least this many "
                          "MiB free, so the upgrade waits for room on the GPU; 0 (default) loads as before")
-    ap.add_argument("--woosh-upgrade-vram-save", default="",
+    ap.add_argument("--woosh-upgrade-vram-save", default=VRAM_AUTO,
                     help="--woosh-upgrade flow: generic VRAM savings in the Woosh worker, a comma list of %s: share "
                          "captures the Flow graphs into the served DFlow graph pool (one lock already serialises "
                          "every render), about 50 MiB; encoder takes the autoencoder's encoder, which generation "
                          "never runs, off the card before the warm-up, about 440 MiB. Neither changes a sample of "
-                         "audio. Empty (default) changes nothing" % ", ".join(VRAM_SAVES))
+                         "audio. auto (default) turns both on whenever --woosh-upgrade flow is set and changes "
+                         "nothing without it; none keeps the worker as it was before the savings"
+                         % ", ".join(VRAM_SAVES))
+    ap.add_argument("--woosh-upgrade-pool-guard", action="store_true",
+                    help="--woosh-upgrade-pool: the verifier scores every candidate prompt and every take against "
+                         "the cleaned request words of the key (the typed names with file prefixes, take numbers and "
+                         "side marks removed), never against a pool source's own words, so a pool prompt is kept for "
+                         "a key only when its takes score at least as well as the key's own prompt against the typed "
+                         "name. Off by default")
     ap.add_argument("--woosh-upgrade-score", choices=SCORE_MODES, default="request",
                     help="--woosh-upgrade-best: request scores a candidate against the request words; event-min takes "
                          "the lower of that and the score against the event words alone. Default request")
@@ -306,12 +317,17 @@ def main(argv=None) -> int:
                          "+tt or -tt suffix forcing the SA3 prefix on or off; tuned (default): the prompts as before. "
                          "A prompt the game sends (prebake key or event field) wins over all of them on both routes"
                          % ", ".join(TEMPLATES))
-    ap.add_argument("--route", choices=["families", "words", "class", "single"], default="families",
+    ap.add_argument("--route", choices=list(ROUTE_MODES), default="families",
                     help="--generator hybrid: which sounds go to SA3 medium (guns) and which to Woosh. families "
                          "(default): substrings of sarge.amp.FAMILIES as before; words: a whole word of the event name "
                          "in routed.DISCHARGE_WORDS or routed.FIREARM_WORDS, or a firearm word in the material; class: "
                          "only a 'class' field sent by the game that names a --gun-class; single: every sound to "
-                         "--single-model")
+                         "--single-model; meaning: the CPU canonical writer answers per key whether the sound is a "
+                         "firearm discharge or firearm handling sound (one more field of its answer, kept in its "
+                         "store), and until a key has that answer the words rule runs on the cleaned names; a key "
+                         "whose answer moves it to the other model drops its held takes (or keeps them for the Flow "
+                         "upgrade when it moves to Woosh). The writer is the --woosh-upgrade-pool canon source or a "
+                         "--writer-style canon writer when one is set, else a canon writer that only routes")
     ap.add_argument("--gun-class", default="weapon",
                     help="--route class: comma-separated class values that go to SA3 medium (default weapon)")
     ap.add_argument("--single-model", choices=["woosh", "sa3"], default="woosh",
@@ -435,11 +451,9 @@ def main(argv=None) -> int:
         raise SystemExit("--woosh-upgrade-verifier needs --woosh-upgrade-best 2 or more")
     if (args.woosh_upgrade_vram_free and args.woosh_upgrade == "off") or args.woosh_upgrade_vram_free < 0:
         raise SystemExit("--woosh-upgrade-vram-free takes 0 or more MiB and needs --woosh-upgrade flow")
-    saves = [x.strip() for x in str(args.woosh_upgrade_vram_save).split(",") if x.strip()]
-    if any(x not in VRAM_SAVES for x in saves) or (saves and args.woosh_upgrade == "off"):
-        raise SystemExit("--woosh-upgrade-vram-save takes a comma list of %s and needs --woosh-upgrade flow"
-                         % ", ".join(VRAM_SAVES))
-    args.woosh_upgrade_vram_save = ",".join(saves)
+    args.woosh_upgrade_vram_save = vram_saves(args.woosh_upgrade_vram_save, args.woosh_upgrade)
+    if args.woosh_upgrade_pool_guard and args.woosh_upgrade_pool == "off":
+        raise SystemExit("--woosh-upgrade-pool-guard needs --woosh-upgrade-pool")
     if (args.woosh_upgrade_pool != "off" or args.woosh_upgrade_score != "request") and args.woosh_upgrade_best < 2:
         raise SystemExit("--woosh-upgrade-pool and --woosh-upgrade-score need --woosh-upgrade flow and "
                          "--woosh-upgrade-best 2 or more")
@@ -558,6 +572,7 @@ def main(argv=None) -> int:
           + (f" best={args.woosh_upgrade_best}" if args.woosh_upgrade_best > 1 else "")
           + (f" score={args.woosh_upgrade_score}" if args.woosh_upgrade_score != "request" else "")
           + (f" vram-save={args.woosh_upgrade_vram_save}" if args.woosh_upgrade_vram_save else "")
+          + (" pool-guard=on" if args.woosh_upgrade_pool_guard else "")
           + (f"  pool={pool.describe()}" if pool is not None else "")
           + (f"  writer={writer.describe()} swap={args.writer_swap}" if writer is not None else ""),
           flush=True)
@@ -584,6 +599,23 @@ def main(argv=None) -> int:
     return 0
 
 
+def vram_saves(spec, upgrade):
+    raw = str(spec if spec is not None else VRAM_AUTO).strip().lower()
+    if raw == VRAM_AUTO:
+        return ",".join(VRAM_SAVES) if upgrade != "off" else ""
+    if raw in VRAM_NONE or not raw:
+        return ""
+    saves = [x.strip() for x in raw.split(",") if x.strip()]
+    if any(x not in VRAM_SAVES for x in saves) or (saves and upgrade == "off"):
+        raise SystemExit("--woosh-upgrade-vram-save takes auto, none or a comma list of %s, and a list needs "
+                         "--woosh-upgrade flow" % ", ".join(VRAM_SAVES))
+    return ",".join(saves)
+
+
+def routes_by_meaning(args):
+    return getattr(args, "generator", "") == "hybrid" and getattr(args, "route", "families") == "meaning"
+
+
 def template_of(args):
     from sarge.prompts import parse_template
     style = getattr(args, "prompts", None)
@@ -591,10 +623,16 @@ def template_of(args):
 
 
 def make_pool(args, writer):
-    if getattr(args, "woosh_upgrade_pool", "off") == "off":
+    sources = [] if getattr(args, "woosh_upgrade_pool", "off") == "off" else [
+        x.strip() for x in str(args.woosh_upgrade_pool).split(",") if x.strip()]
+    meaning = routes_by_meaning(args)
+    route_sources = []
+    if meaning and "canon" not in sources and getattr(writer, "style", None) != "canon":
+        sources.append("canon")
+        route_sources.append("canon")
+    if not sources:
         return None
     from sarge import pool as prompt_pool
-    sources = [x.strip() for x in str(args.woosh_upgrade_pool).split(",") if x.strip()]
     store = args.writer_store
     if not os.path.isdir(store) and os.path.splitext(store)[1]:
         store = os.path.dirname(store)
@@ -604,9 +642,9 @@ def make_pool(args, writer):
                               port=args.writer_port, threads=args.writer_threads, affinity=affinity, store=store,
                               when=tuple(w.strip() for w in args.writer_when.split(",") if w.strip()),
                               log_path=os.path.join(store, "llama-server.log"), template=template_of(args),
-                              ground_index=args.writer_ground_index)
+                              ground_index=args.writer_ground_index, firearm=meaning, route_sources=route_sources)
     except (FileNotFoundError, ValueError) as e:
-        raise SystemExit("--woosh-upgrade-pool %s: %s" % (args.woosh_upgrade_pool, e))
+        raise SystemExit("--woosh-upgrade-pool %s: %s" % (",".join(sources), e))
     os.makedirs(store, exist_ok=True)
     return p
 
@@ -639,7 +677,8 @@ def make_writer(args):
                                 log_path=os.path.join(store if os.path.isdir(store) or not os.path.splitext(store)[1]
                                                       else os.path.dirname(store), "llama-server.log"),
                                 ground=args.writer_ground, ground_index=args.writer_ground_index,
-                                ground_k=args.writer_ground_k, template=template_of(args))
+                                ground_k=args.writer_ground_k, template=template_of(args),
+                                firearm=routes_by_meaning(args))
     except (FileNotFoundError, ValueError) as e:
         raise SystemExit("--writer %s: %s" % (args.writer, e))
     if args.writer != "store":

@@ -6,12 +6,12 @@ import time
 from ..amp import family_for
 from ..startup import stage
 from ..types import AudioClip, CacheKey
-from ..words import split_words
+from ..words import clean_words, split_words
 from .base import Generator
 
 GUN_FAMILIES = ("blast", "handling")
 WARM_KEY = CacheKey("shoot", "pistol", "normal")
-ROUTES = ("families", "words", "class", "single")
+ROUTES = ("families", "words", "class", "single", "meaning")
 SIDES = ("guns", "rest")
 GUN_CLASSES = ("weapon",)
 DISCHARGE_WORDS = frozenset(("shoot", "shoots", "shooting", "shot", "shots", "gunshot", "gunshots", "gunfire",
@@ -27,7 +27,28 @@ def weapon_words(key) -> bool:
     return any(w in FIREARM_WORDS for w in split_words(key.material))
 
 
-def side_for(key, mode="families", gun_families=GUN_FAMILIES, gun_classes=GUN_CLASSES, single="rest") -> str:
+def firearm_words(key) -> bool:
+    if any(w in DISCHARGE_WORDS or w in FIREARM_WORDS for w in clean_words(key.event_type)):
+        return True
+    return any(w in FIREARM_WORDS for w in clean_words(key.material))
+
+
+def meaning_side(key, meaning=None) -> str:
+    ans = None
+    if meaning is not None:
+        try:
+            ans = meaning(key)
+        except Exception:
+            ans = None
+    if ans is None:
+        ans = firearm_words(key)
+    return "guns" if ans else "rest"
+
+
+def side_for(key, mode="families", gun_families=GUN_FAMILIES, gun_classes=GUN_CLASSES, single="rest",
+             meaning=None) -> str:
+    if mode == "meaning":
+        return meaning_side(key, meaning)
     if mode == "words":
         return "guns" if weapon_words(key) else "rest"
     if mode == "class":
@@ -104,6 +125,9 @@ class RoutedGenerator(Generator):
         self.send_scene = scene_words(getattr(guns, "prompt_style", ""))
         if self.send_scene and hasattr(rest, "send_scene"):
             rest.send_scene = True
+        self.meaning = None
+        self.made = {}
+        self.flipped = 0
 
     def _remote(self):
         from .remote import RemoteGenerator
@@ -159,7 +183,26 @@ class RoutedGenerator(Generator):
         return clip
 
     def route(self, key: CacheKey) -> str:
-        return side_for(key, self.route_mode, self.gun_families, self.gun_classes, self.single_route)
+        return side_for(key, self.route_mode, self.gun_families, self.gun_classes, self.single_route, self.meaning)
+
+    def route_tag(self, key: CacheKey) -> str:
+        return "side:" + self.route(key) if self.route_mode == "meaning" else ""
+
+    def _made(self, key, side):
+        if self.route_mode == "meaning":
+            self.made[key] = side
+
+    def flips(self) -> list:
+        if self.route_mode != "meaning":
+            return []
+        return [k for k, side in list(self.made.items()) if self.route(k) != side]
+
+    def settle(self, key) -> str:
+        side = self.route(key)
+        if self.made.get(key, side) != side:
+            self.flipped += 1
+        self.made[key] = side
+        return side
 
     def cost_ms(self, key: CacheKey) -> float:
         return self.costs[self.route(key)]
@@ -230,6 +273,7 @@ class RoutedGenerator(Generator):
     def generate(self, key: CacheKey, *, variant: int = 0, prompt: str | None = None) -> AudioClip:
         side = self.route(key)
         self.counts[side] += 1
+        self._made(key, side)
         kw = {"prompt": prompt} if prompt else {}
         if side == "guns":
             if self.upgrade:
@@ -247,6 +291,7 @@ class RoutedGenerator(Generator):
             clips = self.guns.generate_batch([items[i] for i in guns])
             for i, c in zip(guns, clips):
                 out[i] = c
+                self._made(items[i][0], "guns")
             self.counts["guns"] += len(guns)
         for i, (k, v) in enumerate(items):
             if out[i] is None:
@@ -256,6 +301,8 @@ class RoutedGenerator(Generator):
     def fast_stats(self) -> dict:
         s = dict(getattr(self.guns, "fast_stats", lambda: {})())
         s.update({"routed_" + k: v for k, v in self.counts.items()})
+        if self.route_mode == "meaning":
+            s["routed_flips"] = self.flipped
         if self.upgrade:
             s.update({"upgrade_" + k: v for k, v in self.upgrade_stats.items()})
         return s

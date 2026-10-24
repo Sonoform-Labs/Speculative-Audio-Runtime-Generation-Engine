@@ -209,7 +209,8 @@ def test_worker_lines_after_listening_reach_the_log_only_with_best_of_n(capsys):
 
 def test_sidecar_best_flag_defaults_off_and_reaches_the_worker_only_when_set(monkeypatch):
     import run_sidecar as rs
-    base = ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "midpoint:16"]
+    base = ["--prompts", CAP, "--woosh-upgrade", "flow", "--woosh-upgrade-solver", "midpoint:16",
+            "--woosh-upgrade-vram-save", "none"]
     up = _rest_cmd(monkeypatch, base)
     assert "--upgrade-best" not in up and "--upgrade-verifier" not in up
     one = _rest_cmd(monkeypatch, base + ["--woosh-upgrade-best", "1"])
