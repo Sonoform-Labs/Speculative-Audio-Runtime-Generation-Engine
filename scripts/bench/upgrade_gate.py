@@ -15,6 +15,15 @@ FILL_REST = [("footstep", "gravel"), ("footstep", "stone"), ("footstep", "wood")
              ("bullet impact", "glass"), ("splash", "water"), ("punch", "body"), ("dog_bark", "dog"),
              ("door_creak", "wood"), ("car_horn", "car")]
 FILL_GUNS = [("shoot", "pistol"), ("shoot", "rifle"), ("reload", "rifle")]
+FILL_REST_WIDE = FILL_REST + [("footstep", "sand"), ("footstep", "snow"), ("footstep", "grass"),
+                               ("footstep", "metal"), ("door_slam", "wood"), ("glass_break", "bottle"),
+                               ("sword_clash", "steel"), ("water_drip", "water"), ("keyboard_typing", "plastic"),
+                               ("door_open", "metal"), ("land", "dirt"), ("dog_growl", "dog"),
+                               ("whoosh", "cloth"), ("crate_drop", "wood")]
+FILL_GUNS_WIDE = FILL_GUNS + [("shoot", "shotgun"), ("reload", "pistol"), ("shoot", "revolver"), ("gunshot", "smg"),
+                              ("fire", "carbine"), ("equip", "pistol"), ("holster", "pistol"), ("reload", "shotgun"),
+                              ("shoot", "sniper")]
+FILLS = ("base", "wide")
 STRESS_CTX = ("indoor_small", "tunnel", "indoor_large", "outdoor_open")
 GAPS = (0.3, 1.2, 0.5, 2.0, 0.8, 1.5)
 
@@ -78,6 +87,36 @@ def med(xs):
     return float(e2e.np.median(xs)) if xs else None
 
 
+def fill_plan(kind):
+    if kind == "wide":
+        out = []
+        for i, (et, mat) in enumerate(FILL_REST_WIDE):
+            out.append(("rest", et, mat, "normal"))
+            if i % 2 == 1:
+                out.append(("guns",) + FILL_GUNS_WIDE[i // 2] + ("normal",))
+        return out
+    return ([("rest", et, mat, "normal") for et, mat in FILL_REST] +
+            [("guns", et, mat, "normal") for et, mat in FILL_GUNS] +
+            [("rest", et, mat, "soft") for et, mat in FILL_REST[:5]])
+
+
+def sa3_events(ev):
+    swaps = [x for x in ev if x.get("type") == "sa3_swap"]
+    errs = [x for x in ev if x.get("type") in ("sa3_error", "sa3_failed")]
+    if not swaps and not errs:
+        return None
+    rms = [m for x in swaps for ms in (x.get("render_ms") or {}).values() for m in ms]
+    lags = [x["first_hit_s"] for x in swaps if x.get("first_swap") and x.get("first_hit_s") is not None]
+    picks = [p for x in swaps for p in (x.get("picks") or {}).values()]
+    return {"swap_events": len(swaps), "swapped_takes": sum(x.get("takes", 0) for x in swaps),
+            "decided_takes": sum(x.get("decided", 0) for x in swaps), "keys": len({x["key"] for x in swaps}),
+            "candidate_renders": len(rms), "render_ms_median": med(rms),
+            "render_ms_p95": float(e2e.np.percentile(rms, 95)) if rms else None,
+            "verify_ms_median": med([x["verify_ms"] for x in swaps if x.get("verify_ms") is not None]),
+            "picks_by_candidate": {str(j): picks.count(j) for j in sorted(set(picks))},
+            "first_hit_to_decision_s_median": med(lags), "errors": len(errs), "error_records": errs[:10]}
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description="gate V and first-hit latency with --woosh-upgrade flow: startup peak, "
                                              "READY, peak while the upgrade renders beside served renders, and "
@@ -87,6 +126,11 @@ def main(argv=None):
     ap.add_argument("--woosh-port", type=int, default=8773)
     ap.add_argument("--stress-s", type=float, default=90.0)
     ap.add_argument("--out", default=OUT)
+    ap.add_argument("--fill", choices=FILLS, default="base",
+                    help="base: 15 Woosh and 3 gun first hits as before; wide: 24 Woosh and 12 gun first hits "
+                         "interleaved, two Woosh keys to one gun key")
+    ap.add_argument("--fill-only", action="store_true",
+                    help="stop after the first hits: no wait for the upgrade, no stress and no after phase")
     ap.add_argument("--extra", nargs=argparse.REMAINDER, default=[])
     a = ap.parse_args(argv)
     e2e.late_imports()
@@ -101,7 +145,7 @@ def main(argv=None):
         "--port", str(a.port), "--woosh-port", str(a.woosh_port), "--learn", "--event-log", ev_path,
         "--cache-dir", os.path.join(e2e.ROOT, ".cache", "sfx_bake")] + list(a.extra)
     res = {"tag": a.tag, "cmd": cmd, "bounds": BOUNDS, "gpu_before": e2e.smi(), "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-           "fail_hook": os.environ.get("SARGE_UPGRADE_FAIL") or None}
+           "fail_hook": os.environ.get("SARGE_UPGRADE_FAIL") or None, "fill": a.fill, "fill_only": a.fill_only}
     sampler = e2e.Sampler(every=0.1)
     log = open(log_path, "w", encoding="utf-8")
     t0 = time.time()
@@ -140,16 +184,12 @@ def main(argv=None):
         res["gpu_ready"] = e2e.smi()
         c = e2e.connect(port=a.port, timeout=120.0)
         t_fill = time.time() - t0
-        for et, mat in FILL_REST:
-            shot(c, "rest", et, mat, "normal", "default", rows, "fill", t0)
-        for et, mat in FILL_GUNS:
-            shot(c, "guns", et, mat, "normal", "default", rows, "fill", t0)
-        for et, mat in FILL_REST[:5]:
-            shot(c, "rest", et, mat, "soft", "default", rows, "fill", t0)
+        for side, et, mat, inten in fill_plan(a.fill):
+            shot(c, side, et, mat, inten, "default", rows, "fill", t0)
         res["peak_fill_mib"] = sampler.peak(t_fill)
         t_wait = time.time()
         state = None
-        while "--woosh-upgrade" in a.extra and time.time() - t_wait < 180:
+        while "--woosh-upgrade" in a.extra and not a.fill_only and time.time() - t_wait < 180:
             st = [x for x in events(ev_path) if x.get("type") == "upgrade_state"]
             state = st[-1]["state"] if st else None
             if state in ("ready", "failed"):
@@ -161,7 +201,7 @@ def main(argv=None):
         res["peak_until_upgrade_ready_mib"] = sampler.peak(ready, time.time() - t0)
         t_st = time.time() - t0
         i = 0
-        while time.time() - t0 - t_st < a.stress_s:
+        while time.time() - t0 - t_st < (0.0 if a.fill_only else a.stress_s):
             gap = GAPS[i % len(GAPS)]
             time.sleep(gap)
             k = i % 4
@@ -177,10 +217,13 @@ def main(argv=None):
             i += 1
         t_end = time.time() - t0
         res["peak_stress_mib"] = sampler.peak(t_st, t_end)
-        time.sleep(15.0)
-        for et, mat in FILL_REST:
+        time.sleep(0.0 if a.fill_only else 15.0)
+        for et, mat in ([] if a.fill_only else FILL_REST):
             for _ in range(3):
                 shot(c, "rest", et, mat, "normal", "default", rows, "after", t0)
+        for et, mat in (FILL_GUNS if "--sa3-upgrade-best" in a.extra and not a.fill_only else []):
+            for _ in range(3):
+                shot(c, "guns", et, mat, "normal", "default", rows, "after", t0)
         res["stats"] = c.stats()
         c.close()
         res["gpu_after"] = e2e.smi()
@@ -206,11 +249,12 @@ def main(argv=None):
     fill = [r for r in rows if r["pass"] == "fill" and r["served"] == "realtime"]
     miss = [r for r in rows if r["pass"] == "stress_miss" and r["served"] == "realtime"]
     after = [r for r in rows if r["pass"] == "after"]
-    changed = sum(1 for r in after if r["rev"] >= 1 and first.get(r["key"], {}).get("sha") != r["sha"])
+    after_rest = [r for r in after if r["side"] == "rest"]
+    changed = sum(1 for r in after_rest if r["rev"] >= 1 and first.get(r["key"], {}).get("sha") != r["sha"])
     lags = [x["first_hit_s"] for x in swaps if x.get("first_swap") and x.get("first_hit_s") is not None]
     res["upgrade"] = {"swaps": len(swaps), "takes": sum(x.get("takes", 0) for x in swaps), "yields": len(yields),
-                      "flow_ms_median": med([x["ms"] for x in swaps]), "rev_after": sorted({r["rev"] for r in after}),
-                      "after_changed_audio": changed, "after_rows": len(after),
+                      "flow_ms_median": med([x["ms"] for x in swaps]), "rev_after": sorted({r["rev"] for r in after_rest}),
+                      "after_changed_audio": changed, "after_rows": len(after_rest),
                       "errors": len([x for x in ev if x.get("type") == "upgrade_error"]),
                       "failed_keys": len([x for x in ev if x.get("type") == "upgrade_failed"]),
                       "first_hit_to_swap_s_median": med(lags), "first_hit_to_swap_s_max": max(lags, default=None),
@@ -233,6 +277,14 @@ def main(argv=None):
                              "n_fill": len([r for r in fill if r["side"] == side]),
                              "n_stress": len([r for r in miss if r["side"] == side])} for side in ("guns", "rest")}
     res["stress_hit_median_ms"] = med([r["ms"] for r in rows if r["pass"] == "stress_hit"])
+    sa3 = sa3_events(ev)
+    if sa3 is not None:
+        res["sa3"] = sa3
+        keys = {x["key"] for x in ev if x.get("type") == "sa3_swap"}
+        res["sa3"]["served_upgraded"] = len([x for x in ev if x.get("type") == "event" and x.get("upgraded")
+                                             and x.get("key") in keys])
+        res["sa3"]["after_rows"] = sum(1 for r in after if r["side"] == "guns")
+        res["sa3"]["after_rev"] = sorted({r["rev"] for r in after if r["side"] == "guns"})
     res["gate_v"] = {"startup_peak": [res.get("startup", {}).get("peak_used_mib"), BOUNDS["startup_peak_mib"]],
                      "ready": [res.get("gpu_ready", {}).get("used_mib"), BOUNDS["ready_mib"]],
                      "both_rendering": [res.get("peak_after_ready_mib"), BOUNDS["both_rendering_mib"]]}
@@ -243,8 +295,8 @@ def main(argv=None):
         json.dump(res, fh, indent=1, default=str)
     print(json.dumps({k: res.get(k) for k in ("startup", "gate_v", "gate_v_pass", "upgrade_state", "upgrade",
                                                "latency", "stress_hit_median_ms", "woosh_died_s",
-                                               "commit_free_gb_ready", "commit_free_gb_min")}, indent=1,
-                     default=str))
+                                               "commit_free_gb_ready", "commit_free_gb_min", "sa3")
+                      if k != "sa3" or "sa3" in res}, indent=1, default=str))
     return 0 if res["gate_v_pass"] else 1
 
 

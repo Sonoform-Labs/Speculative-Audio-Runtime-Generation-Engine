@@ -941,7 +941,7 @@ class Verifier:
         self.texts[text] = e
         return e
 
-    def score(self, y, sr, temb):
+    def embed(self, y, sr):
         import torch
         from math import gcd
         from scipy.signal import resample_poly
@@ -953,14 +953,29 @@ class Verifier:
         with torch.inference_mode():
             e = self.tower.get_audio_embedding_from_data(m, device=self.device, use_tensor=True).float()[0].cpu()
         self.ms.append((time.perf_counter() - t) * 1000.0)
+        return e
+
+    @staticmethod
+    def match(e, temb):
         return min(float((e * x).sum()) for x in (temb if isinstance(temb, tuple) else (temb,)))
+
+    def score(self, y, sr, temb):
+        return self.match(self.embed(y, sr), temb)
+
+    def scores(self, y, sr, tembs):
+        e = self.embed(y, sr)
+        return [self.match(e, t) for t in tembs]
 
 
 class Upgrade:
     def __init__(self, base, kind, frames, lock, opts, make=None, clock=time.monotonic, commit=None, solver="dopri5",
-                 best=1, verifier=None, score="request", vram_free=0, vram=None, saves=(), guard=False):
+                 best=1, verifier=None, score="request", vram_free=0, vram=None, saves=(), guard=False, floor=None):
         self.base, self.kind, self.frames, self.lock, self.opts = base, kind, frames, lock, dict(opts)
         self.guard = bool(guard)
+        self.floor = None if floor is None else float(floor)
+        self.floor_drops = 0
+        self.score_lock = threading.Lock()
+        self.verified = 0
         self.saves = frozenset(saves or ())
         self.vram_free = max(0, int(vram_free or 0))
         self.vram = vram or free_vram_mib
@@ -1091,6 +1106,24 @@ class Upgrade:
             out.update({"pool_keys": len(self.choice), "pool_picks": dict(self.pool_picks)})
         if self.guard:
             out["pool_guard"] = True
+        if self.floor is not None:
+            out.update({"pool_floor": self.floor, "pool_floor_drops": self.floor_drops})
+        if self.verified:
+            out["verified_takes"] = self.verified
+        return out
+
+    def score_takes(self, key, ys, sr, style=None):
+        from sarge import verify
+        if self.verifier is None or self.verifier_state != "ready" or self.gen is None:
+            raise RuntimeError("the verifier is %s" % ("off" if self.verifier is None else self.verifier_state
+                                                       if self.verifier_state != "ready" else "waiting for Flow"))
+        m = verify.style_texts(style) if style else {}
+        want = (verify.key_text(key, **m), verify.event_text(key, **m) if self.score_mode == "event-min" else None)
+        with self.lock:
+            temb = self._emb(want)
+        with self.score_lock:
+            out = [self.verifier.score(y, sr, temb) for y in ys]
+        self.verified += len(ys)
         return out
 
     def render(self, key, variant, prompts, prompt, amp, stereo, level, pool=None, texts=None):
@@ -1128,6 +1161,10 @@ class Upgrade:
         req, ev = want
         a = self.verifier.text(self.gen.ldm, req)
         return a if ev is None else (a, self.verifier.text(self.gen.ldm, ev))
+
+    def _floor_want(self, key, style):
+        from sarge import verify
+        return verify.key_text(key, **verify.guard_texts(style)), None
 
     def _keep(self, tag, got):
         self.pending[tag] = got
@@ -1187,6 +1224,7 @@ class Upgrade:
         got = self.pending.pop(tag, [])
         fail = os.environ.get(FAIL_ENV, "")
         want = self._want(key, texts, prompts)
+        low = self._floor_want(key, prompts) if self.floor is not None else None
         order = [(i, j) for i in range(len(cands)) for j in range(self.best)]
         try:
             for i, j in order[len(got):]:
@@ -1196,8 +1234,13 @@ class Upgrade:
                     raw = render_key(self.gen, key, verify.candidate_variant(variant, j), self.frames, prompts,
                                      cands[i])
                     temb = self._emb(want)
+                    lemb = self._emb(low) if low is not None else None
                 y = finish_key(raw, key, amp, stereo, level=level)
-                got.append((self.verifier.score(y, SR, temb), i, j, y))
+                if lemb is None:
+                    got.append((self.verifier.score(y, SR, temb), i, j, y, None))
+                else:
+                    s, f = self.verifier.scores(y, SR, (temb, lemb))
+                    got.append((s, i, j, y, f))
                 self.candidates += 1
         except Preempted:
             self.preempted += 1
@@ -1206,13 +1249,18 @@ class Upgrade:
         except Exception:
             self.failed += 1
             raise
-        means = [float(np.mean([s for s, i, _j, _y in got if i == k])) for k in range(len(cands))]
-        c = verify.choose_guarded(means) if self.guard else verify.choose(means)
+        means = [float(np.mean([s for s, i, _j, _y, _f in got if i == k])) for k in range(len(cands))]
+        if low is not None:
+            lows = [float(np.mean([f for _s, i, _j, _y, f in got if i == k])) for k in range(len(cands))]
+            c = verify.choose_floored(means, lows, self.floor)
+            self.floor_drops += len(verify.floor_drops(lows, self.floor))
+        else:
+            c = verify.choose_guarded(means) if self.guard else verify.choose(means)
         self.choice[ck] = c
         while len(self.choice) > CHOICE_KEEP:
             self.choice.popitem(last=False)
         self.pool_picks[c] = self.pool_picks.get(c, 0) + 1
-        _s, j, y = verify.pick([(s, j, y) for s, i, j, y in got if i == c])
+        _s, j, y = verify.pick([(s, j, y) for s, i, j, y, _f in got if i == c])
         self.picked[j] += 1
         self.renders += 1
         self._say_best()
@@ -1293,6 +1341,37 @@ def render_key(gen, key, variant, frames, style="tuned", prompt=None):
 
 def finish_key(raw, key, amp, stereo, level="peak"):
     return finish(raw, key.event_type, key.intensity, amp, stereo, level=level, **physics_shape(key.phys))
+
+
+def verify_clips(req, pcm):
+    a = np.frombuffer(pcm, dtype="<f4")
+    out, at = [], 0
+    for n, ch in zip(req["frames"], req["channels"]):
+        k = int(n) * int(ch)
+        if at + k > a.shape[0]:
+            raise ValueError("verify request holds %d samples, its frames need more" % a.shape[0])
+        y = np.array(a[at:at + k], dtype=np.float32)
+        out.append(y.reshape(int(n), int(ch)) if int(ch) > 1 else y)
+        at += k
+    if at != a.shape[0]:
+        raise ValueError("verify request holds %d samples, its frames need %d" % (a.shape[0], at))
+    return out
+
+
+def verify_reply(up, req, pcm):
+    t = time.perf_counter()
+    try:
+        if up is None:
+            raise RuntimeError("this worker has no upgrade and no verifier")
+        key = CacheKey(req["event_type"], req["material"], req.get("intensity", "normal"),
+                       req.get("context", "default"), req.get("phys", ""), "", req.get("scene", ""))
+        ys = verify_clips(req, pcm)
+        scores = up.score_takes(key, ys, int(req["sample_rate"]), req.get("style"))
+    except (ConnectionError, OSError):
+        raise
+    except Exception as e:
+        return {"type": "error", "message": "%s: %s" % (type(e).__name__, e)}
+    return {"type": "scores", "scores": scores, "ms": (time.perf_counter() - t) * 1000.0}
 
 
 def parent_gone(pid):
@@ -1403,6 +1482,11 @@ def main():
                     help="--upgrade-best: request scores a candidate against the request words; event-min takes the "
                          "lower of that and the score against the event words alone, so a take has to sound like the "
                          "event as well as the material. Default request")
+    ap.add_argument("--upgrade-pool-floor", type=float, default=None,
+                    help="--upgrade-best: with a prompt pool, also score every take against the cleaned request "
+                         "words of the key and drop a pool prompt whose mean there falls more than this margin "
+                         "below the key's own prompt, then keep the best of the rest by the usual score. Off by "
+                         "default")
     ap.add_argument("--upgrade-pool-guard", action="store_true",
                     help="--upgrade-best: score every candidate prompt and every take against the cleaned request "
                          "words of the key (sarge.verify.key_text with clean on) and ignore the texts a request "
@@ -1423,6 +1507,10 @@ def main():
         ap.error("--upgrade-score needs --upgrade-best 2 or more")
     if args.upgrade_pool_guard and args.upgrade_best < 2:
         ap.error("--upgrade-pool-guard needs --upgrade-best 2 or more")
+    if args.upgrade_pool_floor is not None and (args.upgrade_best < 2 or args.upgrade_pool_guard
+                                                or not args.upgrade_pool_floor >= 0.0):
+        ap.error("--upgrade-pool-floor takes a margin of 0 or more, needs --upgrade-best 2 or more and leaves out "
+                 "--upgrade-pool-guard")
     if args.upgrade_vram_free and args.upgrade == "off":
         ap.error("--upgrade-vram-free needs --upgrade")
     if args.upgrade_vram_free < 0:
@@ -1470,13 +1558,15 @@ def main():
                      best=args.upgrade_best,
                      verifier=Verifier(args.upgrade_verifier) if args.upgrade_best > 1 else None,
                      score=args.upgrade_score, vram_free=args.upgrade_vram_free, saves=saves,
-                     guard=args.upgrade_pool_guard)
+                     guard=args.upgrade_pool_guard, floor=args.upgrade_pool_floor)
         print("woosh upgrade %s on request: it loads after an upgrade_load message, shares the autoencoder and the "
               "text encoder, and yields to every served render; served prompts %s, upgrade prompts %s, solver %s%s"
               % (args.upgrade, args.prompts, upgrade_style(args), args.upgrade_solver,
                  ("" if args.upgrade_best == 1 else ", best of %d by %s" % (args.upgrade_best, up.verifier.path)) +
                  ("" if args.upgrade_score == "request" else ", score %s" % args.upgrade_score) +
                  ("" if not args.upgrade_pool_guard else ", pool guarded by the cleaned request words") +
+                 ("" if args.upgrade_pool_floor is None else ", pool floor %g under the key's own prompt on the "
+                  "cleaned request words" % args.upgrade_pool_floor) +
                  ("" if not args.upgrade_vram_free else ", loads once %d MiB are free" % args.upgrade_vram_free) +
                  ("" if not saves else ", vram savings %s" % ",".join(sorted(saves)))),
               flush=True)
@@ -1502,12 +1592,15 @@ def main():
     def serve(conn):
         try:
             while True:
-                req, _ = _recv(conn)
+                req, pcm = _recv(conn)
                 if req.get("type") == "hello":
                     _send(conn, {"type": "hello", "sample_rate": SR, "model": "woosh-" + args.model})
                     continue
                 if up is not None and req.get("type") in ("upgrade_load", "upgrade_state", "upgrade_abort"):
                     control(conn, req["type"])
+                    continue
+                if req.get("type") == "verify":
+                    _send(conn, verify_reply(up, req, pcm))
                     continue
                 try:
                     key = CacheKey(req["event_type"], req["material"], req.get("intensity", "normal"),

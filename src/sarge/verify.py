@@ -51,5 +51,14 @@ def choose_guarded(means):
     return max(range(len(means)), key=lambda i: (means[i], i > 0, -i))
 
 
+def floor_drops(floor_means, margin):
+    return [i for i in range(1, len(floor_means)) if floor_means[i] < floor_means[0] - float(margin)]
+
+
+def choose_floored(means, floor_means, margin):
+    out = set(floor_drops(floor_means, margin))
+    return max((i for i in range(len(means)) if i not in out), key=lambda i: (means[i], -i))
+
+
 def guard_texts(style):
     return dict(style_texts(style) if style else {"loop": False}, clean=True)

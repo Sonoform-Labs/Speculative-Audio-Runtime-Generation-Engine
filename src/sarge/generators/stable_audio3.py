@@ -164,7 +164,7 @@ class StableAudio3Generator(Generator):
                  decode_margin_frames: int = 2, triton_proj: bool = False, trim: str = "window",
                  level: str = "rms", decoder_ckpt: str | None = None, amp: bool = False,
                  prompt_style: str = "v1", stereo: bool = False, width: float = 1.0, noise_span=None,
-                 hoist_diff: bool = False, weight_cache: str | None = None, **_):
+                 hoist_diff: bool = False, weight_cache: str | None = None, raw_words: bool = False, **_):
         self.model_name = model_name
         self.device = device
         self.steps = int(steps)
@@ -204,6 +204,7 @@ class StableAudio3Generator(Generator):
         self.amp = bool(amp) and amp != "off"
         self.amp_mode = amp if isinstance(amp, str) else ("full" if amp else "off")
         self.prompt_style = str(prompt_style)
+        self.raw_words = bool(raw_words)
         self.stereo = bool(stereo)
         self.width = float(width)
         self.noise_span = None if noise_span is None else (float(noise_span[0]), float(noise_span[1]))
@@ -372,6 +373,13 @@ class StableAudio3Generator(Generator):
             return ""
         return "post:%s:%s" % (self.level, self.amp_mode if self.amp else "off")
 
+    @property
+    def words_style(self) -> str:
+        if not self.raw_words:
+            return self.prompt_style
+        from ..prompts import CLEAN_MOD, drop_mod
+        return drop_mod(self.prompt_style, CLEAN_MOD)
+
     def _prompt(self, key: CacheKey) -> str:
         override = self.prompts.get(str(key))
         if override:
@@ -383,7 +391,7 @@ class StableAudio3Generator(Generator):
             return generic(key.event_type, key.material, key.intensity, key.context, key.phys, SA3_PREFIX)
         if self.prompt_style.startswith("template:"):
             from ..prompts import template
-            return template(self.prompt_style, key.event_type, key.material, key.intensity, key.context, key.phys,
+            return template(self.words_style, key.event_type, key.material, key.intensity, key.context, key.phys,
                             "sa3", getattr(key, "scene", ""))
         if self.prompt_style == "detailed":
             from ..prompts import build

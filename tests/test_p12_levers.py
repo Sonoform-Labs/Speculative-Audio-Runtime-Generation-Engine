@@ -25,11 +25,11 @@ def ws(monkeypatch):
     return woosh_server
 
 
-def _head_module(rel, name, package="sarge"):
+def _head_module(rel, name, package="sarge", ref="HEAD"):
     import subprocess
-    r = subprocess.run(["git", "show", "HEAD:" + rel], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    r = subprocess.run(["git", "show", ref + ":" + rel], cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
     if r.returncode != 0:
-        pytest.skip("git show HEAD:%s failed" % rel)
+        pytest.skip("git show %s:%s failed" % (ref, rel))
     mod = types.ModuleType(name)
     mod.__package__ = package
     sys.modules[name] = mod
@@ -436,7 +436,7 @@ def test_canon_writer_reads_model_codes_whole_only_when_it_cleans_names_or_route
     assert wr.key_text(k) == "event: qx 15 zorbo single\nmaterial: zk 98"
     assert wr.key_text(k, True) == "event: qx15 zorbo single\nmaterial: zk98"
     assert not canon.style(CAP)["codes"] and canon.style(CLEAN)["codes"] and canon.style(CAP, True)["codes"]
-    head = _head_module("src/sarge/canon.py", "sarge._head_canon_p12")
+    head = _head_module("src/sarge/canon.py", "sarge._head_canon_p12", ref="d1c77f0")
     assert canon.ident(CAP) == head.ident(CAP) and canon.ident(CLEAN) != head.ident(CLEAN)
     llm = FakeLLM(lambda msgs: _canon_raw("zz bang"))
     w = wr.build("llama", style="canon", template=CLEAN, store="unused", backend=llm)

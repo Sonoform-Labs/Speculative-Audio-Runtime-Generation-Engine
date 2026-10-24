@@ -114,6 +114,32 @@ class RemoteGenerator(Generator):
             samples = samples.reshape(-1, ch)
         return AudioClip(np.ascontiguousarray(samples), sr, variant_id=variant, gen_ms=body.get("gen_ms"))
 
+    def verify(self, key: CacheKey, clips: list, style: str | None = None) -> list:
+        arrs = [np.ascontiguousarray(c.samples, dtype="<f4") for c in clips]
+        req = {"type": "verify", "event_type": key.event_type, "material": key.material,
+               "intensity": key.intensity, "context": key.context, "sample_rate": int(clips[0].sample_rate),
+               "frames": [int(a.shape[0]) for a in arrs], "channels": [1 if a.ndim == 1 else int(a.shape[1])
+                                                                       for a in arrs]}
+        if key.phys:
+            req["phys"] = key.phys
+        if getattr(key, "scene", ""):
+            req["scene"] = key.scene
+        if style:
+            req["style"] = style
+        pcm = b"".join(a.tobytes() for a in arrs)
+        for attempt in (0, 1):
+            try:
+                self._ensure()
+                body, _ = self._roundtrip(req, pcm)
+                break
+            except (ConnectionError, OSError):
+                self._sock = None
+                if attempt == 1:
+                    raise
+        if body.get("type") != "scores":
+            raise RuntimeError("model server: %s" % body.get("message", "no scores"))
+        return [float(x) for x in body["scores"]]
+
     def close(self):
         if self._sock is not None:
             try:

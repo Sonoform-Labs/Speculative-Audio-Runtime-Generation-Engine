@@ -87,7 +87,7 @@ class RoutedGenerator(Generator):
                  guns=None, rest=None, warm_guns: bool = True, start_rest=None, gun_cost_ms: float = 155.0,
                  rest_cost_ms: float = 50.0, load_rest=None, drop_rest=None, route: str = "families",
                  gun_classes=GUN_CLASSES, single_route: str = "rest", upgrade: str | None = None,
-                 first_prompt: str | None = None, **sa3_kwargs):
+                 first_prompt: str | None = None, sa3_best: int = 1, **sa3_kwargs):
         if route not in ROUTES:
             raise ValueError("unknown route %r, choose from %s" % (route, ", ".join(ROUTES)))
         if single_route not in SIDES:
@@ -128,6 +128,8 @@ class RoutedGenerator(Generator):
         self.meaning = None
         self.made = {}
         self.flipped = 0
+        self.sa3_best = max(1, int(sa3_best or 1))
+        self.sa3_stats = {"candidates": 0, "scored": 0, "failed": 0}
 
     def _remote(self):
         from .remote import RemoteGenerator
@@ -182,6 +184,33 @@ class RoutedGenerator(Generator):
         self.upgrade_stats["renders"] += 1
         return clip
 
+    def sa3_style(self) -> str:
+        return str(getattr(self.guns, "words_style", None) or getattr(self.guns, "prompt_style", "") or "")
+
+    def sa3_candidate(self, key: CacheKey, variant: int) -> AudioClip:
+        try:
+            clip = self.guns.generate(key, variant=int(variant))
+        except Exception as e:
+            self.sa3_stats["failed"] += 1
+            raise UpgradeFailed("%s: %s" % (type(e).__name__, e)) from e
+        self.sa3_stats["candidates"] += 1
+        return clip
+
+    def sa3_verify(self, key: CacheKey, clips: list) -> list:
+        if self._up is None:
+            self._up = self._remote()
+        try:
+            out = self._up.verify(key, clips, self.sa3_style())
+        except (ConnectionError, OSError) as e:
+            self._up = None
+            self.sa3_stats["failed"] += 1
+            raise UpgradeFailed("%s: %s" % (type(e).__name__, e), unreachable=True) from e
+        except Exception as e:
+            self.sa3_stats["failed"] += 1
+            raise UpgradeFailed("%s: %s" % (type(e).__name__, e)) from e
+        self.sa3_stats["scored"] += len(clips)
+        return out
+
     def route(self, key: CacheKey) -> str:
         return side_for(key, self.route_mode, self.gun_families, self.gun_classes, self.single_route, self.meaning)
 
@@ -218,6 +247,8 @@ class RoutedGenerator(Generator):
             extra.append("prompts:" + style)
         if self.first_prompt:
             extra.append("first:" + self.first_prompt)
+        if getattr(self.guns, "raw_words", False):
+            extra.append("sa3:raw")
         return "|".join([tag] + extra) if extra else tag
 
     def ensure_ready(self):
@@ -305,4 +336,6 @@ class RoutedGenerator(Generator):
             s["routed_flips"] = self.flipped
         if self.upgrade:
             s.update({"upgrade_" + k: v for k, v in self.upgrade_stats.items()})
+        if self.sa3_best > 1:
+            s.update({"sa3_upgrade_" + k: v for k, v in self.sa3_stats.items()})
         return s

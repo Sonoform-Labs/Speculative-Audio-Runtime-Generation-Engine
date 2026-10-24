@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import socket
 import socketserver
@@ -268,6 +269,7 @@ class _Handler(socketserver.BaseRequestHandler):
             t2 = time.perf_counter()
             if getattr(self.server, "upgrade", None):
                 _upgrade_sync(self.server, key)
+                _sa3_sync(self.server, key)
             rev = _rev(self.server, key)
             claimed = getattr(self.server, "concurrent_gen", False) and eng.claim_realtime(key)
             if claimed:
@@ -326,7 +328,8 @@ class _Handler(socketserver.BaseRequestHandler):
                    "encode_ms": (t4 - t3) * 1e3, "send_ms": (time.perf_counter() - t4) * 1e3,
                    "bytes": len(pcm), "meta_only": meta_only, "client": id(self)}
             if up:
-                rec["upgraded"] = self.server.upgrade_done.get(key, {}).get(variant_id) is clip
+                rec["upgraded"] = (self.server.upgrade_done.get(key, {}).get(variant_id) is clip
+                                   or _sa3_served(self.server, key, variant_id, clip))
                 rec["rev"] = rev
             _log(self.server, rec)
 
@@ -556,6 +559,7 @@ def _register_prompt(server, key, prompt):
             _bump_rev(server, key)
             if getattr(server, "upgrade", None):
                 _upgrade_drop(server, key)
+                _sa3_drop(server, key)
 
 
 def _rapid(server, event_type):
@@ -1056,7 +1060,7 @@ def _upgrade_summary(server):
             "unreachable": c["unreachable"], "failed_keys": c["failed_keys"], "skipped_keys": skipped,
             "first_hit_to_swap_s": {"keys": len(lag), "median": statistics.median(lag) if lag else None,
                                     "max": lag[-1] if lag else None},
-            "swapped_before_hit": c["before_hit"]}
+            "swapped_before_hit": c["before_hit"], **({"sa3": _sa3_summary(server)} if _sa3_on(server) else {})}
 
 
 def _upgrade_line(s):
@@ -1067,7 +1071,7 @@ def _upgrade_line(s):
             "%d before a first hit, preempted %d, failed %d renders, %d keys skipped, %s"
             % (s["engine"], s["queued_takes"], s["queued_keys"], s["staged_takes"], s["rendered"],
                s["swapped_takes"], s["swaps"], s["swapped_before_hit"], s["preempted"], s["errors"],
-               s["skipped_keys"], when))
+               s["skipped_keys"], when)) + (_sa3_line(s["sa3"]) if "sa3" in s else "")
 
 
 def _upgrade_say(server, summary, force=False):
@@ -1206,6 +1210,302 @@ def _upgrade_step(server):
     return True
 
 
+def _sa3_gen(server):
+    g = _routed(server)
+    return g if g is not None and int(getattr(g, "sa3_best", 1) or 1) > 1 else None
+
+
+def _sa3_on(server):
+    return getattr(server, "sa3_done", None) is not None
+
+
+def _yield_gates(server):
+    out, g = [], server.engine.gen
+    for _ in range(8):
+        d = getattr(g, "__dict__", None)
+        if not d:
+            break
+        if d.get("_gate") is not None:
+            out.append(d["_gate"])
+        g = d.get("_g") if d.get("_g") is not None else d.get("inner")
+    return out
+
+
+def _sa3_init(server):
+    server.sa3_done = {}
+    server.sa3_stage = {}
+    server.sa3_rev = {}
+    server.sa3_fail = {}
+    server.sa3_timed = set()
+    server.sa3_lag = []
+    server.sa3_ms = {"render": [], "verify": []}
+    server.sa3_state = "on"
+    server.sa3_error = None
+    server.sa3_turn = False
+    server.sa3_count = {"candidates": 0, "scored": 0, "swaps": 0, "swapped": 0, "kept": 0, "errors": 0,
+                        "failed_keys": 0, "before_hit": 0}
+
+
+def _sa3_drop(server, key):
+    if not _sa3_on(server):
+        return None
+    server.sa3_done.pop(key, None)
+    server.sa3_stage.pop(key, None)
+    return server.sa3_rev.pop(key, None)
+
+
+def _sa3_sync(server, key):
+    if not _sa3_on(server):
+        return
+    done = server.sa3_done.get(key)
+    if done and not any(done.get(c.variant_id) is c for c in server.engine.cache.get(key) or ()):
+        at = _sa3_drop(server, key)
+        if at is not None and _rev(server, key) == at:
+            _bump_rev(server, key)
+
+
+def _sa3_served(server, key, variant_id, clip):
+    return _sa3_on(server) and server.sa3_done.get(key, {}).get(variant_id) is clip
+
+
+def _sa3_pending(server, key, pool):
+    done = server.sa3_done.get(key, {})
+    st = server.sa3_stage.get(key) or {"orig": {}}
+    return [c for c in pool if done.get(c.variant_id) is not c and st["orig"].get(c.variant_id) is not c]
+
+
+def _sa3_blocked(server, key, prompt, now):
+    rec = server.sa3_fail.get(key)
+    if rec is None:
+        return False
+    if rec["prompt"] != prompt:
+        server.sa3_fail.pop(key, None)
+        return False
+    return rec["dead"] or now < rec["until"]
+
+
+def _sa3_pick(server, g, now):
+    eng = server.engine
+    pm = _prompts(server) or {}
+    for key in list(server.sa3_done):
+        _sa3_sync(server, key)
+    for key in list(server.sa3_stage):
+        if key not in eng.cache:
+            server.sa3_stage.pop(key, None)
+    keys = sorted((k for k in eng.cache if g.route(k) == "guns"), key=lambda k: k not in eng.fired)
+    for key in keys:
+        prompt = pm.get(str(key))
+        st = server.sa3_stage.get(key)
+        if st is not None and st["prompt"] != prompt:
+            server.sa3_stage.pop(key, None)
+            st = None
+        if _sa3_blocked(server, key, prompt, now):
+            continue
+        for c in _sa3_pending(server, key, eng.cache.get(key) or []):
+            if (key, c.variant_id) in eng.inflight:
+                continue
+            if st is None:
+                st = server.sa3_stage[key] = {"prompt": prompt, "work": {}, "cands": {}, "ms": {}, "orig": {},
+                                              "chosen": {}, "pick": {}, "scores": {}}
+            if st["work"].get(c.variant_id) is not c:
+                st["work"][c.variant_id] = c
+                st["cands"][c.variant_id] = []
+                st["ms"][c.variant_id] = []
+            return key, c, prompt, st
+    return None
+
+
+def _sa3_summary(server):
+    eng = server.engine
+    g = _sa3_gen(server)
+    queued = keys = 0
+    for key, pool in list(eng.cache.items()):
+        if not pool or g is None or g.route(key) != "guns":
+            continue
+        rec = server.sa3_fail.get(key)
+        if rec is not None and rec["dead"]:
+            continue
+        n = len(_sa3_pending(server, key, pool))
+        queued += n
+        keys += 1 if n else 0
+    c = server.sa3_count
+    lag = sorted(server.sa3_lag)
+    rm, vm = server.sa3_ms["render"], server.sa3_ms["verify"]
+    return {"best": int(getattr(g, "sa3_best", 0) or 0), "state": server.sa3_state, "error": server.sa3_error,
+            "queued_takes": queued, "queued_keys": keys, "candidates": c["candidates"], "scored": c["scored"],
+            "swaps": c["swaps"], "swapped_takes": c["swapped"], "kept_takes": c["kept"], "errors": c["errors"],
+            "failed_keys": c["failed_keys"], "render_ms_median": statistics.median(rm) if rm else None,
+            "verify_ms_median": statistics.median(vm) if vm else None,
+            "first_hit_to_swap_s": {"keys": len(lag), "median": statistics.median(lag) if lag else None,
+                                    "max": lag[-1] if lag else None},
+            "swapped_before_hit": c["before_hit"]}
+
+
+def _sa3_line(x):
+    return ("; sa3 best of %d (%s): queued %d takes (%d keys), %d candidates rendered (median %s ms), %d takes "
+            "scored (median %s ms a group), swapped %d takes in %d swaps, kept %d served takes, failed %d"
+            % (x["best"], x["state"], x["queued_takes"], x["queued_keys"], x["candidates"],
+               "%.0f" % x["render_ms_median"] if x["render_ms_median"] is not None else "-", x["scored"],
+               "%.0f" % x["verify_ms_median"] if x["verify_ms_median"] is not None else "-", x["swapped_takes"],
+               x["swaps"], x["kept_takes"], x["errors"]))
+
+
+def _sa3_error(server, key, variant, prompt, err, ms):
+    now = time.monotonic()
+    msg = str(err)[:300]
+    first_fail = False
+    with engine_lock:
+        server.sa3_count["errors"] += 1
+        if getattr(err, "unreachable", False):
+            server.upgrade_block = max(server.upgrade_block, now + UPGRADE_BACKOFF_S)
+            rec = {"type": "sa3_error", "t": time.time(), "key": str(key), "variant": variant, "ms": ms,
+                   "error": msg, "unreachable": True}
+        elif "the verifier is" in msg or "no upgrade" in msg:
+            first_fail = server.sa3_state == "on"
+            server.sa3_state = "failed"
+            server.sa3_error = msg
+            server.sa3_stage.clear()
+            rec = {"type": "sa3_failed", "t": time.time(), "key": str(key), "variant": variant, "error": msg,
+                   "lane": True}
+        else:
+            fail = server.sa3_fail.get(key)
+            if fail is None or fail["prompt"] != prompt:
+                fail = server.sa3_fail[key] = {"n": 0, "prompt": prompt, "until": 0.0, "dead": False}
+            fail["n"] += 1
+            fail["error"] = msg
+            if fail["n"] > UPGRADE_RETRIES:
+                fail["dead"] = True
+                server.sa3_stage.pop(key, None)
+                server.sa3_count["failed_keys"] += 1
+                rec = {"type": "sa3_failed", "t": time.time(), "key": str(key), "variant": variant, "ms": ms,
+                       "attempts": fail["n"], "error": msg}
+            else:
+                fail["until"] = now + UPGRADE_BACKOFF_S * 2 ** (fail["n"] - 1)
+                rec = {"type": "sa3_error", "t": time.time(), "key": str(key), "variant": variant, "ms": ms,
+                       "error": msg, "attempt": fail["n"]}
+    if first_fail:
+        print("upgrade sa3: the worker does not score SA3 takes (%s), single SA3 takes stay for the session" % msg,
+              flush=True)
+    if getattr(server, "event_log", None) is not None:
+        _log(server, rec)
+
+
+def _sa3_step(server):
+    from .. import verify
+    from ..types import AudioClip
+    g = _sa3_gen(server)
+    if g is None or not _sa3_on(server) or server.sa3_state != "on":
+        return False
+    now = time.monotonic()
+    if now < server.upgrade_block or not _upgrade_ready(server, g, now):
+        return False
+    eng = server.engine
+    with engine_lock:
+        if eng.claims or eng.inflight or now - server.last_gen_t < UPGRADE_IDLE_S:
+            return False
+        pick = _sa3_pick(server, g, now)
+    if pick is None:
+        return False
+    key, orig, prompt, st = pick
+    v = orig.variant_id
+    have = st["cands"][v]
+    t = time.perf_counter()
+    if len(have) < g.sa3_best - 1:
+        try:
+            with contextlib.ExitStack() as gates:
+                for gate in _yield_gates(server):
+                    gates.enter_context(gate)
+                clip = g.sa3_candidate(key, verify.candidate_variant(v, len(have) + 1))
+        except Exception as e:
+            _sa3_error(server, key, v, prompt, e, (time.perf_counter() - t) * 1e3)
+            return True
+        ms = (time.perf_counter() - t) * 1e3
+        with engine_lock:
+            server.sa3_count["candidates"] += 1
+            server.sa3_ms["render"].append(ms)
+            if server.sa3_stage.get(key) is st and st["work"].get(v) is orig and st["cands"].get(v) is have:
+                have.append(clip)
+                st["ms"][v].append(ms)
+        return True
+    group = [orig] + list(have)
+    try:
+        scores = g.sa3_verify(key, group)
+    except Exception as e:
+        _sa3_error(server, key, v, prompt, e, (time.perf_counter() - t) * 1e3)
+        return not getattr(e, "unreachable", False)
+    vms = (time.perf_counter() - t) * 1e3
+    _s, j, best = verify.pick([(float(x), i, c) for i, (x, c) in enumerate(zip(scores, group))])
+    chosen = orig if j == 0 else AudioClip(best.samples, best.sample_rate, variant_id=v, gen_ms=best.gen_ms)
+    rec = None
+    with engine_lock:
+        server.sa3_count["scored"] += len(group)
+        server.sa3_ms["verify"].append(vms)
+        fail = server.sa3_fail.get(key)
+        if fail is not None and not fail["dead"]:
+            server.sa3_fail.pop(key, None)
+        if server.sa3_stage.get(key) is not st or st["work"].get(v) is not orig:
+            return True
+        st["work"].pop(v, None)
+        st["cands"].pop(v, None)
+        st["orig"][v] = orig
+        st["chosen"][v] = chosen
+        st["pick"][v] = j
+        st["scores"][v] = [float(x) for x in scores]
+        pool = eng.cache.get(key)
+        if not pool or (_prompts(server) or {}).get(str(key)) != prompt or not any(c is orig for c in pool):
+            return True
+        if _sa3_pending(server, key, pool):
+            return True
+        new = [st["chosen"][c.variant_id] if st["orig"].get(c.variant_id) is c else c for c in pool]
+        changed = sum(1 for a, b in zip(new, pool) if a is not b)
+        decided = sum(1 for c in pool if st["orig"].get(c.variant_id) is c)
+        done = server.sa3_done.setdefault(key, {})
+        for a, b in zip(new, pool):
+            if st["orig"].get(b.variant_id) is b:
+                done[b.variant_id] = a
+        server.sa3_stage.pop(key, None)
+        c = server.sa3_count
+        c["kept"] += decided - changed
+        rev = _rev(server, key)
+        if changed:
+            eng.cache[key] = new
+            _bump_rev(server, key)
+            rev = server.sa3_rev[key] = _rev(server, key)
+            c["swaps"] += 1
+            c["swapped"] += changed
+        t_first = server.upgrade_first.get(key) if hasattr(server, "upgrade_first") else None
+        first_hit_s = time.monotonic() - t_first if t_first is not None else None
+        first_swap = key not in server.sa3_timed
+        if first_swap:
+            server.sa3_timed.add(key)
+            if first_hit_s is None:
+                c["before_hit"] += 1
+            else:
+                server.sa3_lag.append(first_hit_s)
+        rec = {"type": "sa3_swap", "t": time.time(), "key": str(key), "takes": changed, "decided": decided,
+               "picks": {str(k): x for k, x in sorted(st["pick"].items())},
+               "scores": {str(k): x for k, x in sorted(st["scores"].items())},
+               "render_ms": {str(k): x for k, x in sorted(st["ms"].items())}, "verify_ms": vms, "rev": rev,
+               "first_hit_s": first_hit_s, "first_swap": first_swap}
+        if changed:
+            server.upgrade_line_dirty = True
+        summary = _upgrade_summary(server)
+    _upgrade_say(server, summary)
+    if getattr(server, "event_log", None) is not None and rec is not None:
+        _log(server, rec)
+    return True
+
+
+def _upgrade_any(server):
+    if not _sa3_on(server):
+        return _upgrade_step(server)
+    for step in ((_sa3_step, _upgrade_step) if server.sa3_turn else (_upgrade_step, _sa3_step)):
+        if step(server):
+            server.sa3_turn = step is _upgrade_step
+            return True
+    return False
+
+
 def _meaning_sources(server):
     from ..canon import asks_firearm
     out = []
@@ -1246,6 +1546,7 @@ def _route_step(server):
                 eng.cache.pop(key, None)
                 eng.recent.pop(key, None)
                 _upgrade_drop(server, key)
+                _sa3_drop(server, key)
                 _bump_rev(server, key)
             eng.stats["route_flips"] = eng.stats.get("route_flips", 0) + 1
             done = (key, side, held, keep)
@@ -1306,7 +1607,7 @@ def _deepen_loop(server):
             if not batch and getattr(server, "writer", None) is not None and (
                     _writer_step(server) or _writer_fill_step(server)):
                 continue
-            if not batch and getattr(server, "upgrade", None) and _upgrade_step(server):
+            if not batch and getattr(server, "upgrade", None) and _upgrade_any(server):
                 continue
             if batch:
                 tg = time.perf_counter()
@@ -1435,6 +1736,8 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
     server.upgrade_done = {}
     server.upgrade_stage = {}
     _upgrade_init(server)
+    if server.upgrade and _sa3_gen(server) is not None:
+        _sa3_init(server)
     if writer is not None:
         writer.on_written = lambda key, rec: _writer_written(server, key, rec)
     server.event_log_lock = threading.Lock()

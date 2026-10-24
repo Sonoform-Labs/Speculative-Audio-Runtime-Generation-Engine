@@ -124,7 +124,9 @@ def start_woosh(args, hold=False):
         ["--upgrade-vram-free", str(args.woosh_upgrade_vram_free)]
         if getattr(args, "woosh_upgrade_vram_free", 0) else []) + (
         ["--upgrade-vram-save", saves] if saves else []) + (
-        ["--upgrade-pool-guard"] if getattr(args, "woosh_upgrade_pool_guard", False) else [])
+        ["--upgrade-pool-guard"] if getattr(args, "woosh_upgrade_pool_guard", False) else []) + (
+        ["--upgrade-pool-floor", repr(float(args.woosh_upgrade_pool_floor))]
+        if getattr(args, "woosh_upgrade_pool_floor", None) is not None else [])
     env = dict(os.environ, OMP_NUM_THREADS="4", MKL_NUM_THREADS="4", PYTHONUNBUFFERED="1")
     env.pop("TRANSFORMERS_CACHE", None)
     env.update(HF_HUB_CACHE=args.woosh_hf_cache, HF_HUB_OFFLINE="1", SARGE_T0=repr(startup.t0()))
@@ -284,6 +286,21 @@ def main(argv=None) -> int:
                          "side marks removed), never against a pool source's own words, so a pool prompt is kept for "
                          "a key only when its takes score at least as well as the key's own prompt against the typed "
                          "name. Off by default")
+    ap.add_argument("--woosh-upgrade-pool-floor", type=float, default=None,
+                    help="--woosh-upgrade-pool: the verifier also scores every take against the cleaned request "
+                         "words of the key, and a pool prompt whose takes average more than this margin below the "
+                         "key's own prompt there is dropped before the usual choice by the pool's texts. A fixed "
+                         "generic score margin, 0 or more. Off by default")
+    ap.add_argument("--sa3-raw-words", action="store_true",
+                    help="--prompts template:NAME+clean: SA3 renders keep the raw caption words (the same template "
+                         "without +clean) while Woosh keeps +clean. Off by default")
+    ap.add_argument("--sa3-upgrade-best", type=int, default=1,
+                    help="--generator hybrid with --woosh-upgrade flow and --woosh-upgrade-best 2 or more: after a "
+                         "gun key's first hit, idle GPU time renders N-1 more SA3 medium candidates of every held "
+                         "take (variants v + 4096 j, the served take is candidate 0), the Woosh worker's verifier "
+                         "scores all N on the CPU against the request words, and the key's takes are swapped for "
+                         "the top of each group at once with prompt_rev + 1, kept in memory only; 1 (default) keeps "
+                         "single SA3 takes")
     ap.add_argument("--woosh-upgrade-score", choices=SCORE_MODES, default="request",
                     help="--woosh-upgrade-best: request scores a candidate against the request words; event-min takes "
                          "the lower of that and the score against the event words alone. Default request")
@@ -457,6 +474,21 @@ def main(argv=None) -> int:
     if (args.woosh_upgrade_pool != "off" or args.woosh_upgrade_score != "request") and args.woosh_upgrade_best < 2:
         raise SystemExit("--woosh-upgrade-pool and --woosh-upgrade-score need --woosh-upgrade flow and "
                          "--woosh-upgrade-best 2 or more")
+    if args.woosh_upgrade_pool_floor is not None and (
+            args.woosh_upgrade_pool == "off" or args.woosh_upgrade_pool_guard
+            or not args.woosh_upgrade_pool_floor >= 0.0):
+        raise SystemExit("--woosh-upgrade-pool-floor takes a margin of 0 or more, needs --woosh-upgrade-pool and "
+                         "leaves out --woosh-upgrade-pool-guard")
+    if args.sa3_raw_words:
+        from sarge.prompts import template_mods
+        if "clean" not in template_mods(args.prompts):
+            raise SystemExit("--sa3-raw-words needs --prompts template:NAME+clean")
+    if args.sa3_upgrade_best < 1:
+        raise SystemExit("--sa3-upgrade-best takes 1 or more")
+    if args.sa3_upgrade_best > 1 and (args.generator != "hybrid" or args.woosh_upgrade == "off"
+                                      or args.woosh_upgrade_best < 2):
+        raise SystemExit("--sa3-upgrade-best needs --generator hybrid, --woosh-upgrade flow and "
+                         "--woosh-upgrade-best 2 or more (the worker's verifier scores the SA3 takes)")
     if args.generator == "hybrid":
         prefetch.start_hybrid(HYBRID_GUNS["model_name"], args.woosh_model,
                               weights=lambda: weight_cache.locate(HYBRID_GUNS["model_name"], cache_dir_of(args)))
@@ -503,6 +535,8 @@ def main(argv=None) -> int:
         if args.route != "families":
             gen_kwargs.update(route=args.route, single_route="guns" if args.single_model == "sa3" else "rest",
                               gun_classes=tuple(c for c in args.gun_class.split(",") if c.strip()))
+        if args.sa3_upgrade_best > 1:
+            gen_kwargs["sa3_best"] = args.sa3_upgrade_best
         if cache_dir_of(args):
             gen_kwargs["weight_cache"] = cache_dir_of(args)
         if early_woosh():
@@ -511,6 +545,8 @@ def main(argv=None) -> int:
                               drop_rest=lambda: close_woosh(woosh[0]))
     if args.prompts != "tuned":
         gen_kwargs["prompt_style"] = args.prompts
+    if args.sa3_raw_words:
+        gen_kwargs["raw_words"] = True
     ckpt = args.decoder_ckpt or os.environ.get("SARGE_DECODER_CKPT")
     if ckpt:
         ckpt = ckpt if os.path.isabs(ckpt) else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ckpt)
@@ -573,6 +609,9 @@ def main(argv=None) -> int:
           + (f" score={args.woosh_upgrade_score}" if args.woosh_upgrade_score != "request" else "")
           + (f" vram-save={args.woosh_upgrade_vram_save}" if args.woosh_upgrade_vram_save else "")
           + (" pool-guard=on" if args.woosh_upgrade_pool_guard else "")
+          + (f" pool-floor={args.woosh_upgrade_pool_floor:g}" if args.woosh_upgrade_pool_floor is not None else "")
+          + ("  sa3-raw-words=on" if args.sa3_raw_words else "")
+          + (f"  sa3-upgrade-best={args.sa3_upgrade_best}" if args.sa3_upgrade_best > 1 else "")
           + (f"  pool={pool.describe()}" if pool is not None else "")
           + (f"  writer={writer.describe()} swap={args.writer_swap}" if writer is not None else ""),
           flush=True)

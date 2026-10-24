@@ -310,6 +310,14 @@ def template_mods(style):
     return _split_mods(s[len(TEMPLATE):])[1] if s.startswith(TEMPLATE) else frozenset()
 
 
+def drop_mod(style, mod):
+    s = str(style or "")
+    if not s.startswith(TEMPLATE):
+        return s
+    body, mods = _split_mods(s[len(TEMPLATE):])
+    return TEMPLATE + body + "".join(m for m in MODS if m[1:] in mods and m != mod)
+
+
 def continuous(event, scene="", canon=None):
     from .scene import parse
     marked = bool(set(split_words(event)) & LOOP_WORDS)
