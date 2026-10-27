@@ -419,6 +419,12 @@ def main(argv=None) -> int:
                     help="--writer llama: suspend the llama-server process while the sidecar renders on the GPU, so "
                          "its CPU threads never compete with a render (on by default with the writer)")
     ap.add_argument("--event-log", default=None, help="write one JSON line per request (timings, served or generated)")
+    ap.add_argument("--trace", action=argparse.BooleanOptionalAction, default=True,
+                    help="on by default: a client that sends trace true in its hello gets a small 'trace' object on "
+                         "each audio reply (the path that served it, route, model, prompt source, world and scene use, "
+                         "Flow take), and a stats request may ask for the background activity feed, both for the Unity "
+                         "pipeline graph (docs/pipeline-graph.md); a client that does not ask gets the replies as "
+                         "before, audio is the same either way, and --no-trace refuses both")
     ap.add_argument("--predict-fixes", action=argparse.BooleanOptionalAction, default=True,
                     help="on by default: a predicted stem maps to the fired event it names (footstep to iron boot "
                          "footstep), a prediction that sends no intensity takes the last fired one, no lead gate in "
@@ -569,6 +575,7 @@ def main(argv=None) -> int:
                                ("scene", args.scene))
              if v}
     extra["rapid_hz"] = args.rapid_hz
+    extra["trace"] = args.trace
     if args.woosh_upgrade != "off":
         extra["upgrade"] = args.woosh_upgrade
     writer = make_writer(args)

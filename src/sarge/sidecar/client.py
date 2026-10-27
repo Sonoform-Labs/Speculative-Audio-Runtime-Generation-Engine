@@ -18,11 +18,12 @@ class ProtocolError(Exception):
 
 class SfxClient:
     def __init__(self, host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
-                 pcm: str = "f32le", timeout: float = 30.0):
+                 pcm: str = "f32le", timeout: float = 30.0, trace: bool = False):
         self.host = host
         self.port = port
         self.pcm = pcm
         self.timeout = timeout
+        self.trace = bool(trace)
         self.sock = None
         self.welcome = None
 
@@ -53,8 +54,10 @@ class SfxClient:
         return rtype, rbody, rpcm
 
     def hello(self) -> dict:
-        _, body, _ = self._round_trip(MsgType.HELLO, {
-            "type": "hello", "proto": wire.PROTOCOL_VERSION, "client": "python-test", "pcm": self.pcm})
+        req = {"type": "hello", "proto": wire.PROTOCOL_VERSION, "client": "python-test", "pcm": self.pcm}
+        if self.trace:
+            req["trace"] = True
+        _, body, _ = self._round_trip(MsgType.HELLO, req)
         self.welcome = body
         self.pcm = body.get("pcm", self.pcm)
         return body
@@ -109,8 +112,11 @@ class SfxClient:
         _, body, _ = self._round_trip(MsgType.MANIFEST, {"type": "manifest", "keys": list(keys)})
         return body
 
-    def stats(self) -> dict:
-        _, body, _ = self._round_trip(MsgType.STATS, {"type": "stats"})
+    def stats(self, feed=None) -> dict:
+        req = {"type": "stats"}
+        if feed is not None:
+            req["feed"] = int(feed)
+        _, body, _ = self._round_trip(MsgType.STATS, req)
         return body
 
     def ping(self, t=None) -> dict:
@@ -119,7 +125,7 @@ class SfxClient:
 
 
 def connect(host: str = "127.0.0.1", port: int = wire.DEFAULT_PORT,
-            pcm: str = "f32le", timeout: float = 30.0) -> SfxClient:
-    c = SfxClient(host, port, pcm, timeout)
+            pcm: str = "f32le", timeout: float = 30.0, trace: bool = False) -> SfxClient:
+    c = SfxClient(host, port, pcm, timeout, trace)
     c.connect()
     return c

@@ -110,7 +110,7 @@ namespace Sarge
 
         void SpawnMarker(Vector3 pos, float confidence, bool transition)
         {
-            if (!showMarkers) return;
+            if (!showMarkers || !SargeHud.Visible) return;
             var m = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             var col = m.GetComponent<Collider>();
             if (col != null) Destroy(col);

@@ -59,6 +59,12 @@ Three more switches on `SargeService`, all off by default, feed the server's pro
 
 `SargeMotionPredictor.eventType` and `SargeAimPredictor.eventType` default to empty. The server then predicts the event that has landed most often on the surfaces that predictor named, so a step called `Footstep_Concrete` or an impact called `BulletHit` is learned from play. Set the field when you know the name, so the very first step can be predicted too.
 
+## Pipeline graph and the clean screen
+
+**Window > SARGE > Pipeline Graph** opens an editor tab in the style of a Blueprint graph: every stage from the game event to playback as a node, and in Play mode the nodes and wires of the path each sound took light up and fade over about a second. `SargeService.trace` (on by default) asks the sidecar for the small `trace` object on each reply, and while the tab is open the service also polls the stats reply for background work such as Flow upgrades. With the tab closed nothing is recorded or polled. See `docs/pipeline-graph.md` for the node map and a recording setup.
+
+The package draws nothing on screen by default. **F1** (`SargeHud.Key`) toggles the debug overlays back: the impulse probe's labels, the motion predictor's footstep markers and any demo HUD that checks `SargeHud.Visible`.
+
 ## Impulse probe
 
 `SargeImpulseProbe` measures how hard things hit, for tuning the intensity axis.

@@ -42,6 +42,7 @@ namespace Sarge
 
         void Update()
         {
+            SargeHud.Tick();
             HandleInput();
             if (_autoWalk)
             {
@@ -129,6 +130,7 @@ namespace Sarge
 
         void OnGUI()
         {
+            if (!SargeHud.Visible) return;
             if (_style == null)
             {
                 _style = new GUIStyle(GUI.skin.label) { fontSize = 16, richText = true, wordWrap = true };

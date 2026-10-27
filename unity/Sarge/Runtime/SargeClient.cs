@@ -17,6 +17,7 @@ namespace Sarge
         public int channels;
         public string pcm;
         public long max_pcm_bytes;
+        public bool trace;
     }
 
     [Serializable]
@@ -37,6 +38,69 @@ namespace Sarge
         public string scene_key;
         public int prompt_rev;
         public bool meta_only;
+        public TraceMeta trace;
+    }
+
+    [Serializable]
+    public class TraceMeta
+    {
+        public string path;
+        public string route;
+        public string gen;
+        public string prompt;
+        public string take;
+        public bool phys;
+        public bool scene;
+        public bool predicted;
+    }
+
+    [Serializable]
+    public class FeedItem
+    {
+        public long seq;
+        public string kind;
+        public string key;
+        public string route;
+        public string gen;
+        public string prompt;
+        public string take;
+        public string why;
+        public string side;
+        public bool phys;
+        public bool scene;
+        public int variant;
+        public int takes;
+        public float ms;
+    }
+
+    [Serializable]
+    public class UpgradeInfo
+    {
+        public string engine;
+        public string state;
+        public int queued_takes;
+        public int rendered;
+        public int swaps;
+    }
+
+    [Serializable]
+    public class WriterInfo
+    {
+        public string state;
+        public int written;
+        public int queued;
+    }
+
+    [Serializable]
+    public class StatsReply
+    {
+        public string type;
+        public int cached_keys;
+        public int wasted;
+        public UpgradeInfo upgrade;
+        public WriterInfo writer;
+        public FeedItem[] feed;
+        public long feed_seq;
     }
 
     [Serializable]
@@ -120,6 +184,7 @@ namespace Sarge
 
         public Welcome Welcome { get; private set; }
         public int SampleRate { get; private set; } = 48000;
+        public bool Trace { get; set; }
 
         public void Connect(string host = "127.0.0.1", int port = 8765, string pcm = "f32le")
         {
@@ -138,7 +203,8 @@ namespace Sarge
 
         void Hello()
         {
-            WriteFrame(HELLO, "{\"type\":\"hello\",\"proto\":1,\"client\":\"unity\",\"pcm\":" + Quote(_pcm) + "}");
+            WriteFrame(HELLO, "{\"type\":\"hello\",\"proto\":1,\"client\":\"unity\",\"pcm\":" + Quote(_pcm) +
+                (Trace ? ",\"trace\":true}" : "}"));
             var f = ReadFrame();
             Welcome = JsonUtility.FromJson<Welcome>(f.json);
             _pcm = Welcome.pcm;
@@ -244,6 +310,17 @@ namespace Sarge
             WriteFrame(PREDICT, sb.ToString());
             var f = ReadFrame();
             try { return JsonUtility.FromJson<PredictAck>(f.json); }
+            catch (Exception) { return null; }
+        }
+
+        public StatsReply Stats(long feedSince = -1)
+        {
+            var json = feedSince < 0
+                ? "{\"type\":\"stats\"}"
+                : "{\"type\":\"stats\",\"feed\":" + feedSince.ToString(CultureInfo.InvariantCulture) + "}";
+            WriteFrame(STATS, json);
+            var f = ReadFrame();
+            try { return JsonUtility.FromJson<StatsReply>(f.json); }
             catch (Exception) { return null; }
         }
 

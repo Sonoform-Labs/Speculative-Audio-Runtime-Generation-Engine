@@ -45,6 +45,7 @@ class RemoteGenerator(Generator):
         self.sample_rate = int(sample_rate)
         self.prompts: dict = {}
         self.send_scene = False
+        self.model = ""
         self._sock = None
 
     def _connect(self):
@@ -54,6 +55,8 @@ class RemoteGenerator(Generator):
         body, _ = self._roundtrip({"type": "hello"})
         if body.get("sample_rate"):
             self.sample_rate = int(body["sample_rate"])
+        if body.get("model"):
+            self.model = str(body["model"])
 
     def _ensure(self):
         if self._sock is None:

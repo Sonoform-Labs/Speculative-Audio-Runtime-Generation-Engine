@@ -52,6 +52,7 @@ namespace Sarge
 
         void Update()
         {
+            SargeHud.Tick();
             if (!SargeService.Instance.IsConnected) return;
 
             _yaw += Input.GetAxisRaw("Mouse X") * mouseSensitivity;
@@ -175,7 +176,11 @@ namespace Sarge
 
         void UpdateLandMarker(Vector3 p)
         {
-            if (!showLandMarker) return;
+            if (!showLandMarker || !SargeHud.Visible)
+            {
+                if (_landMarker != null) _landMarker.SetActive(false);
+                return;
+            }
             if (_landMarker == null)
             {
                 _landMarker = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
@@ -200,6 +205,7 @@ namespace Sarge
 
         void OnGUI()
         {
+            if (!SargeHud.Visible) return;
             var svc = SargeService.Instance;
             if (!svc.IsConnected)
             {

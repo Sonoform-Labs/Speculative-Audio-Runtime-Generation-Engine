@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import contextlib
 import json
 import socket
@@ -37,6 +38,10 @@ UPGRADE_RETRIES = 2
 UPGRADE_BACKOFF_S = 5.0
 UPGRADE_UNREACH_MAX_S = 60.0
 UPGRADE_LINE_S = 15.0
+FEED_MAX = 256
+FEED_REPLY_MAX = 64
+TRACE_PATHS = {"cached": "cache", "realtime": "render"}
+GEN_LABELS = {"stableaudio3": "sa3", "stableaudio": "sa1", "remote": "woosh"}
 
 
 class SfxServer(socketserver.ThreadingTCPServer):
@@ -59,6 +64,7 @@ class _Handler(socketserver.BaseRequestHandler):
         self.request.settimeout(self.server.recv_timeout)
         self.pcm = self.server.default_pcm
         self.ready = False
+        self.trace = False
         self.send_lock = threading.Lock()
         if getattr(self.server, "keep_warm_s", 0.0) > 0.0:
             with engine_lock:
@@ -142,7 +148,8 @@ class _Handler(socketserver.BaseRequestHandler):
             raise FrameError("bad_fields", f"unknown pcm {pcm}", fatal=True)
         self.pcm = pcm
         self.ready = True
-        self._send(MsgType.WELCOME, {
+        self.trace = body.get("trace") is True and getattr(self.server, "trace", False)
+        welcome = {
             "type": "welcome",
             "proto": wire.PROTOCOL_VERSION,
             "server_version": __version__,
@@ -151,7 +158,10 @@ class _Handler(socketserver.BaseRequestHandler):
             "channels": 1,
             "pcm": self.pcm,
             "max_pcm_bytes": wire.MAX_PCM,
-        })
+        }
+        if self.trace:
+            welcome["trace"] = True
+        self._send(MsgType.WELCOME, welcome)
 
     def _context_from(self, body):
         if not isinstance(body, dict):
@@ -271,6 +281,7 @@ class _Handler(socketserver.BaseRequestHandler):
                 _upgrade_sync(self.server, key)
                 _sa3_sync(self.server, key)
             rev = _rev(self.server, key)
+            predicted = self.trace and key in (getattr(eng, "eta", None) or ())
             claimed = getattr(self.server, "concurrent_gen", False) and eng.claim_realtime(key)
             if claimed:
                 intent = self._note(key)
@@ -314,6 +325,8 @@ class _Handler(socketserver.BaseRequestHandler):
             meta["prompt_rev"] = rev
         if meta_only:
             meta["meta_only"] = True
+        if self.trace:
+            meta["trace"] = _trace(self.server, key, served, clip, variant_id, meta_only, predicted)
         t4 = time.perf_counter()
         self._send(MsgType.AUDIO, meta, pcm)
         up = getattr(self.server, "upgrade", None)
@@ -515,6 +528,12 @@ class _Handler(socketserver.BaseRequestHandler):
         if w is not None:
             reply["writer"] = dict(w.stats, state=w.state, id=w.id[:12], stored=len(w.store or ()),
                                    swaps_pending=pending)
+        if isinstance(body, dict) and "feed" in body and getattr(self.server, "feed", None) is not None:
+            try:
+                since = int(body.get("feed") or 0)
+            except (TypeError, ValueError):
+                raise FrameError("bad_fields", "feed must be an int", fatal=False)
+            reply["feed"], reply["feed_seq"] = _feed_since(self.server, since)
         self._send(MsgType.STATS_REPLY, reply)
 
     def _on_ping(self, body):
@@ -533,6 +552,99 @@ def _log(server, rec):
             f.flush()
         except (OSError, ValueError):
             server.event_log = None
+
+
+def _inner_name(gen):
+    g = gen
+    for _ in range(8):
+        d = getattr(g, "__dict__", None) or {}
+        nxt = d.get("_g") if d.get("_g") is not None else d.get("inner")
+        if nxt is None:
+            break
+        g = nxt
+    name = str(getattr(g, "name", "") or "")
+    return GEN_LABELS.get(name, name)
+
+
+def _gen_label(server, g, route, take=""):
+    if take == "flow":
+        return "woosh_flow"
+    if g is None:
+        return _inner_name(server.engine.gen)
+    if route == "guns":
+        return "sa3"
+    model = str(getattr(getattr(g, "rest", None), "model", "") or "")
+    return model.replace("-", "_") if model.startswith("woosh") else "woosh"
+
+
+def _prompt_source(server, key):
+    pm = _prompts(server)
+    if pm is None:
+        return ""
+    k = str(key)
+    if k not in pm:
+        return "template"
+    owned = getattr(server, "writer_owned", None)
+    return "writer" if owned is not None and k in owned else "game"
+
+
+def _take_of(server, key, variant_id, clip):
+    if getattr(server, "upgrade", None) and server.upgrade_done.get(key, {}).get(variant_id) is clip:
+        return "flow"
+    if _sa3_served(server, key, variant_id, clip):
+        return "best"
+    return ""
+
+
+def _trace_key(server, key, take=""):
+    g = _routed(server)
+    route = ""
+    if g is not None:
+        made = getattr(g, "made", None)
+        route = (made.get(key) if isinstance(made, dict) else None) or g.route(key)
+    return {"route": route, "gen": _gen_label(server, g, route, take), "prompt": _prompt_source(server, key),
+            "phys": bool(key.phys), "scene": bool(getattr(key, "scene", ""))}
+
+
+def _trace(server, key, served, clip, variant_id, meta_only, predicted):
+    path = "meta" if meta_only else TRACE_PATHS.get(served, served)
+    out = {"path": path, "route": "", "gen": "", "prompt": "", "take": "", "phys": bool(key.phys),
+           "scene": bool(getattr(key, "scene", "")), "predicted": bool(predicted)}
+    try:
+        take = _take_of(server, key, variant_id, clip)
+        out.update(_trace_key(server, key, take), take=take)
+        if served in ("fallback", "silence"):
+            out.update(route="", gen=served)
+    except Exception:
+        pass
+    return out
+
+
+def _feed(server, kind, key=None, **extra):
+    q = getattr(server, "feed", None)
+    if q is None:
+        return
+    rec = {"kind": kind}
+    if key is not None:
+        rec["key"] = "%s|%s" % (key.event_type, key.material)
+        try:
+            rec.update(_trace_key(server, key, extra.get("take", "")))
+        except Exception:
+            pass
+    rec.update(extra)
+    with server.feed_lock:
+        server.feed_seq += 1
+        rec["seq"] = server.feed_seq
+        q.append(rec)
+
+
+def _feed_since(server, since):
+    with server.feed_lock:
+        seq = server.feed_seq
+        if since > seq or since < 0:
+            since = 0
+        items = [dict(r) for r in server.feed if r["seq"] > since]
+    return items[-FEED_REPLY_MAX:], seq
 
 
 def _register_prompt(server, key, prompt):
@@ -849,6 +961,7 @@ def _writer_step(server):
         eng.stats["gpu_ms"] += eng.cost_ms(key)
         if n_old > 1:
             server.writer_fill[key] = n_old
+    _feed(server, "writer_swap", key, ms=round(ms, 1))
     if getattr(server, "event_log", None) is not None:
         _log(server, {"type": "writer_swap", "t": time.time(), "key": k, "ms": ms, "old_clips": n_old})
     return True
@@ -884,6 +997,7 @@ def _writer_fill_step(server):
     server.last_gen_t = time.monotonic()
     with engine_lock:
         eng.commit_clips([item], [clip], "spec_gen")
+    _feed(server, "render", item[0], variant=item[1], why="writer_fill")
     return True
 
 
@@ -1160,6 +1274,7 @@ def _upgrade_step(server):
             _log(server, {"type": "upgrade_yield", "t": time.time(), "key": str(key), "variant": orig.variant_id,
                           "ms": ms})
         return False
+    _feed(server, "flow_take", key, variant=orig.variant_id, take="flow", ms=round(ms, 1))
     swapped = 0
     with engine_lock:
         server.upgrade_count["rendered"] += 1
@@ -1200,6 +1315,7 @@ def _upgrade_step(server):
         server.upgrade_line_dirty = True
         summary = _upgrade_summary(server)
     _upgrade_say(server, summary)
+    _feed(server, "flow_swap", key, takes=swapped, take="flow")
     if getattr(server, "event_log", None) is not None:
         _log(server, {"type": "upgrade_swap", "t": time.time(), "key": str(key), "takes": swapped, "ms": ms,
                       "rev": rev, "take_ms": [st["ms"].get(v) for v in sorted(st["ms"])],
@@ -1426,6 +1542,7 @@ def _sa3_step(server):
             if server.sa3_stage.get(key) is st and st["work"].get(v) is orig and st["cands"].get(v) is have:
                 have.append(clip)
                 st["ms"][v].append(ms)
+        _feed(server, "sa3_candidate", key, variant=v, takes=len(have) + 1, ms=round(ms, 1))
         return True
     group = [orig] + list(have)
     try:
@@ -1491,6 +1608,7 @@ def _sa3_step(server):
             server.upgrade_line_dirty = True
         summary = _upgrade_summary(server)
     _upgrade_say(server, summary)
+    _feed(server, "sa3_pick", key, takes=changed, decided=decided)
     if getattr(server, "event_log", None) is not None and rec is not None:
         _log(server, rec)
     return True
@@ -1554,6 +1672,7 @@ def _route_step(server):
     if done is None:
         return False
     key, side, held, keep = done
+    _feed(server, "route_flip", key, side=side)
     w = getattr(server, "writer", None)
     rec = w.lookup(key) if w is not None else None
     if rec:
@@ -1566,6 +1685,8 @@ def _route_step(server):
 
 def _writer_written(server, key, rec):
     _writer_deliver(server, key, rec)
+    ms = rec.get("ms")
+    _feed(server, "writer", key, ms=round(float(ms), 1) if isinstance(ms, (int, float)) else 0.0)
     if getattr(server, "event_log", None) is not None:
         _log(server, {"type": "writer", "t": time.time(), "key": str(key), "ms": rec.get("ms"),
                       "repaired": bool(rec.get("repaired")), "route": _writer_route(server, key)})
@@ -1615,6 +1736,8 @@ def _deepen_loop(server):
                 with engine_lock:
                     eng.commit_clips(batch, clips, stat)
                 server.last_gen_t = time.monotonic()
+                for k, v in batch:
+                    _feed(server, "render", k, variant=v, why=stat)
                 if getattr(server, "event_log", None) is not None:
                     _log(server, {"type": "deepen", "t": time.time(), "stat": stat,
                                   "items": [[str(k), v] for k, v in batch],
@@ -1662,7 +1785,7 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
           concurrent_gen: bool = False, keep_warm_ms: float = 0.0, sibling_on_miss: bool = False,
           cache_async: bool = False, rapid_hz: float = RAPID_HZ, read_class: bool = False, clock=None,
           scene: bool = False, writer=None, writer_swap: str = "revalidate", writer_yield: bool = True,
-          upgrade: str | None = None, prompt_pool=None, **engine_kwargs) -> SfxServer:
+          upgrade: str | None = None, prompt_pool=None, trace: bool = True, **engine_kwargs) -> SfxServer:
     if engine is None:
         gen = get_generator(generator, **(gen_kwargs or {}))
         if cache_dir:
@@ -1698,6 +1821,10 @@ def serve(engine=None, generator: str = "mock", host: str = "127.0.0.1", port: i
         from ..writer import Yielding
         engine.gen = Yielding(engine.gen, b)
     server = SfxServer((host, port), engine, default_pcm=pcm, recv_timeout=recv_timeout)
+    server.trace = bool(trace)
+    server.feed = collections.deque(maxlen=FEED_MAX) if server.trace else None
+    server.feed_seq = 0
+    server.feed_lock = threading.Lock()
     server.world = bool(world)
     server.last_phys = {}
     server.predict_fixes = bool(predict_fixes)

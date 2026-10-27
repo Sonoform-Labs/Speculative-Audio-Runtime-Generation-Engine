@@ -33,6 +33,8 @@ namespace Sarge
         public bool sendManifest = false;
         public bool roomProbe = false;
         public int manifestChunk = 100;
+        public bool trace = true;
+        public float tracePollSeconds = 0.5f;
 
         public static Action<SargeService> Setup;
 
@@ -63,6 +65,7 @@ namespace Sarge
             public bool isContext;
             public bool isPredict;
             public bool isManifest;
+            public bool isStats;
             public ContextArgs ctx;
             public List<SfxPrediction> predictions;
             public List<string> manifest;
@@ -93,6 +96,7 @@ namespace Sarge
             public string sceneKey;
             public int promptRev;
             public bool metaOnly;
+            public TraceMeta trace;
         }
 
         class Lane
@@ -121,6 +125,12 @@ namespace Sarge
             public double dueMs;
         }
 
+        struct Predicted
+        {
+            public string source, eventType, material;
+            public float t;
+        }
+
         readonly List<Lane> _lanes = new List<Lane>();
         readonly List<Lane> _eventLanes = new List<Lane>();
         Lane _control;
@@ -140,6 +150,13 @@ namespace Sarge
         readonly object _predLock = new object();
         readonly ManualResetEventSlim _stop = new ManualResetEventSlim(false);
         readonly object _clientLock = new object();
+        readonly List<Predicted> _recentPreds = new List<Predicted>();
+        const int MaxRecentPreds = 64;
+        const float PredictWindowS = 4f;
+        int _polling;
+        float _nextPoll;
+        long _feedSeq;
+        bool _feedPrimed;
 
         volatile bool _running;
         volatile ContextArgs _lastContext;
@@ -227,8 +244,143 @@ namespace Sarge
                 p.etaS.ToString("0.00", CultureInfo.InvariantCulture) + "s";
             PredictionsSent += preds.Count;
             if (resendPredictions) Remember(preds);
+            if (SargeTrace.Listening) NotePredicted(preds);
             Enqueue(_control, new WorkItem { isPredict = true, predictions = preds, predictNow = now });
         }
+
+        void NotePredicted(List<SfxPrediction> preds)
+        {
+            float t = Time.unscaledTime;
+            for (int i = 0; i < preds.Count && i < 8; i++)
+                _recentPreds.Add(new Predicted { source = preds[i].source ?? "motion", eventType = preds[i].eventType ?? "",
+                    material = preds[i].material ?? "", t = t });
+            if (_recentPreds.Count > MaxRecentPreds) _recentPreds.RemoveRange(0, _recentPreds.Count - MaxRecentPreds);
+        }
+
+        string PredictedBy(string eventType, string material)
+        {
+            float now = Time.unscaledTime;
+            string ev = " " + (eventType ?? "") + " ";
+            for (int i = _recentPreds.Count - 1; i >= 0; i--)
+            {
+                var r = _recentPreds[i];
+                if (now - r.t > PredictWindowS) break;
+                if (r.material != (material ?? "")) continue;
+                if (r.eventType.Length == 0 || r.eventType == eventType || ev.Contains(" " + r.eventType + " ")) return r.source;
+            }
+            return null;
+        }
+
+        static SargeTraceRecord EventRecord(WorkItem it)
+        {
+            return new SargeTraceRecord
+            {
+                kind = "event",
+                eventType = it.eventType,
+                material = it.material,
+                intensity = it.intensity,
+                physSent = !string.IsNullOrEmpty(it.physJson),
+                sceneSent = it.sceneJson != null,
+            };
+        }
+
+        void TraceLocal(WorkItem it)
+        {
+            var r = EventRecord(it);
+            r.path = "local";
+            r.source = PredictedBy(it.eventType, it.material);
+            r.predicted = r.source != null;
+            SargeTrace.Add(r);
+        }
+
+        void TraceResult(Result res)
+        {
+            var it = res.item;
+            var r = EventRecord(it);
+            string by = PredictedBy(it.eventType, it.material);
+            var t = res.trace;
+            if (!res.ok) r.path = "failed";
+            else if (t != null && !string.IsNullOrEmpty(t.path))
+            {
+                r.path = t.path;
+                r.route = t.route;
+                r.gen = t.gen;
+                r.prompt = t.prompt;
+                r.take = t.take;
+                r.phys = t.phys;
+                r.scene = t.scene;
+                r.predicted = t.predicted;
+            }
+            else
+            {
+                r.path = res.metaOnly ? "meta" : res.served == "cached" ? "cache" : res.served == "realtime" ? "render" : res.served;
+                r.phys = !string.IsNullOrEmpty(res.physKey);
+                r.scene = !string.IsNullOrEmpty(res.sceneKey);
+                r.predicted = by != null;
+            }
+            r.source = by ?? (r.predicted ? "intent" : null);
+            if (it.tReply > 0.0 && it.tRequest > 0.0) r.ms = (float)(it.tReply - it.tRequest);
+            SargeTrace.Add(r);
+        }
+
+        static void TracePredict(List<SfxPrediction> preds, PredictAck ack)
+        {
+            if (!SargeTrace.Listening || preds == null || preds.Count == 0) return;
+            var p = preds[0];
+            SargeTrace.Add(new SargeTraceRecord
+            {
+                kind = "predict",
+                source = p.source ?? "motion",
+                eventType = p.eventType,
+                material = p.material,
+                intensity = p.intensity,
+                eta = p.etaS,
+                count = preds.Count,
+                queued = ack != null ? ack.queued : -1,
+                physSent = !string.IsNullOrEmpty(p.physJson),
+                sceneSent = !string.IsNullOrEmpty(p.scene),
+            });
+        }
+
+        static SargeTraceRecord FeedRecord(FeedItem f)
+        {
+            string key = f.key ?? "";
+            int bar = key.IndexOf('|');
+            return new SargeTraceRecord
+            {
+                kind = "feed:" + f.kind,
+                eventType = bar >= 0 ? key.Substring(0, bar) : key,
+                material = bar >= 0 ? key.Substring(bar + 1) : "",
+                route = f.route,
+                gen = f.gen,
+                prompt = f.prompt,
+                take = f.take,
+                phys = f.phys,
+                scene = f.scene,
+                ms = f.ms,
+                count = f.takes,
+                variant = f.variant,
+                detail = f.kind == "route_flip" ? f.side : f.why,
+            };
+        }
+
+        void PollStats(SargeClient c)
+        {
+            var r = c.Stats(_feedSeq);
+            if (r == null) return;
+            SargeTrace.UpgradeState = r.upgrade != null && !string.IsNullOrEmpty(r.upgrade.state)
+                ? r.upgrade.engine + " " + r.upgrade.state : null;
+            SargeTrace.WriterState = r.writer != null && !string.IsNullOrEmpty(r.writer.state) ? r.writer.state : null;
+            if (r.feed == null) return;
+            bool reset = r.feed_seq < _feedSeq;
+            if (_feedPrimed)
+                foreach (var f in r.feed)
+                    if (f != null && (reset || f.seq > _feedSeq)) SargeTrace.Add(FeedRecord(f));
+            _feedSeq = r.feed_seq;
+            _feedPrimed = true;
+        }
+
+        static bool IsEvent(WorkItem it) => !it.isContext && !it.isPredict && !it.isManifest && !it.isStats;
 
         void Enqueue(Lane lane, WorkItem item)
         {
@@ -332,7 +484,7 @@ namespace Sarge
                 onReady = onReady,
                 onFailed = onFailed,
             };
-            if (logTimings) item.tRequest = Now();
+            if (logTimings || SargeTrace.Listening) item.tRequest = Now();
             var lane = PickLane();
             item.lane = lane.index;
             if (localPlayback) PlayLocal(item);
@@ -397,6 +549,7 @@ namespace Sarge
             LocalCount++;
             LastServed = "local";
             LastVariantId = variant;
+            if (SargeTrace.Listening) TraceLocal(item);
             if (logTimings) LogRow(item, "local", variant, node.Value.clip);
             item.onReady?.Invoke(node.Value.clip);
         }
@@ -404,6 +557,15 @@ namespace Sarge
         void Update()
         {
             _lastNow = Time.time;
+            SargeHud.Tick();
+            SargeTrace.Connected = IsConnected;
+            SargeTrace.Generator = Generator;
+            if (SargeTrace.Listening && _running && IsConnected && Time.unscaledTime >= _nextPoll &&
+                Interlocked.CompareExchange(ref _polling, 1, 0) == 0)
+            {
+                _nextPoll = Time.unscaledTime + Mathf.Max(0.1f, tracePollSeconds);
+                Enqueue(_control, new WorkItem { isStats = true });
+            }
             if (roomProbe) SargeScene.Tick(Time.unscaledTime);
             if (_manifestDue && sendManifest && _running)
             {
@@ -528,6 +690,7 @@ namespace Sarge
                         catch (Exception) { clip = null; }
                     }
                     if (it.playedLocally) continue;
+                    if (SargeTrace.Listening) TraceResult(res);
                     if (logTimings) LogRow(it, res.served, res.variantId, clip);
                     if (clip != null) it.onReady?.Invoke(clip);
                     else it.onFailed?.Invoke();
@@ -535,6 +698,7 @@ namespace Sarge
                 else
                 {
                     if (it.playedLocally) continue;
+                    if (SargeTrace.Listening) TraceResult(res);
                     if (logTimings) LogRow(it, "failed", -1, null);
                     it.onFailed?.Invoke();
                 }
@@ -676,7 +840,13 @@ namespace Sarge
                     if (!got) { client.Ping(0f); continue; }
                     if (item.isPredict)
                     {
-                        Learn(item.predictions, client.Predict(item.predictions, item.predictNow));
+                        var ack = client.Predict(item.predictions, item.predictNow);
+                        Learn(item.predictions, ack);
+                        TracePredict(item.predictions, ack);
+                    }
+                    else if (item.isStats)
+                    {
+                        PollStats(client);
                     }
                     else if (item.isContext)
                     {
@@ -691,25 +861,26 @@ namespace Sarge
                     {
                         var r = client.Event(item.eventType, item.material, item.intensity, item.context, item.physJson, item.have, item.havePhys,
                             item.eventClass, item.prompt, item.sceneJson, item.haveScene, item.haveRev);
-                        if (logTimings) item.tReply = Now();
-                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, channels = r.meta.channels, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned, physKey = r.meta.phys_key, sceneKey = r.meta.scene_key, promptRev = r.meta.prompt_rev, metaOnly = r.meta.meta_only });
+                        if (logTimings || item.tRequest > 0.0) item.tReply = Now();
+                        _results.Enqueue(new Result { ok = true, item = item, samples = r.samples, sampleRate = r.meta.sample_rate, channels = r.meta.channels, variantId = r.meta.variant_id, served = r.meta.served, intent = r.meta.intent, learned = r.meta.learned, physKey = r.meta.phys_key, sceneKey = r.meta.scene_key, promptRev = r.meta.prompt_rev, metaOnly = r.meta.meta_only, trace = r.meta.trace });
                     }
                 }
                 catch (SfxProtocolException pe)
                 {
-                    if (got && item != null && !item.isContext && !item.isPredict && !item.isManifest) _results.Enqueue(new Result { ok = false, item = item });
+                    if (got && item != null && IsEvent(item)) _results.Enqueue(new Result { ok = false, item = item });
                     if (pe.Fatal) { lane.connected = false; SafeClose(lane); _stop.Wait(reconnectDelayMs); }
                 }
                 catch (Exception)
                 {
                     lane.connected = false;
                     SafeClose(lane);
-                    if (got && item != null && !item.isContext && !item.isPredict && !item.isManifest) _results.Enqueue(new Result { ok = false, item = item });
+                    if (got && item != null && IsEvent(item)) _results.Enqueue(new Result { ok = false, item = item });
                     _stop.Wait(reconnectDelayMs);
                 }
                 finally
                 {
                     if (got) Interlocked.Decrement(ref lane.busy);
+                    if (got && item != null && item.isStats) Interlocked.Exchange(ref _polling, 0);
                 }
             }
             SafeClose(lane);
@@ -721,7 +892,7 @@ namespace Sarge
             {
                 lock (_clientLock) { if (lane.client != null) return lane.client; }
             }
-            var c = new SargeClient();
+            var c = new SargeClient { Trace = trace };
             lock (_clientLock) { lane.client = c; }
             try { c.Connect(host, port, pcm); }
             catch

@@ -391,6 +391,8 @@ def fire(c, side, et, mat, inten, ctx, rows, tag):
            "sr_ok": int(body["sample_rate"]) == SR[side], "channels": ch, "shape_ok": y.ndim == 2 and y.shape[1] == ch,
            "duration_s": float(body["duration_s"]), "peak": float(np.max(np.abs(y))) if y.size else 0.0,
            "max_abs_vs_bench": d}
+    if "trace" in body:
+        row["trace"] = body["trace"]
     rows.append(row)
     print(json.dumps(row), flush=True)
     return row
@@ -443,6 +445,9 @@ def main(argv=None):
     ap.add_argument("--sidecar-root", default=ROOT,
                     help="run scripts/run_sidecar.py from this checkout (e.g. a HEAD export) with this repo's venvs "
                          "and compile caches")
+    ap.add_argument("--trace", action="store_true",
+                    help="both bench clients ask for the trace fields in their hello (docs/pipeline-graph.md) and each "
+                         "row keeps the trace; the clips must stay the same as without it")
     ap.add_argument("--extra", nargs=argparse.REMAINDER, default=[])
     a = ap.parse_args(argv)
     global SAVER
@@ -524,7 +529,7 @@ def main(argv=None):
         res["gpu_ready"] = smi()
         res["proc_gpu_ready"] = by_role(proc_gpu(list(procs)), procs)
         sampler.every = 2.0
-        c = connect(port=a.port, timeout=120.0)
+        c = connect(port=a.port, timeout=120.0, trace=a.trace)
         res["welcome"] = c.welcome
         t_req = time.time() - t0
         res["gpu_before_first"] = smi()
@@ -539,7 +544,7 @@ def main(argv=None):
             for et, mat in keys:
                 for inten in INTENSITIES:
                     fire(c, side, et, mat, inten, "default", rows, "repeat")
-        c2 = connect(port=a.port, timeout=120.0)
+        c2 = connect(port=a.port, timeout=120.0, trace=a.trace)
         from sarge.amp import family_for
         for et, mat, inten, ctx in SECOND:
             fire(c2, "guns" if family_for(et) in ("blast", "handling") else "rest", et, mat, inten, ctx, rows, "conn2")

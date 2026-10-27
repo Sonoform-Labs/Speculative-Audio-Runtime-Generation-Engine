@@ -30,6 +30,7 @@ namespace Sarge
 
         void Update()
         {
+            SargeHud.Tick();
             float h = Input.GetAxisRaw("Horizontal");
             float v = Input.GetAxisRaw("Vertical");
             var move = new Vector3(h, 0f, v);
@@ -70,6 +71,7 @@ namespace Sarge
 
         void OnGUI()
         {
+            if (!SargeHud.Visible) return;
             var svc = SargeService.Instance;
             GUI.Label(new Rect(12, 10, 460, 22), "WASD / arrows to move  ·  stand still = silence");
             GUI.Label(new Rect(12, 30, 460, 22), "on: " + (_surface ?? "-") + "    served: " + (svc.LastServed ?? "-") +

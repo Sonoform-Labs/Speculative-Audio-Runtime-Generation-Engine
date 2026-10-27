@@ -119,6 +119,7 @@ namespace Sarge
 
         void Update()
         {
+            SargeHud.Tick();
             if (!_motion)
             {
 #if ENABLE_LEGACY_INPUT_MANAGER
@@ -270,6 +271,7 @@ namespace Sarge
 
         void OnGUI()
         {
+            if (!SargeHud.Visible) return;
             if (!_motion)
             {
                 int i = _bouncers.IndexOf(this);
