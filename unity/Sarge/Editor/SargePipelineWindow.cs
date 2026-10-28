@@ -763,9 +763,9 @@ namespace Sarge
             }
             float pad = 9f * z;
             GUI.Label(new Rect(h.x + pad, h.y, h.width - 2f * pad, h.height), n.title, _title);
-            GUI.Label(new Rect(r.x + pad, h.yMax + 3f * z, r.width - 2f * pad, 15f * z), n.role, _role);
             _caption.normal.textColor = Color.Lerp(CaptionIdle, Color.white, lv);
-            GUI.Label(new Rect(r.x + pad, h.yMax + 22f * z, r.width - 2f * pad, 20f * z), n.caption ?? "", _caption);
+            GUI.Label(new Rect(r.x + pad, h.yMax + (r.height - h.height - 20f * z) / 2f, r.width - 2f * pad, 20f * z),
+                n.caption ?? "", _caption);
         }
 
         void DrawPins(Wire w, double now)
