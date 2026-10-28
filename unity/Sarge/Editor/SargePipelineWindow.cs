@@ -220,57 +220,57 @@ namespace Sarge
                     return;
                 case "predict":
                     s.Add(new Step(N.WorldLayer, null, 0.4f));
-                    s.Add(new Step(N.Predictors, (r.source ?? "motion") + " · " + key + " in " + r.eta.ToString("0.00", Inv) + " s"));
-                    if (r.queued > 0) s.Add(new Step(N.Cache, "prefetch queued · " + key));
+                    s.Add(new Step(N.Predictors, (r.source ?? "motion") + ", " + r.eta.ToString("0.00", Inv) + " s"));
+                    if (r.queued > 0) s.Add(new Step(N.Cache, "queued"));
                     Run(now, 0.75f, s);
                     return;
                 case "feed:render":
                     Thinking(r, s);
-                    Model(r, s, "background render" + Ms(r.ms));
-                    s.Add(new Step(N.Shaping, "shaped · " + key));
-                    s.Add(new Step(N.Cache, (r.detail == "writer_fill" ? "refilled · " : "prefetched · ") + key));
+                    Model(r, s, "background" + Ms(r.ms));
+                    s.Add(new Step(N.Shaping, "shaped"));
+                    s.Add(new Step(N.Cache, r.detail == "writer_fill" ? "refilled" : "prefetched"));
                     Run(now, 0.75f, s);
                     return;
                 case "feed:writer":
                     if (r.phys || r.scene) s.Add(new Step(N.WorldModel, Meaning(r)));
-                    s.Add(new Step(N.Writer, "wrote · " + key + Ms(r.ms)));
-                    s.Add(new Step(N.Prompt, "writer prompt ready"));
+                    s.Add(new Step(N.Writer, "wrote" + Ms(r.ms)));
+                    s.Add(new Step(N.Prompt, "ready"));
                     Run(now, 0.85f, s);
                     return;
                 case "feed:writer_swap":
-                    s.Add(new Step(N.Writer, "re-render · " + key));
-                    s.Add(new Step(N.Prompt, "writer prompt"));
-                    Model(r, s, "re-rendered" + Ms(r.ms));
-                    s.Add(new Step(N.Shaping, "shaped · " + key));
-                    s.Add(new Step(N.Cache, "writer take swapped in"));
+                    s.Add(new Step(N.Writer, "re-render"));
+                    s.Add(new Step(N.Prompt, "writer"));
+                    Model(r, s, Ms(r.ms).Trim());
+                    s.Add(new Step(N.Shaping, "shaped"));
+                    s.Add(new Step(N.Cache, "swapped"));
                     Run(now, 0.85f, s);
                     return;
                 case "feed:route_flip":
-                    s.Add(new Step(N.Writer, "firearm? · " + key));
-                    s.Add(new Step(N.Router, "by meaning: " + (string.IsNullOrEmpty(r.detail) ? r.route : r.detail)));
+                    s.Add(new Step(N.Writer, "gun?"));
+                    s.Add(new Step(N.Router, "by meaning"));
                     Run(now, 0.85f, s);
                     return;
                 case "feed:flow_take":
-                    s.Add(new Step(N.Cache, "upgrading · " + key, 0.6f));
-                    s.Add(new Step(N.Flow, "take " + r.variant.ToString(Inv) + " · " + key + Ms(r.ms)));
-                    s.Add(new Step(N.Selection, "scoring takes"));
+                    s.Add(new Step(N.Cache, "upgrading", 0.6f));
+                    s.Add(new Step(N.Flow, "take " + r.variant.ToString(Inv) + (r.ms > 0f ? "," + Ms(r.ms) : "")));
+                    s.Add(new Step(N.Selection, "scoring"));
                     Run(now, 0.85f, s);
                     return;
                 case "feed:flow_swap":
-                    s.Add(new Step(N.Flow, "upgrade ready · " + key));
-                    s.Add(new Step(N.Selection, "kept the best"));
-                    s.Add(new Step(N.Cache, "upgrade swapped " + r.count.ToString(Inv) + (r.count == 1 ? " take" : " takes")));
+                    s.Add(new Step(N.Flow, "ready"));
+                    s.Add(new Step(N.Selection, "best kept"));
+                    s.Add(new Step(N.Cache, "upgraded"));
                     Run(now, 0.95f, s);
                     return;
                 case "feed:sa3_candidate":
-                    s.Add(new Step(N.Sa3, "candidate " + r.count.ToString(Inv) + " · " + key));
-                    s.Add(new Step(N.Selection, "scoring SA3 takes"));
+                    s.Add(new Step(N.Sa3, "take " + r.count.ToString(Inv)));
+                    s.Add(new Step(N.Selection, "scoring"));
                     Run(now, 0.75f, s);
                     return;
                 case "feed:sa3_pick":
-                    s.Add(new Step(N.Sa3, "best of N · " + key));
-                    s.Add(new Step(N.Selection, r.count > 0 ? "picked a better take" : "kept the served take"));
-                    s.Add(new Step(N.Cache, r.count > 0 ? "SA3 swapped " + r.count.ToString(Inv) : "SA3 takes kept"));
+                    s.Add(new Step(N.Sa3, "best of N"));
+                    s.Add(new Step(N.Selection, r.count > 0 ? "better take" : "kept"));
+                    s.Add(new Step(N.Cache, r.count > 0 ? "swapped" : "kept"));
                     Run(now, 0.85f, s);
                     return;
             }
@@ -279,42 +279,42 @@ namespace Sarge
         void OnEventRecord(SargeTraceRecord r, string key, double now)
         {
             var s = Steps();
-            string inten = string.IsNullOrEmpty(r.intensity) || r.intensity == "normal" ? "" : " · " + r.intensity;
+            string inten = string.IsNullOrEmpty(r.intensity) || r.intensity == "normal" ? "" : ", " + r.intensity;
             s.Add(new Step(N.GameEvent, key + inten));
             s.Add(new Step(N.WorldLayer, World(r)));
             string path = r.path ?? "";
             if (path == "cache" || path == "meta" || path == "local" || path == "sibling")
             {
-                if (r.predicted) s.Add(new Step(N.Predictors, "hit · " + (r.source ?? "predicted")));
+                if (r.predicted) s.Add(new Step(N.Predictors, "hit, " + (r.source ?? "predicted")));
                 s.Add(new Step(N.Cache, CacheCaption(r)));
-                s.Add(new Step(N.Playback, "played · " + key));
+                s.Add(new Step(N.Playback, "played"));
                 Run(now, 1f, s);
                 return;
             }
             if (path == "render")
             {
                 Thinking(r, s);
-                Model(r, s, "rendered" + Ms(r.ms));
-                s.Add(new Step(N.Shaping, "shaped · " + key));
-                s.Add(new Step(N.Playback, "played · " + key));
+                Model(r, s, Ms(r.ms).Trim());
+                s.Add(new Step(N.Shaping, "shaped"));
+                s.Add(new Step(N.Playback, "played"));
                 Run(now, 1f, s);
-                if (r.predicted) Light(N.Predictors, now + Stagger * 2.0, 0.55f, "predicted, still rendering");
+                if (r.predicted) Light(N.Predictors, now + Stagger * 2.0, 0.55f, "too late");
                 return;
             }
             if (path == "failed")
             {
-                s[1] = new Step(N.WorldLayer, "no reply from the sidecar");
+                s[1] = new Step(N.WorldLayer, "no reply");
                 Run(now, 0.8f, s);
                 return;
             }
             Run(now, 1f, s);
-            Light(N.Playback, now + Stagger * 2.0, 0.8f, path + " clip · " + key);
+            Light(N.Playback, now + Stagger * 2.0, 0.8f, path);
         }
 
         void Thinking(SargeTraceRecord r, List<Step> s)
         {
             if (r.phys || r.scene) s.Add(new Step(N.WorldModel, Meaning(r)));
-            if (r.prompt == "writer") s.Add(new Step(N.Writer, "written prompt"));
+            if (r.prompt == "writer") s.Add(new Step(N.Writer, "written"));
             s.Add(new Step(N.Prompt, PromptCaption(r.prompt)));
         }
 
@@ -357,43 +357,43 @@ namespace Sarge
         {
             string e = r.eventType ?? "";
             if (string.IsNullOrEmpty(r.material)) return e.Length > 0 ? e : "?";
-            return (e.Length > 0 ? e : "?") + " | " + r.material;
+            return (e.Length > 0 ? e : "?") + ", " + r.material;
         }
 
         static string World(SargeTraceRecord r)
         {
             string m = string.IsNullOrEmpty(r.material) ? "no material" : r.material;
-            if (r.physSent) m += " · physics";
-            if (r.sceneSent) m += " · scene";
+            if (r.physSent) m += ", physics";
+            if (r.sceneSent) m += ", scene";
             return m;
         }
 
         static string Meaning(SargeTraceRecord r)
         {
-            return r.phys && r.scene ? "physics + scene record" : r.phys ? "physics record" : "scene record";
+            return r.phys && r.scene ? "physics, scene" : r.phys ? "physics" : "scene";
         }
 
         static string CacheCaption(SargeTraceRecord r)
         {
-            string where = r.path == "meta" ? "held in Unity" : r.path == "local" ? "Unity copy, played at once"
-                : r.path == "sibling" ? "sibling take" : "cached";
-            string take = r.take == "flow" ? " · Flow take" : r.take == "best" ? " · best SA3 take" : "";
+            string where = r.path == "meta" ? "in Unity" : r.path == "local" ? "in Unity"
+                : r.path == "sibling" ? "sibling" : "cached";
+            string take = r.take == "flow" ? ", Flow" : r.take == "best" ? ", best" : "";
             return where + take + (r.path == "local" ? "" : Ms(r.ms));
         }
 
         static string PromptCaption(string p)
         {
-            if (p == "writer") return "writer prompt";
-            if (p == "game") return "game prompt";
-            if (p == "template") return "template prompt";
-            return "built prompt";
+            if (p == "writer") return "writer";
+            if (p == "game") return "game";
+            if (p == "template") return "template";
+            return "built";
         }
 
         static string RouteCaption(string route, N gen, string label)
         {
-            if (route == "guns") return "guns → SA3 Medium";
-            if (route == "rest") return gen == N.Flow ? "rest → Woosh Flow" : "rest → Woosh";
-            return string.IsNullOrEmpty(label) ? "one model" : "one model · " + label;
+            if (route == "guns") return "guns";
+            if (route == "rest") return "Woosh";
+            return "one model";
         }
 
         static N Gen(string route, string gen)
@@ -465,21 +465,10 @@ namespace Sarge
         void Toolbar()
         {
             GUILayout.BeginHorizontal(EditorStyles.toolbar);
-            GUILayout.Label(Status(), EditorStyles.miniLabel);
             GUILayout.FlexibleSpace();
             if (GUILayout.Button("Preview", EditorStyles.toolbarButton, GUILayout.Width(60f))) Preview();
             if (GUILayout.Button("Frame", EditorStyles.toolbarButton, GUILayout.Width(50f))) _auto = true;
             GUILayout.EndHorizontal();
-        }
-
-        static string Status()
-        {
-            if (!EditorApplication.isPlaying) return "SARGE pipeline  ·  enter Play mode to see live traffic";
-            if (!SargeTrace.Connected) return "SARGE pipeline  ·  waiting for the sidecar";
-            string s = "SARGE pipeline  ·  connected" + (string.IsNullOrEmpty(SargeTrace.Generator) ? "" : " to " + SargeTrace.Generator);
-            if (!string.IsNullOrEmpty(SargeTrace.UpgradeState)) s += "  ·  upgrade " + SargeTrace.UpgradeState;
-            if (!string.IsNullOrEmpty(SargeTrace.WriterState)) s += "  ·  writer " + SargeTrace.WriterState;
-            return s;
         }
 
         void Navigate(Rect canvas)
