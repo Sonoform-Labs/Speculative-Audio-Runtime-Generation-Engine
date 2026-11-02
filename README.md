@@ -1,4 +1,4 @@
-# Speculative Audio Generation Engine
+# Speculative Audio Runtime Generation Engine
 
 Generates game sound effects in real time, predicting events before they happen and caching every result in the instance of repeat events.
 
